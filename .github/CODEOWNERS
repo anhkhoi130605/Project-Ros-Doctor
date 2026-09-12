@@ -1,0 +1,34 @@
+# CODEOWNERS — AI20K-Build-Phase/starter-code-template
+#
+# File này chỉ định AI có quyền duyệt thay đổi. Với các đường dẫn dưới đây,
+# GitHub tự động yêu cầu review của owner tương ứng trước khi PR được merge.
+#
+# QUAN TRỌNG — vì sao docs/guide/ được bảo vệ:
+# Thư mục docs/guide/ là NGUỒN của Technical Book đăng tại
+#   https://phoenix.note.transformerlabs.ai/technical-book
+# Nội dung merge vào `main` sẽ được đồng bộ lên trang đó. Do vậy quyền duyệt
+# các đường dẫn này chính là quyền quyết định nội dung nào được publish lên
+# technical-book. Chỉ thành viên @AI20K-Build-Phase/book-maintainers có quyền đó.
+#
+# Thêm/bớt người: sửa thành viên team book-maintainers, KHÔNG cần sửa file này.
+#   https://github.com/orgs/AI20K-Build-Phase/teams/book-maintainers
+
+# ---------------------------------------------------------------------------
+# Mặc định — mọi file chưa khớp rule nào bên dưới
+# ---------------------------------------------------------------------------
+*                           @AI20K-Build-Phase/book-maintainers
+
+# ---------------------------------------------------------------------------
+# Nguồn Technical Book — đồng bộ lên phoenix.note.transformerlabs.ai
+# ---------------------------------------------------------------------------
+/docs/                      @AI20K-Build-Phase/book-maintainers
+/docs/guide/                @AI20K-Build-Phase/book-maintainers
+
+# ---------------------------------------------------------------------------
+# Quản trị repo — license, quy trình, CI, và chính file CODEOWNERS này
+# ---------------------------------------------------------------------------
+/.github/                   @AI20K-Build-Phase/book-maintainers
+/LICENSE                    @AI20K-Build-Phase/book-maintainers
+/SECURITY.md                @AI20K-Build-Phase/book-maintainers
+/CONTRIBUTING.md            @AI20K-Build-Phase/book-maintainers
+/CODE_OF_CONDUCT.md         @AI20K-Build-Phase/book-maintainers
