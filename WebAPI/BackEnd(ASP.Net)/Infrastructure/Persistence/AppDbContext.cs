@@ -5,10 +5,8 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Domain.Entities.Config;
-using Domain.Entities.EventIformation;
 using Domain.Entities.FeedBack;
 using Domain.Entities.Information;
-using Domain.Entities.RoomIformation;
 using Domain.Entities.AboutUser;
 
 namespace Infrastructure.Persistence;
@@ -37,12 +35,9 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
     public virtual DbSet<ProfileUser> Profiles { get; set; }
     public virtual DbSet<Notification> Notifications { get; set; }
-    public virtual DbSet<Department> Departments { get; set; }
-    public virtual DbSet<EventWaitlist> EventWaitlists { get; set; }
     public virtual DbSet<Feedback> Feedbacks { get; set; }
     public virtual DbSet<StudentQuizScore> StudentQuizScores { get; set; }
     public virtual DbSet<TeamMember> TeamMembers { get; set; }
-    public virtual DbSet<EventAgenda> EventAgendas { get; set; }
     public virtual DbSet<Ticket> Tickets { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

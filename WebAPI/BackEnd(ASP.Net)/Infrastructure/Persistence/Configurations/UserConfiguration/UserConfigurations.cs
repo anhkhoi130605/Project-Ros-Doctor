@@ -52,18 +52,6 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 		}
 	}
 
-	public class ProfileConfiguration : IEntityTypeConfiguration<ProfileUser>
-	{
-		public void Configure(EntityTypeBuilder<ProfileUser> builder)
-		{
-            builder.HasIndex(d => d.Id).IsUnique();
-
-			builder.HasOne(d => d.Department)
-				.WithMany()
-				.HasForeignKey(d => d.DepartmentId)
-				.OnDelete(DeleteBehavior.SetNull);
-		}
-	}
 	public class RoleConfiguration : IEntityTypeConfiguration<Role>
 	{
 		public void Configure(EntityTypeBuilder<Role> builder)
