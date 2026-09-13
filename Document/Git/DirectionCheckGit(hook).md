@@ -12,31 +12,9 @@ File logic kiểm tra commit message đã có sẵn trong repo:
 
 File này đọc message commit từ tham số hook `commit-msg`, hoặc nếu không có tham số thì lấy message gần nhất từ `git log`.
 
-## 3. Cài hook `commit-msg`
+## 3. Cài hook chuẩn cho repo
 
-Tạo file hook ở thư mục `.git/hooks/commit-msg` với nội dung:
-
-```bash
-#!/usr/bin/env bash
-repo_root=$(git rev-parse --show-toplevel)
-bash "$repo_root/Coding-Convention/check-commit.sh" "$1"
-```
-
-Sau đó cài quyền thực thi:
-
-```bash
-chmod +x .git/hooks/commit-msg
-```
-
-Nếu bạn đang ở PowerShell / Git Bash Windows, có thể dùng lệnh tương đương:
-
-```powershell
-Set-Content -Path .git\hooks\commit-msg -Value "#!/usr/bin/env bash`nrepo_root=$(git rev-parse --show-toplevel)`nbash \"$repo_root/Coding-Convention/check-commit.sh\" \"$1\"`n"
-```
-
-## 4. Cài hook AI log `pre-push`
-
-Repo có script cài hook chuẩn:
+Repo có script cài hook chuẩn ở:
 
 - `scripts/setup_hooks.sh` (Linux/macOS/Git Bash)
 - `scripts/setup_hooks.ps1` (Windows PowerShell)
@@ -53,14 +31,104 @@ hoặc:
 powershell -ExecutionPolicy Bypass -File scripts\setup_hooks.ps1
 ```
 
-Hook `pre-push` sẽ gọi:
+Script này sẽ tạo đồng thời hai hook ở `.git/hooks`:
+
+1. `commit-msg` để chạy logic kiểm tra commit message:
 
 ```bash
-bash scripts/_pyrun.sh scripts/log_antigravity.py --auto || true
-bash scripts/_pyrun.sh scripts/submit_log.py || true
+#!/usr/bin/env bash
+repo_root=$(git rev-parse --show-toplevel)
+bash "$repo_root/Coding-Convention/check-commit.sh" "$1"
 ```
 
-Nội dung hook này luôn phải có dòng `exit 0` để không chặn push nếu log server không có sẵn.
+2. `pre-push` để chạy logger AI log:
+
+```bash
+#!/usr/bin/env bash
+bash scripts/_pyrun.sh scripts/log_antigravity.py --auto || true
+bash scripts/_pyrun.sh scripts/submit_log.py || true
+exit 0
+```
+
+Điều quan trọng là phải đảm bảo `chmod +x` (`git add`/hook trên Windows có thể mất mode) và không để hook bị cài dưới `core.hooksPath` sai.
+
+## 4. Kiểm tra nhanh sau khi cài
+
+Sau khi chạy script setup, hãy kiểm tra:
+
+```bash
+git rev-parse --git-path hooks
+git config --get core.hooksPath
+ls .git/hooks
+```
+
+Nếu `core.hooksPath` có output thì xóa:
+
+```bash
+git config --unset core.hooksPath
+```
+
+Nếu file hook cũ chưa đúng định dạng hoặc trống, hãy xóa hook và chạy lại script chuẩn:
+
+```bash
+rm -f .git/hooks/commit-msg .git/hooks/pre-push
+bash scripts/setup_hooks.sh
+```
+
+Trên Windows / PowerShell, nếu hook chưa có execute bit thì dùng:
+
+```powershell
+& 'C:\Program Files\Git\bin\bash.exe' -lc 'chmod +x .git/hooks/commit-msg .git/hooks/pre-push'
+```
+
+## 5. Cấu hình biến môi trường AI log
+
+Để hook AI log gửi lên server, phải có file `.env` chứa:
+
+```dotenv
+AI_LOG_SERVER=https://ai-logs.note.transformerlabs.ai/api/ingest
+AI_LOG_API_KEY=<get-your-api-key-from-dashboard-phoenix>
+AI_LOG_DIR=.ai-log
+```
+
+File mẫu đặt ở `.env.example`.
+
+## 6. Nếu gặp lỗi hook
+
+Nếu Git báo:
+
+```text
+error: cannot spawn .git/hooks/pre-push: No such file or directory
+```
+
+hoặc:
+
+```text
+error: cannot spawn .git/hooks/commit-msg: No such file or directory
+```
+
+nguyên nhân thường là:
+
+1. Hook chưa được tạo vì người dùng chưa chạy `scripts/setup_hooks.sh` / `scripts/setup_hooks.ps1`.
+2. `core.hooksPath` đang trỏ sang đường dẫn sai.
+3. Hook `pre-push` hoặc `commit-msg` đã bị ghi thành file rỗng / sai nội dung vì script PowerShell hoặc Bash chạy trên Windows không tạo đúng quyền thực thi.
+
+Cách xử lý:
+
+```bash
+git config --unset core.hooksPath
+rm -f .git/hooks/commit-msg .git/hooks/pre-push
+bash scripts/setup_hooks.sh
+chmod +x .git/hooks/commit-msg .git/hooks/pre-push
+```
+
+## 7. Kết luận
+
+- File `check-commit.sh` là logic kiểm tra.
+- File `.git/hooks/commit-msg` là hook cắm logic đó vào Git.
+- File `.git/hooks/pre-push` là hook AI logging.
+- Không commit hook vào repository; hook ở local `.git/hooks` chỉ cài trên mỗi máy.
+- Nếu team muốn đồng bộ, nên đưa logic cài hook vào script setup như `scripts/setup_hooks.sh` / `scripts/setup_hooks.ps1` để mọi người chạy một lần sau khi clone.
 
 ## 5. Cấu hình biến môi trường AI log
 
