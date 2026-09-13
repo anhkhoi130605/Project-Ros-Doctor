@@ -1,0 +1,79 @@
+using MediatR;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Mvc;
+using Application.DTOs.Authentication;
+using Application.Features.Authentication.Login;
+using Application.Features.Authentication.Login.Handler;
+using Application.DTOs.Authentication.Register;
+using Application.Features.Authentication.Register.Handler;
+
+namespace API.Controller;
+
+[ApiController]
+[Route("api/auth")]
+public class RegisterController : ControllerBase
+{
+	private readonly IMediator _mediator;
+
+	public RegisterController(IMediator mediator)
+	{
+		_mediator = mediator;
+	}
+
+	// 1. Khi Frontend click, trình duyệt sẽ nhảy vào đây đầu tiên
+	[HttpGet("register-google")]
+	public IActionResult RegisterGoogle()
+	{
+		// Sau khi Google quét vân tay xong, nó sẽ bắt trình duyệt quay lại endpoint "google-response" ở dưới
+        // Use explicit redirect path for register flow
+		var properties = new AuthenticationProperties { RedirectUri = "/api/auth/google-register-response" };
+
+		// Lệnh Challenge này sẽ tự động sinh link Google và trả về mã 302 Redirect để trình duyệt tự nhảy sang Google
+		return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+	}
+
+	// 2. Nơi xử lý ngầm sau khi người dùng chọn tài khoản Gmail thành công
+    [HttpGet("google-register-response")]
+	public async Task<IActionResult> GoogleResponse()
+	{
+		// 1. Hứng lấy thông tin từ Cookie trung gian của Google
+		var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+		if (!authenticateResult.Succeeded)
+			return BadRequest("Xác thực từ Google thất bại.");
+
+		// 2. Bắn vào MediatR để xử lý logic (Lưu DB, Tạo User nếu chưa có, sinh mã JWT)
+		var command = new GoogleLoginCommand(authenticateResult.Principal);
+		var loginResult = await _mediator.Send(command); // loginResult này là LoginResponseDTO
+
+		// 3. Đăng xuất Cookie trung gian ngay để làm sạch bộ nhớ
+		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+		// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
+		// (Bạn có thể đính thêm tên user, avatar nếu muốn, hoặc chỉ cần AccessToken là đủ)
+		var reactFrontendUrl = $"https://localhost:5173/login-success?token={loginResult.AccessToken}";
+
+		return Redirect(reactFrontendUrl);
+	}
+    [HttpPost("register")]
+	public async Task<IActionResult> Register([FromBody] RegisterUserRequestDTO request)
+	{
+		if (!ModelState.IsValid) return BadRequest(ModelState);
+
+		// 1. Gói dữ liệu vào Command và bắn qua MediatR xuống tầng Application xử lý
+		var command = new RegisterCommand(request);
+		try
+		{
+			var registerResult = await _mediator.Send(command);
+			// 2. Trả thẳng cục dữ liệu JSON về cho Axios của React nhận lấy
+			return Ok(registerResult);
+		}
+		catch (Exception ex)
+		{
+			// Trả về BadRequest để client biết lý do (ví dụ: email hoặc mã sinh viên đã tồn tại)
+			return BadRequest(new { StatusCode = 400, Message = ex.Message, Detail = ex.InnerException?.Message });
+		}
+	}
+}

@@ -58,3 +58,210 @@ out/
 # AI logs — tracked structure, ignored content
 .ai-log/*.jsonl
 .ai-log/archive/
+
+# -------------------------------------------------------------------
+# File .gitignore được tối ưu hóa cho các dự án .NET
+# Bao gồm Visual Studio, Rider, VS Code và các công cụ phổ biến.
+# -------------------------------------------------------------------
+
+## Hệ điều hành
+# Windows
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+
+# -------------------------------------------------------------------
+
+## IDE & Editors
+# Cấu hình người dùng cụ thể, không nên commit
+*.suo
+*.user
+*.userosscache
+*.userprefs
+*.sln.docstates
+*.sln.iml
+
+# Visual Studio
+.vs/
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+.builds
+.localhistory/
+MigrationBackup/
+
+# JetBrains Rider
+.idea/
+# Giữ lại các cài đặt dùng chung cho cả team
+!.idea/projectSettings.xml
+!.idea/encodings.xml
+!.idea/vcs.xml
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# -------------------------------------------------------------------
+
+## Thư mục Build & Output
+# Bỏ qua tất cả các thư mục build phổ biến
+[Bb]in/
+[Oo]bj/
+[Rr]elease/
+[Dd]ebug/
+[Rr]eleases/
+[Dd]ebugPublic/
+[Dd]ebugPS/
+[Rr]eleasePS/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+publish/
+AppPackages/
+BundleArtifacts/
+artifacts/
+Generated\ Files/
+
+# -------------------------------------------------------------------
+
+## Các file và gói do .NET/NuGet sinh ra
+# NuGet
+**/[Pp]ackages/*
+*.nupkg
+*.snupkg
+# Ngoại trừ thư mục build, cần thiết cho MSBuild
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+
+# SQL Server local database files
+*.mdf
+*.ldf
+*.ndf
+
+# File sinh ra trong quá trình build
+*.log
+*.tlog
+*.pdb
+*.ipdb
+*.ilk
+*.aps
+*.pch
+*.pgc
+*.pgd
+*.tmp
+*.sbr
+*.cache
+*.cachefile
+*.binlog
+
+# File cài đặt
+*.msi
+*.msix
+*.msm
+*.msp
+*.cab
+
+# -------------------------------------------------------------------
+
+## Công cụ và Add-ins
+# ReSharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Test & Coverage
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+TestResult.xml
+nunit-*.xml
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+BenchmarkDotNet.Artifacts/
+FakesAssemblies/
+
+# Node.js
+node_modules/
+.ntvs_analysis.dat
+
+# Python
+__pycache__/
+*.pyc
+
+# Khác
+_NCrunch_*
+.paket/
+FodyWeavers.xsd
+
+# -------------------------------------------------------------------
+
+## Cấu hình môi trường (Secrets)
+# Bỏ qua tất cả các file .env và biến thể
+**/.env
+**/.env.*
+# Nhưng giữ lại file ví dụ
+!.env.example
+
+# Bỏ qua các file cấu hình appsettings cụ thể cho môi trường
+**/appsettings.*.json
+appsettings.json
+# Bỏ qua các file cài đặt publish có thể chứa thông tin nhạy cảm
+*.pubxml
+*.publishproj
+*.publishsettings
+PublishScripts/
+
+# Tệp Strong Name Key (rủi ro bảo mật)
+# *.snk
+Properties/
+WorkFlow.txt
+DiagramResup.drawio
+.$DiagramResup.drawio.bkp
+.$DiagramResup.drawio.dtmp
+
+
+#ReactJS
+node_modules
+dist
+.vite
+.env
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+vite.config.js
+mkcert
+Note.txt
+localhost-key.pem
+localhost.pem
+.mcp.json
