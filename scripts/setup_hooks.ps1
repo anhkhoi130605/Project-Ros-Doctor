@@ -16,13 +16,16 @@ bash "$repo_root/Coding-Convention/check-commit.sh" "$1"
 Set-Content -Path $CommitMsgHook -Value $CommitMsgBody -Encoding UTF8 -NoNewline
 Write-Host "[commit-msg] Git commit-msg hook installed."
 
-# pre-push hook for AI log submission
+# pre-push hook for AI log submission and direct-main push protection
 $PrePushHook = Join-Path $HookDir 'pre-push'
 $PrePushBody = @'
 #!/usr/bin/env bash
-# Pre-push: sweep recent Antigravity / Gemini prompts, then submit AI logs.
-# Uses the cross-platform Python launcher so it works whether the user
-# has python3, python, or only the `py` launcher (Windows).
+repo_root=$(git rev-parse --show-toplevel)
+
+# Block direct push to main before AI logging side effects.
+bash "$repo_root/Coding-Convention/check-push.sh" "$@" || exit 1
+
+# AI logging hook continues after branch guard passes.
 bash scripts/_pyrun.sh scripts/log_antigravity.py --auto || true
 bash scripts/_pyrun.sh scripts/submit_log.py || true
 exit 0  # Never block push, even if either step fails
