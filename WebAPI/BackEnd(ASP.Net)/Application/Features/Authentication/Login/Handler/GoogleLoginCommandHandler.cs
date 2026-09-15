@@ -57,7 +57,6 @@ namespace Application.Features.Authentication.Login.Handler
                     PasswordHash = _passwordHasher.HashPassword(temporaryPassword),
                     RoleId = roleEntity.Id,
                     Role = roleEntity,
-                    StudentId = string.Empty,
                     MemberInOrOutClub = MemberInOrOutClubEnum.OutClub,
                 };
 

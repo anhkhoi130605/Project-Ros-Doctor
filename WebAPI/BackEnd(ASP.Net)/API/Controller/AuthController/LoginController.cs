@@ -68,4 +68,11 @@ public class LoginController : ControllerBase
 		// 2. Trả thẳng cục dữ liệu JSON về cho Axios của React nhận lấy
 		return Ok(loginResult);
 	}
+
+	[HttpPost("logout")]
+	public async Task<IActionResult> Logout()
+	{
+		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+		return NoContent();
+	}
 }
