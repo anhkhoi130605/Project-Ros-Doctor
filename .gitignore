@@ -260,8 +260,13 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 vite.config.js
+!WebAPI/FrontEnd(ReactJS)/vite.config.js
 mkcert
 Note.txt
 localhost-key.pem
 localhost.pem
+localhost.pfx
 .mcp.json
+vite.config.js
+localhost.key
+
