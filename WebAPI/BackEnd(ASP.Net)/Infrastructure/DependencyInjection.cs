@@ -21,6 +21,8 @@ using System;
 using AutoMapper;
 using Infrastructure.Persistence.Storage;
 using Infrastructure.Repository;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 
 namespace ResUpClub.Infrastructure.ConfigModel;
@@ -29,6 +31,15 @@ public static class DependencyInjection
 {
 	public static IServiceCollection AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
 	{
+		var connectionString = configuration.GetConnectionString("DefaultConnection");
+		if (string.IsNullOrWhiteSpace(connectionString))
+		{
+			throw new InvalidOperationException("ConnectionStrings:DefaultConnection is not configured.");
+		}
+
+		services.AddDbContext<AppDbContext>(options =>
+			options.UseMySql(connectionString, ServerVersion.Parse("8.4.8-mysql")));
+
 		// 1. Bind configuration sections
 		// JWTConfiguration is a POCO used by infrastructure JwtTokenGenerator
 		var jwtConfig = configuration.GetSection("Jwt").Get<JWTConfiguration>() ?? new JWTConfiguration();
