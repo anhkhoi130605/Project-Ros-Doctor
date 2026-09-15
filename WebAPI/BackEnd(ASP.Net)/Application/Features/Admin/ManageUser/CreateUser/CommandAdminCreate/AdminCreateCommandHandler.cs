@@ -43,7 +43,6 @@ namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 			PasswordHash = _passwordHasher.HashPassword(request.Password),
 			RoleId = roleEntity.Id,
 			Role = roleEntity,
-			StudentId = string.Empty,
 			MemberInOrOutClub = (request.Role == RoleEnum.Admin) ? MemberInOrOutClubEnum.InClub : MemberInOrOutClubEnum.OutClub,
 			Gender = request.Gender
 		};

@@ -34,14 +34,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 
 		string securedPassword = _passwordHasher.HashPassword(dto.Password);
 
-        // 2. Kiểm tra xem Email hoặc StudentId này đã được ai đăng ký trong DB chưa
+		// 2. Kiểm tra email đã được đăng ký trong DB chưa
 		var existingUser = await _unitOfWork.User.FindByEmailAsync(email);
-		if (!string.IsNullOrWhiteSpace(dto.StudentId))
-		{
-			var existsStudent = await _unitOfWork.User.ExistsStudentIdAsync(dto.StudentId);
-			if (existsStudent)
-				throw new Exception("Mã sinh viên đã tồn tại.");
-		}
 
 		if (existingUser != null)
 		{
@@ -66,8 +60,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
             PasswordHash = securedPassword, // store raw for now (replace with hash in production)
 			RoleId = roleEntity.Id,
 			Role = roleEntity,
-            // Store full student id string if provided
-			StudentId = string.IsNullOrWhiteSpace(dto.StudentId) ? string.Empty : dto.StudentId.ToUpperInvariant(),
 			MemberInOrOutClub = MemberInOrOutClubEnum.OutClub, // Mặc định là chưa tham gia câu lạc bộ
 		};
 

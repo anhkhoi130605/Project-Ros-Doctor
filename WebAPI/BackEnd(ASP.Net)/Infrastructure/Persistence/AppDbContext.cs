@@ -4,9 +4,6 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Domain.Entities.Config;
-using Domain.Entities.FeedBack;
-using Domain.Entities.Information;
 using Domain.Entities.AboutUser;
 
 namespace Infrastructure.Persistence;
@@ -33,12 +30,6 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Role> Roles { get; set; }
-    public virtual DbSet<ProfileUser> Profiles { get; set; }
-    public virtual DbSet<Notification> Notifications { get; set; }
-    public virtual DbSet<Feedback> Feedbacks { get; set; }
-    public virtual DbSet<StudentQuizScore> StudentQuizScores { get; set; }
-    public virtual DbSet<TeamMember> TeamMembers { get; set; }
-    public virtual DbSet<Ticket> Tickets { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -89,9 +80,10 @@ public partial class AppDbContext : DbContext
             .UseCollation("utf8mb4_0900_ai_ci")
             .HasCharSet("utf8mb4");
 
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
-
-        OnModelCreatingPartial(modelBuilder);
+        modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.RoleConfiguration());
+       
+		OnModelCreatingPartial(modelBuilder);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

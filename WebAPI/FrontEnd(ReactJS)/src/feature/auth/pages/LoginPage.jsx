@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../auth.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7423';
+const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 
 export default function LoginPage() {
 	const navigate = useNavigate();
@@ -29,18 +29,24 @@ export default function LoginPage() {
 			const response = await fetch(`${API_URL}/api/auth/login`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(form),
+				body: JSON.stringify({
+					email: form.email,
+					password: form.password
+				})
 			});
 			const data = await response.json().catch(() => ({}));
-
 			if (!response.ok) {
 				throw new Error(data.message || data.title || 'Email hoặc mật khẩu không đúng.');
 			}
-
-			const token = data.accessToken || data.token;
+            const token = data.accessToken || data.token;
+            localStorage.setItem(
+                'accessToken',
+                data.accessToken
+            );
+			
 			if (token) localStorage.setItem('accessToken', token);
 			setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
-			setTimeout(() => navigate('/'), 500);
+			setTimeout(() => navigate('/dashboard'), 500);
 		} catch (error) {
 			setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
 		} finally {

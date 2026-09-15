@@ -57,9 +57,7 @@ namespace Application.Features.Authentication.Login.Handler
 					// Email = user.Email
 					Id = user.Id,
 					Email = user.Email,
-                    Role = user.Role?.RoleName.ToString() ?? string.Empty,
-					FullName = user.FullName,
-					MemberInOrOutClub = user.MemberInOrOutClub,
+                    Role = user.Role?.RoleName.ToString() ?? string.Empty
 				}
 			};
 		}

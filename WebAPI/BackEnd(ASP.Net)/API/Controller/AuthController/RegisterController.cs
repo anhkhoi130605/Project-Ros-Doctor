@@ -72,7 +72,7 @@ public class RegisterController : ControllerBase
 		}
 		catch (Exception ex)
 		{
-			// Trả về BadRequest để client biết lý do (ví dụ: email hoặc mã sinh viên đã tồn tại)
+			// Trả về BadRequest nếu email đã tồn tại hoặc dữ liệu không hợp lệ
 			return BadRequest(new { StatusCode = 400, Message = ex.Message, Detail = ex.InnerException?.Message });
 		}
 	}
