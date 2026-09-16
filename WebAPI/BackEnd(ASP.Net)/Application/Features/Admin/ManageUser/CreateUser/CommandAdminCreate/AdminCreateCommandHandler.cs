@@ -1,7 +1,8 @@
 ﻿using MediatR;
 using Application.Interfaces.ManageTrancsaction;
 using Application.Interfaces.Authentication;
-using Domain.Entities.AboutUser;
+using DomainUser = Domain.Entities.AboutUser.User;
+using DomainRole = Domain.Entities.AboutUser.Role;
 using static Domain.Enums.UserEnum;
 
 namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
@@ -30,20 +31,19 @@ namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 		var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == request.Role);
 		if (roleEntity == null)
 		{
-			roleEntity = new Role { RoleName = request.Role };
+			roleEntity = new DomainRole { RoleName = request.Role };
 			await _unitOfWork.Roles.CreateAsync(roleEntity);
 			await _unitOfWork.SaveChangesAsync();
 		}
 
 		// 3. Create new user entity (hash password)
-        var newUser = new User
+        var newUser = new DomainUser
 		{
 			Email = request.Email,
 			FullName = request.FullName,
 			PasswordHash = _passwordHasher.HashPassword(request.Password),
 			RoleId = roleEntity.Id,
 			Role = roleEntity,
-			MemberInOrOutClub = (request.Role == RoleEnum.Admin) ? MemberInOrOutClubEnum.InClub : MemberInOrOutClubEnum.OutClub,
 			Gender = request.Gender
 		};
 
@@ -58,7 +58,6 @@ namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 			FullName = newUser.FullName,
 			Role = roleEntity.RoleName ?? request.Role,
 			Status = UserStatusEnum.Active,
-			MemberInOrOutClub = newUser.MemberInOrOutClub,
 			Gender = newUser.Gender,
 		};
 	}

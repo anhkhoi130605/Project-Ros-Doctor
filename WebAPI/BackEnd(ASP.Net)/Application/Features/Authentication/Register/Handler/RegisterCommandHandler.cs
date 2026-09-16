@@ -1,11 +1,14 @@
 ﻿using System.Security.Claims;
 using MediatR;
-using Domain.Entities.AboutUser;
+using DomainUser = Domain.Entities.AboutUser.User;
+using DomainRole = Domain.Entities.AboutUser.Role;
 using Application.DTOs.Authentication;
 using Application.Interfaces.Authentication;
+using Application.Interfaces.Logging;
 using Application.Interfaces.ManageTrancsaction;
 using static Domain.Enums.UserEnum;
 using Application.DTOs.Authentication.Register;
+using Domain.Enums;
 
 namespace Application.Features.Authentication.Register.Handler;
 
@@ -14,11 +17,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 	private readonly IUnitOfWork _unitOfWork;
     private readonly IJWTTokenGenerator _jwtTokenGenerator;
 	private readonly IPasswordHasher _passwordHasher;
-	public RegisterCommandHandler(IUnitOfWork unitOfWork, IJWTTokenGenerator jwtTokenGenerator, IPasswordHasher passwordHasher)
+	private readonly IUserActivityLogService _userActivityLogService;
+	public RegisterCommandHandler(IUnitOfWork unitOfWork, IJWTTokenGenerator jwtTokenGenerator, IPasswordHasher passwordHasher, IUserActivityLogService userActivityLogService)
 	{
 		_unitOfWork = unitOfWork;
 		_jwtTokenGenerator = jwtTokenGenerator;
 		_passwordHasher = passwordHasher;
+		_userActivityLogService = userActivityLogService;
 	}
 
     public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
@@ -48,23 +53,31 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
         var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == RoleEnum.User);
 		if (roleEntity == null)
 		{
-			roleEntity = new Role { RoleName = RoleEnum.User };
+			roleEntity = new DomainRole { RoleName = RoleEnum.User };
 			await _unitOfWork.Roles.CreateAsync(roleEntity);
 			// Lưu để có Id
 			await _unitOfWork.SaveChangesAsync();
 		}
-        var newUser = new User
+        var newUser = new DomainUser
 		{
 			Email = email,
 			FullName = name ?? string.Empty,
             PasswordHash = securedPassword, // store raw for now (replace with hash in production)
 			RoleId = roleEntity.Id,
 			Role = roleEntity,
-			MemberInOrOutClub = MemberInOrOutClubEnum.OutClub, // Mặc định là chưa tham gia câu lạc bộ
 		};
 
 		await _unitOfWork.User.CreateAsync(newUser);
 		await _unitOfWork.SaveChangesAsync();
+
+		await _userActivityLogService.LogActivityAsync(
+			newUser.Id,
+			UserActionType.Register,
+			targetId: newUser.Id,
+			targetType: TargetType.User,
+			description: "User registered a new account",
+			requestPath: "/api/auth/register",
+			httpMethod: "POST");
 
 		// 4. Sinh Token JWT lập tức để người dùng đăng ký xong là tự động vào app luôn
 		var roleName = roleEntity.RoleName?.ToString() ?? RoleEnum.User.ToString();

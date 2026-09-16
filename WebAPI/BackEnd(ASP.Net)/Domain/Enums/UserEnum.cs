@@ -17,36 +17,10 @@ namespace Domain.Enums
 			User,
 			Admin
 		}
-		public enum MemberInOrOutClubEnum
-		{
-			InClub,
-			OutClub
-		}
 		public enum Gender
 		{
 			Male,
 			Female
-		}
-		public enum StudentCodeEnum
-		{
-		  DE,
-		  DS
-		}
-		public enum RoleInClublEnum{
-		    President,
-			VicePresident,
-			Member,
-			Leader
-		}
-		public enum RoleOutClubEnum
-		{
-		   Student,
-		   Teacher
-		}
-		public enum RoleSupportClubEnum
-		{
-			Mentor,
-			Manager
 		}
 	}
 }

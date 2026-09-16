@@ -30,8 +30,9 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<Role> Roles { get; set; }
+	public virtual DbSet<UserActivityLog> UserActivityLogs { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
         {
@@ -82,6 +83,7 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.RoleConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserActivityLogConfiguration());
        
 		OnModelCreatingPartial(modelBuilder);
     }

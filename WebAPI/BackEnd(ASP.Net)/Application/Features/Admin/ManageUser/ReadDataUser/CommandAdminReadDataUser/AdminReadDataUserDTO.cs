@@ -13,7 +13,6 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.CommandAdminReadDat
 		public string? Phone { get; init; }
 		public UserStatusEnum? Status { get; init; }
 		public Gender? Gender { get; init; }
-		public MemberInOrOutClubEnum MemberInOrOutClub { get; init; }
 		public virtual Role Role { get; init; }
 		public string? Bio { get; init; }
 	}

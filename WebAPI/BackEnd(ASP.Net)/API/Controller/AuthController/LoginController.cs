@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Application.DTOs.Authentication;
 using Application.Features.Authentication.Login;
 using Application.Features.Authentication.Login.Handler;
+using Application.Interfaces.Logging;
+using API.Middlewares.Extentions;
+using Domain.Enums;
 
 namespace API.Controller;
 
@@ -14,10 +17,12 @@ namespace API.Controller;
 public class LoginController : ControllerBase
 {
 	private readonly IMediator _mediator;
+	private readonly IUserActivityLogService _userActivityLogService;
 
-	public LoginController(IMediator mediator)
+	public LoginController(IMediator mediator, IUserActivityLogService userActivityLogService)
 	{
 		_mediator = mediator;
+		_userActivityLogService = userActivityLogService;
 	}
 
 	// 1. Khi Frontend click, trình duyệt sẽ nhảy vào đây đầu tiên
@@ -72,6 +77,19 @@ public class LoginController : ControllerBase
 	[HttpPost("logout")]
 	public async Task<IActionResult> Logout()
 	{
+		var userId = User.GetUserId();
+		if (!string.IsNullOrWhiteSpace(userId))
+		{
+			await _userActivityLogService.LogActivityAsync(
+				userId,
+				UserActionType.Logout,
+				targetId: userId,
+				targetType: TargetType.User,
+				description: "User logged out",
+				requestPath: "/api/auth/logout",
+				httpMethod: "POST");
+		}
+
 		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 		return NoContent();
 	}

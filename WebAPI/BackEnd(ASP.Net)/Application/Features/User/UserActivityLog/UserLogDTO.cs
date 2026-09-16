@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Domain.Enums
+namespace Application.Features.User.UserActivityLog
 {
-	internal class System
+	internal class UserLogDTO
 	{
 	}
 }

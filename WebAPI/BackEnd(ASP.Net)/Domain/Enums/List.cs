@@ -16,12 +16,5 @@ namespace Domain.Enums
 			Active,
 			Inactive
 		}
-		public enum DepartmentOfClubEnum
-		{
-			 BCN,
-			 Biz,
-			 HR,
-			 Media,
-		}
 	}
 }

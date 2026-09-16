@@ -6,14 +6,12 @@ namespace Domain.Enums
 {
     public enum NotificationType
     {
-        SystemBroadcast,
-        ClubActivity,
-        EventReminder,
-        JoinRequestApproved,
-        JoinRequestRejected,
-        NewPost,
-        MentionInComment,
-        AdminAlert,
-        Other
+		SystemError,
+		UserRegistered,
+		AccountBan,
+		AccountUnban,
+		SystemBroadcast,
+		NewChatMessage,
+		Other
     }
 }

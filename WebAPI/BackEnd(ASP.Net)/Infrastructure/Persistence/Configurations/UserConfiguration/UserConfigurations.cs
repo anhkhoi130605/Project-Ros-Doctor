@@ -13,16 +13,6 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 		public void Configure(EntityTypeBuilder<User> builder)
 		{
 			// Role relationship
-			builder.HasOne(d => d.Role)
-				.WithMany(p => p.Users)
-				.HasForeignKey(d => d.RoleId)
-				.OnDelete(DeleteBehavior.Restrict);
-
-			builder.Property(d => d.MemberInOrOutClub)
-				.HasConversion<string>()
-				.IsRequired()
-				.HasMaxLength(50)
-				.HasDefaultValue(MemberInOrOutClubEnum.OutClub);
 
 			builder.Property(d => d.Status)
 				.HasConversion<string>()
@@ -44,6 +34,26 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 				.HasConversion<string>()
 				.HasMaxLength(50)
 				.HasDefaultValue(RoleEnum.User);
+		}
+	}
+
+	public class UserActivityLogConfiguration : IEntityTypeConfiguration<UserActivityLog>
+	{
+		public void Configure(EntityTypeBuilder<UserActivityLog> builder)
+		{
+			builder.ToTable("UserActivityLogs");
+			builder.Property(x => x.Action).IsRequired().HasMaxLength(200);
+			builder.Property(x => x.RequestPath).HasMaxLength(500);
+			builder.Property(x => x.HttpMethod).HasMaxLength(20);
+			builder.Property(x => x.IpAddress).HasMaxLength(50);
+			builder.Property(x => x.UserAgent).HasMaxLength(500);
+			builder.Property(x => x.UserName).HasMaxLength(200);
+			builder.Property(x => x.Email).HasMaxLength(200);
+
+			builder.HasOne(x => x.User)
+				.WithMany()
+				.HasForeignKey(x => x.UserId)
+				.OnDelete(DeleteBehavior.SetNull);
 		}
 	}
 }

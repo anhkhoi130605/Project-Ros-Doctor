@@ -3,6 +3,12 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import LoginPage from './feature/auth/pages/Loginpage';
 import RegisterPage from './feature/auth/pages/RegisterPage';
 import DashboardPage, { AdminDashboardPage, UserDashboardPage } from './feature/DashBoard';
+import MembersDashboardPage from './feature/DashBoard/page/Admin/Members/MembersDashboardPage';
+import ActivityDashboardPage from './feature/DashBoard/page/Admin/components/ActivityLog/ActivityDashboardPage';
+import SystemLogsDashboardPage from './feature/DashBoard/page/Admin/components/SystemLog/SystemLogsDashboardPage';
+import UserActivityLogDashboardPage from './feature/DashBoard/page/Admin/components/ActivityLog/UserActivityLogDashboardPage';
+import SettingsDashboardPage from './feature/DashBoard/page/Admin/Settings/SettingsDashboardPage';
+import UserActivityLogDetailPage from './feature/DashBoard/page/Admin/components/ActivityLog/UserActivityLogDetailPage';
 
 export default function App() {
   return (
@@ -11,6 +17,13 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/admin-dashboard" element={<AdminDashboardPage />} />
+      <Route path="/admin-dashboard/overview" element={<AdminDashboardPage />} />
+      <Route path="/admin-dashboard/members" element={<MembersDashboardPage />} />
+      <Route path="/admin-dashboard/activity" element={<ActivityDashboardPage />} />
+      <Route path="/admin-dashboard/system-logs" element={<SystemLogsDashboardPage />} />
+      <Route path="/admin-dashboard/user-activity" element={<UserActivityLogDashboardPage />} />
+      <Route path="/admin-dashboard/settings" element={<SettingsDashboardPage />} />
+      <Route path="/admin-dashboard/activity/:id" element={<UserActivityLogDetailPage />} />
       <Route path="/user-dashboard" element={<UserDashboardPage />} />
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<Navigate to="/login" replace />} />

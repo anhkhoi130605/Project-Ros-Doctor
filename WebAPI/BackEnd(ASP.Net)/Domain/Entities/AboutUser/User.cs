@@ -39,7 +39,6 @@ public partial class User : BaseEntity
 	//public DateTime? DeletedAt { get; set; }
 
     public virtual Role Role { get; set; } = null!;
-	public MemberInOrOutClubEnum MemberInOrOutClub { get; set; }
 
 	public Gender? Gender { get; set; }
 

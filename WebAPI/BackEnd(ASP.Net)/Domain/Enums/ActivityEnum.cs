@@ -9,29 +9,6 @@ namespace Domain.Enums
         ChangePassword,
         UpdateProfile,
 
-        // Club
-        CreateClub,
-        UpdateClub,
-        DeleteClub,
-        JoinClub,
-        LeaveClub,
-        ApproveJoinRequest,
-        RejectJoinRequest,
-
-        // Event
-        CreateEvent,
-        UpdateEvent,
-        DeleteEvent,
-        RegisterEvent,
-        CancelEventRegistration,
-
-        // Content / Resource
-        UploadFile,
-        DeleteFile,
-        CreatePost,
-        UpdatePost,
-        DeletePost,
-
         // Admin
         BanUser,
         UnbanUser,
