@@ -4,19 +4,16 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Infrastructure.Persistence.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260915193627_RemoveStudentId")]
-    partial class RemoveStudentId
+    partial class AppDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,7 +40,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<string>("RoleName")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("longtext")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("User");
 
                     b.Property<DateTime>("RowVersion")
@@ -94,7 +92,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Gender")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("GoogleId")
                         .HasColumnType("longtext");
@@ -105,8 +104,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("MemberInOrOutClub")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("OutClub");
 
                     b.Property<string>("PasswordHash")
@@ -130,7 +129,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("longtext")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("Active");
 
                     b.Property<DateTime>("UpdatedAt")

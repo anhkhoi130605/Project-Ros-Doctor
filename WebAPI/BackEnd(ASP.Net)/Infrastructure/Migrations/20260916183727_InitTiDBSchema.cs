@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Infrastructure.Persistence.Migrations
+namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AuthInitialCreate : Migration
+    public partial class InitTiDBSchema : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -20,7 +20,7 @@ namespace Infrastructure.Persistence.Migrations
                 {
                     Id = table.Column<string>(type: "varchar(255)", nullable: false, collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    RoleName = table.Column<string>(type: "longtext", nullable: true, defaultValue: "User", collation: "utf8mb4_0900_ai_ci")
+                    RoleName = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true, defaultValue: "User", collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -56,7 +56,7 @@ namespace Infrastructure.Persistence.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     RoleId = table.Column<string>(type: "varchar(255)", nullable: false, collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<string>(type: "longtext", nullable: false, defaultValue: "Active", collation: "utf8mb4_0900_ai_ci")
+                    Status = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, defaultValue: "Active", collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsBanned = table.Column<bool>(type: "tinyint(1)", nullable: true),
                     Bio = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_0900_ai_ci")
@@ -64,11 +64,9 @@ namespace Infrastructure.Persistence.Migrations
                     ReactivateAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     GoogleId = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    StudentId = table.Column<string>(type: "varchar(8)", maxLength: 8, nullable: false, collation: "utf8mb4_0900_ai_ci")
+                    MemberInOrOutClub = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false, defaultValue: "OutClub", collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    MemberInOrOutClub = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false, defaultValue: "OutClub", collation: "utf8mb4_0900_ai_ci")
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Gender = table.Column<string>(type: "longtext", nullable: true, collation: "utf8mb4_0900_ai_ci")
+                    Gender = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true, collation: "utf8mb4_0900_ai_ci")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DateOfBirth = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
@@ -97,12 +95,6 @@ namespace Infrastructure.Persistence.Migrations
                 name: "IX_Users_RoleId",
                 table: "Users",
                 column: "RoleId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Users_StudentId",
-                table: "Users",
-                column: "StudentId",
-                unique: true);
         }
 
         /// <inheritdoc />

@@ -9,11 +9,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Infrastructure.Persistence.Migrations
+namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260915185659_AuthInitialCreate")]
-    partial class AuthInitialCreate
+    [Migration("20260916183727_InitTiDBSchema")]
+    partial class InitTiDBSchema
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,7 +43,8 @@ namespace Infrastructure.Persistence.Migrations
 
                     b.Property<string>("RoleName")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("longtext")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("User");
 
                     b.Property<DateTime>("RowVersion")
@@ -94,7 +95,8 @@ namespace Infrastructure.Persistence.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Gender")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("GoogleId")
                         .HasColumnType("longtext");
@@ -105,8 +107,8 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("MemberInOrOutClub")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("OutClub");
 
                     b.Property<string>("PasswordHash")
@@ -130,13 +132,9 @@ namespace Infrastructure.Persistence.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("longtext")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
                         .HasDefaultValue("Active");
-
-                    b.Property<string>("StudentId")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("varchar(8)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -147,9 +145,6 @@ namespace Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RoleId");
-
-                    b.HasIndex("StudentId")
-                        .IsUnique();
 
                     b.ToTable("Users");
                 });

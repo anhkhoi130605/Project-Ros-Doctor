@@ -38,15 +38,28 @@ export default function LoginPage() {
 			if (!response.ok) {
 				throw new Error(data.message || data.title || 'Email hoặc mật khẩu không đúng.');
 			}
-            const token = data.accessToken || data.token;
-            localStorage.setItem(
-                'accessToken',
-                data.accessToken
-            );
-			
+
+			const token = data.accessToken || data.token;
+			const user = data.user || {};
+			const role = (user.role ?? user.Role ?? data.role ?? data.Role ?? '').toString().trim();
+
 			if (token) localStorage.setItem('accessToken', token);
+			if (role) localStorage.setItem('userRole', role);
+
 			setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
-			setTimeout(() => navigate('/dashboard'), 500);
+
+			setTimeout(() => {
+				const normalizedRole = role.toLowerCase();
+				if (normalizedRole.includes('admin')) {
+					navigate('/admin-dashboard');
+					return;
+				}
+				if (normalizedRole.includes('user')) {
+					navigate('/user-dashboard');
+					return;
+				}
+				navigate('/dashboard');
+			}, 500);
 		} catch (error) {
 			setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
 		} finally {
