@@ -21,15 +21,18 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 			builder.Property(d => d.MemberInOrOutClub)
 				.HasConversion<string>()
 				.IsRequired()
-				.HasMaxLength(100)
+				.HasMaxLength(50)
 				.HasDefaultValue(MemberInOrOutClubEnum.OutClub);
-			builder.Property(d=>d.Status)
+
+			builder.Property(d => d.Status)
 				.HasConversion<string>()
 				.IsRequired()
+				.HasMaxLength(50)
 				.HasDefaultValue(UserStatusEnum.Active);
+
 			builder.Property(d => d.Gender)
-				.HasConversion<string>();
-				 
+				.HasConversion<string>()
+				.HasMaxLength(20);
 		}
 	}
 
@@ -39,6 +42,7 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 		{
 			builder.Property(d => d.RoleName)
 				.HasConversion<string>()
+				.HasMaxLength(50)
 				.HasDefaultValue(RoleEnum.User);
 		}
 	}

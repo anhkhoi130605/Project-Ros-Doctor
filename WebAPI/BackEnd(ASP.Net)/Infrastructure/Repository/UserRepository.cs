@@ -13,7 +13,9 @@ public class UserRepository : GenericRepository<User>, IUserRepository
 
 	public async Task<User?> FindByEmailAsync(string email)
 	{
-		return await _context.Set<User>().FirstOrDefaultAsync(x => x.Email == email);
+		return await _context.Set<User>()
+			.Include(x => x.Role)
+			.FirstOrDefaultAsync(x => x.Email == email);
 	}
 
 	public async Task<bool> ExistsByEmailAsync(string email)
