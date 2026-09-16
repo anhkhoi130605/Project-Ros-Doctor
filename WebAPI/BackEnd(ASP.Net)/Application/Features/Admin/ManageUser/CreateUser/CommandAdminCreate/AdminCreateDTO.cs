@@ -13,6 +13,5 @@ namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 		public required UserStatusEnum Status{ get; init; }
 		public required string PasswordHash { get; init; } // Consider security implications of including password in DTO
 		public Gender? Gender { get; init; }
-		public MemberInOrOutClubEnum MemberInOrOutClub { get; init; }
 	}
 }

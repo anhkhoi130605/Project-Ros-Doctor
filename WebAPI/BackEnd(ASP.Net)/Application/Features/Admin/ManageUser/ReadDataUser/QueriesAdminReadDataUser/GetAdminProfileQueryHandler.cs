@@ -32,7 +32,6 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 				Phone = user.Phone,
 				Status = user.Status,
 				Gender = user.Gender,
-				MemberInOrOutClub = user.MemberInOrOutClub,
 				Role = user.Role,
 				Bio = user.Bio
 			};

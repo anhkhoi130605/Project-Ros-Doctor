@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Domain.Enums
 {
-	internal class AdminLog
+	public class AdminLog
 	{
 	}
 }

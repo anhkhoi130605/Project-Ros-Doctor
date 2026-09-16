@@ -17,6 +17,7 @@ namespace Infrastructure.Repository
 		public IUserRepository User { get; }
 		public IGenericRepository<Role> Roles { get; }
 		public IGenericRepository<Notification> Notifications { get; }
+		public IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 
 		public UnitOfWork(AppDbContext ctx, IUserRepository userRepository)
 		{
@@ -26,6 +27,7 @@ namespace Infrastructure.Repository
 			// Initialize generic repositories
 			Roles = new GenericRepository<Role>(_ctx);
 			Notifications = new GenericRepository<Notification>(_ctx);
+			UserActivityLogs = new GenericRepository<UserActivityLog>(_ctx);
 		}
 
 		public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

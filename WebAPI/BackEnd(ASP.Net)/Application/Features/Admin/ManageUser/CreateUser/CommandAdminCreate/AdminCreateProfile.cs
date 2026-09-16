@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using AutoMapper;
-using Domain.Entities.AboutUser;
+using DomainUser = Domain.Entities.AboutUser.User;
 
 namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 {
@@ -10,7 +10,7 @@ namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 	{
 		public AdminCreateProfile()
 		{
-			CreateMap<User, AdminCreateDTO>();
+			CreateMap<DomainUser, AdminCreateDTO>();
 		}
 	}
 }

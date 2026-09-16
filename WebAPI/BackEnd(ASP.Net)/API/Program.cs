@@ -1,6 +1,8 @@
-using ResUpClub.Infrastructure.ConfigModel;
+using API.Middlewares;
+using API.Middlewares.Extentions;
 using Application.Features.Authentication.Login.Handler;
 using MediatR;
+using ResUpClub.Infrastructure.ConfigModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,12 +24,13 @@ builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+app.UseGlobalExceptionMiddleware();
+app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
 app.UseAuthentication();

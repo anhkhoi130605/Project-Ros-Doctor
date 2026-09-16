@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+    #!/usr/bin/env python3
 """
 Submit .ai-log/session.jsonl to grading server.
 Called by git pre-push hook or manually.

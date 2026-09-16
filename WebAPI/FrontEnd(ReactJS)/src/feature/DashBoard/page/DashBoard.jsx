@@ -1,10 +1,11 @@
 import React from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import './dashboard.css';
 
 const defaultNav = [
-  { label: 'Overview', active: true },
-  { label: 'Activity' },
-  { label: 'Settings' },
+  { label: 'Overview', active: true, path: '/admin-dashboard/overview' },
+  { label: 'Activity', path: '/admin-dashboard/activity' },
+  { label: 'Settings', path: '/admin-dashboard/settings' },
 ];
 
 export default function DashboardPage({
@@ -14,7 +15,23 @@ export default function DashboardPage({
   navItems = defaultNav,
   actions,
   children,
+  onNavItemClick,
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentPath = location.pathname;
+
+  const resolvedNavItems = navItems.map((item) => {
+    const isOverviewItem = item.label === 'Overview';
+    const isActive = item.path
+      ? isOverviewItem
+        ? currentPath === item.path || currentPath === '/admin-dashboard'
+        : currentPath === item.path
+      : Boolean(item.active);
+
+    return { ...item, active: Boolean(isActive) };
+  });
+
   return (
     <main className="dashboard-shell">
       <aside className="dashboard-sidebar" aria-label="Dashboard sidebar">
@@ -23,22 +40,30 @@ export default function DashboardPage({
           <small>{sidebarTitle}</small>
         </div>
 
-        
-
         <nav className="dashboard-nav" aria-label="Dashboard navigation">
-          {navItems.map((item) => (
-            <button key={item.label} type="button" className={`dashboard-nav-item ${item.active ? 'active' : ''}`}>
+          {resolvedNavItems.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className={`dashboard-nav-item ${item.active ? 'active' : ''}`}
+              onClick={() => {
+                if (onNavItemClick) {
+                  const shouldContinue = onNavItemClick(item.label, item.path) !== false;
+                  if (item.path && shouldContinue) {
+                    navigate(item.path);
+                  }
+                  return;
+                }
+
+                if (item.path) {
+                  navigate(item.path);
+                }
+              }}
+            >
               {item.label}
             </button>
           ))}
         </nav>
-
-        <div className="dashboard-sidebar-footer">
-          <div className="dashboard-status-pill">
-            <span className="dashboard-status-dot" />
-            <span>25°</span>
-          </div>
-        </div>
       </aside>
 
       <section className="dashboard-main">
@@ -52,7 +77,7 @@ export default function DashboardPage({
           {actions ? <div className="dashboard-actions">{actions}</div> : <button type="button" className="dashboard-ghost-button">Log out</button>}
         </header>
 
-        <div className="dashboard-content">{children}</div>
+        <div className="dashboard-content dashboard-content-animated">{children}</div>
       </section>
     </main>
   );

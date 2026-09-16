@@ -12,6 +12,10 @@ namespace Application.Interfaces.Logging
             UserActionType actionType,
             string? targetId = null,
             TargetType targetType = TargetType.None,
-            string? description = null);
+            string? description = null,
+            string? requestPath = null,
+            string? httpMethod = null,
+            string? ipAddress = null,
+            string? userAgent = null);
     }
 }

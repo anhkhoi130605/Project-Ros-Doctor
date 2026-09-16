@@ -14,6 +14,7 @@ namespace Application.Interfaces.ManageTrancsaction
         IUserRepository User { get; }
 		IGenericRepository<Role> Roles { get; }
 		IGenericRepository<Notification> Notifications { get; }
+		IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 	}
 }
 
