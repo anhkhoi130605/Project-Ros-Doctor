@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
@@ -15,6 +15,6 @@ namespace Application.Interfaces.ManageTrancsaction
 		// Note: For Add-only semantics where caller controls SaveChanges use CreateAsync then call IUnitOfWork.SaveChangesAsync
 		Task UpdateAsync(T entity);
 		Task RemoveAsync(T entity);
-		Task<int> CountAsync(Expression<Func<T, bool>> predicate = null);
+		Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null);
 	}
 }

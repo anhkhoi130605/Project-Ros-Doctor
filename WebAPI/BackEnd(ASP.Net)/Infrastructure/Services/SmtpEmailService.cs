@@ -3,7 +3,7 @@ using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Application.Interfaces;
-using Domain.ConfigModel;
+using Infrastructure.ConfigModel;
 
 namespace Infrastructure.Services
 {

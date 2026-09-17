@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,7 +15,7 @@ using Application.Interfaces; // IEmailService
 using Infrastructure.Services; // SmtpEmailService
 using Infrastructure.Services.Logging;
 using Infrastructure.Services.Notification;
-using Domain.ConfigModel;
+using Infrastructure.ConfigModel;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence.Configurations.AuthenticationConfig;
 using System;

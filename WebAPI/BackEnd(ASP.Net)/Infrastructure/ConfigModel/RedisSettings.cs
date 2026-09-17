@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Domain.ConfigModel
+namespace Infrastructure.ConfigModel
 {
 	public class RedisSettings
 	{

@@ -10,6 +10,8 @@ using Application.Interfaces.Logging;
 using API.Middlewares.Extentions;
 using Domain.Enums;
 
+using Microsoft.Extensions.Configuration;
+
 namespace API.Controller;
 
 [ApiController]
@@ -18,11 +20,13 @@ public class LoginController : ControllerBase
 {
 	private readonly IMediator _mediator;
 	private readonly IUserActivityLogService _userActivityLogService;
+	private readonly IConfiguration _configuration;
 
-	public LoginController(IMediator mediator, IUserActivityLogService userActivityLogService)
+	public LoginController(IMediator mediator, IUserActivityLogService userActivityLogService, IConfiguration configuration)
 	{
 		_mediator = mediator;
 		_userActivityLogService = userActivityLogService;
+		_configuration = configuration;
 	}
 
 	// 1. Khi Frontend click, trình duyệt sẽ nhảy vào đây đầu tiên
@@ -56,8 +60,8 @@ public class LoginController : ControllerBase
 		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
 		// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
-		// (Bạn có thể đính thêm tên user, avatar nếu muốn, hoặc chỉ cần AccessToken là đủ)
-		var reactFrontendUrl = $"https://localhost:5173/login-success?token={loginResult.AccessToken}";
+		var frontendBaseUrl = (_configuration["Frontend:BaseUrl"] ?? "https://localhost:5173").TrimEnd('/');
+		var reactFrontendUrl = $"{frontendBaseUrl}/login-success?token={loginResult.AccessToken}";
 
 		return Redirect(reactFrontendUrl);
 	}
