@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.IO;
 
-namespace Domain.ConfigModel
+namespace Infrastructure.ConfigModel
 {
 	public class StorageSettings
 	{

@@ -17,7 +17,39 @@ namespace Infrastructure.Services.Logging
             _logger = logger;
         }
 
-        public async Task LogActivityAsync(
+        public async Task LogActivityAsync(LogActivityRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.UserId))
+            {
+                return;
+            }
+
+            var user = await _unitOfWork.User.GetByIdAsync(request.UserId);
+
+            var log = new UserActivityLog
+            {
+                UserId = request.UserId,
+                UserName = user?.FullName,
+                Email = user?.Email,
+                Action = request.ActionType.ToString(),
+                EntityType = request.TargetType.ToString(),
+                EntityId = request.TargetId,
+                RequestPath = request.RequestPath ?? request.Description,
+                HttpMethod = request.HttpMethod,
+                IpAddress = request.IpAddress,
+                UserAgent = request.UserAgent,
+                StatusSystemResponse = SystemLog.SystemLogStatusEnum.Success,
+            };
+
+            await _unitOfWork.UserActivityLogs.CreateAsync(log);
+            await _unitOfWork.SaveChangesAsync();
+
+            _logger.LogInformation(
+                "UserActivity | UserId={UserId} Action={Action} TargetType={TargetType} TargetId={TargetId} Description={Description} Path={RequestPath}",
+                request.UserId, request.ActionType, request.TargetType, request.TargetId, request.Description, request.RequestPath);
+        }
+
+        public Task LogActivityAsync(
             string userId,
             UserActionType actionType,
             string? targetId = null,
@@ -28,34 +60,16 @@ namespace Infrastructure.Services.Logging
             string? ipAddress = null,
             string? userAgent = null)
         {
-            if (string.IsNullOrWhiteSpace(userId))
-            {
-                return;
-            }
-
-            var user = await _unitOfWork.User.GetByIdAsync(userId);
-
-            var log = new UserActivityLog
-            {
-                UserId = userId,
-                UserName = user?.FullName,
-                Email = user?.Email,
-                Action = actionType.ToString(),
-                EntityType = targetType.ToString(),
-                EntityId = targetId,
-                RequestPath = requestPath ?? description,
-                HttpMethod = httpMethod,
-                IpAddress = ipAddress,
-                UserAgent = userAgent,
-                StatusSystemResponse = SystemLog.SystemLogStatusEnum.Success,
-            };
-
-            await _unitOfWork.UserActivityLogs.CreateAsync(log);
-            await _unitOfWork.SaveChangesAsync();
-
-            _logger.LogInformation(
-                "UserActivity | UserId={UserId} Action={Action} TargetType={TargetType} TargetId={TargetId} Description={Description} Path={RequestPath}",
-                userId, actionType, targetType, targetId, description, requestPath);
+            return LogActivityAsync(new LogActivityRequest(
+                userId,
+                actionType,
+                targetId,
+                targetType,
+                description,
+                requestPath,
+                httpMethod,
+                ipAddress,
+                userAgent));
         }
     }
 }

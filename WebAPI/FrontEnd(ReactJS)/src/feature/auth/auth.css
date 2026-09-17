@@ -34,8 +34,14 @@ input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(28,92,67,.1
 .primary-button:disabled { opacity: .65; cursor: wait; }
 .divider { display: flex; align-items: center; gap: 13px; color: #9aa49e; font-size: 12px; margin: 25px 0 0; }
 .divider::before, .divider::after { content: ''; height: 1px; background: var(--line); flex: 1; }
-.google-button { border: 1px solid var(--line); color: var(--ink); background: transparent; margin-top: 14px; gap: 10px; }
-.google-button span { color: var(--green); font-size: 18px; }
+.google-button { border: 1px solid var(--line); color: var(--ink); background: #ffffff; margin-top: 14px; gap: 10px; transition: background .15s, border-color .15s, box-shadow .15s; font-size: 14px; }
+.google-button:hover { background: #fafbf9; border-color: #bbc7bd; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+.google-button svg { flex-shrink: 0; }
+.google-button span { color: var(--ink); font-size: 14px; font-weight: 600; }
+.auth-loader-container { display: flex; justify-content: center; align-items: center; }
+.auth-spinner { width: 42px; height: 42px; border: 3px solid rgba(28,92,67,0.15); border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
+.success-badge { display: inline-flex; align-items: center; justify-content: center; width: 64px; height: 64px; background: rgba(215,243,107,0.4); border-radius: 50%; border: 2px solid var(--green); }
+@keyframes spin { to { transform: rotate(360deg); } }
 .switch-copy { text-align: center; color: var(--muted); font-size: 13px; margin: 28px 0 0; }
 .switch-copy a { color: var(--green); font-weight: 700; text-decoration: none; }
 .form-status { font-size: 13px; line-height: 1.5; margin: 14px 0 0; }

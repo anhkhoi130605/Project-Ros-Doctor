@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Domain.ConfigModel
+namespace Infrastructure.ConfigModel
 {
 	public class CloudinarySettings
 	{

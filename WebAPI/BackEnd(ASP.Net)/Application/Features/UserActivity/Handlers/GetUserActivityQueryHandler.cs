@@ -1,7 +1,6 @@
 using Application.Features.UserActivity.Queries;
 using Application.Interfaces.ManageTrancsaction;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.UserActivity.Handlers
 {

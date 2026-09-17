@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Data;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +10,36 @@ using Application.Interfaces.ManageTrancsaction;
 
 namespace Infrastructure.Repository
 {
+	internal sealed class EfTransactionWrapper : IApplicationTransaction
+	{
+		private readonly IDbContextTransaction _transaction;
+
+		public EfTransactionWrapper(IDbContextTransaction transaction)
+		{
+			_transaction = transaction ?? throw new ArgumentNullException(nameof(transaction));
+		}
+
+		public Task CommitAsync(CancellationToken cancellationToken = default)
+		{
+			return _transaction.CommitAsync(cancellationToken);
+		}
+
+		public Task RollbackAsync(CancellationToken cancellationToken = default)
+		{
+			return _transaction.RollbackAsync(cancellationToken);
+		}
+
+		public ValueTask DisposeAsync()
+		{
+			return _transaction.DisposeAsync();
+		}
+
+		public void Dispose()
+		{
+			_transaction.Dispose();
+		}
+	}
+
 	public class UnitOfWork : IUnitOfWork, IDisposable
 	{
 		private readonly AppDbContext _ctx;
@@ -35,14 +65,16 @@ namespace Infrastructure.Repository
 			return _ctx.SaveChangesAsync(cancellationToken);
 		}
 
-		public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+		public async Task<IApplicationTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
 		{
-			return _ctx.Database.BeginTransactionAsync(cancellationToken);
+			var tx = await _ctx.Database.BeginTransactionAsync(cancellationToken);
+			return new EfTransactionWrapper(tx);
 		}
 
-		public Task<IDbContextTransaction> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
+		public async Task<IApplicationTransaction> BeginTransactionAsync(IsolationLevel isolationLevel, CancellationToken cancellationToken = default)
 		{
-			return _ctx.Database.BeginTransactionAsync(isolationLevel,cancellationToken);
+			var tx = await _ctx.Database.BeginTransactionAsync(isolationLevel, cancellationToken);
+			return new EfTransactionWrapper(tx);
 		}
 
 		public void Dispose()

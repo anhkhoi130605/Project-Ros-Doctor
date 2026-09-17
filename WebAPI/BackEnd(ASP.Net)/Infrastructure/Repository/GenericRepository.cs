@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Domain.Entities.Config;
 using Infrastructure.Persistence;
 using Application.Interfaces.ManageTrancsaction;
@@ -62,7 +62,7 @@ namespace Infrastructure.Repository
 				return Task.CompletedTask;
 			}
 
-			public async Task<int> CountAsync(Expression<Func<T, bool>> predicate = null)
+			public async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)
 			{
 				if (predicate == null)
 					return await _dbSet.CountAsync();
