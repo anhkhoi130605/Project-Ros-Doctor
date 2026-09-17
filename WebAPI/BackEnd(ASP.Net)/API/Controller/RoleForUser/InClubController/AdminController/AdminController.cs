@@ -1,4 +1,5 @@
-﻿using MediatR;
+using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using API.Controller.Common;
@@ -8,14 +9,24 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 {
 	[Route("api/[controller]")]
 	[ApiController]
-	[Authorize(Roles = "Admin")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 	public class AdminController : BaseController
 	{
-	   private readonly IMediator _mediator;
-	   public AdminController(IMediator mediator)
-	   {
-		   _mediator = mediator;
-	   }
+		private readonly IMediator _mediator;
+
+		public AdminController(IMediator mediator)
+		{
+			_mediator = mediator;
+		}
+
+		[HttpGet("members")]
+		public async Task<IActionResult> GetMembers()
+		{
+			var query = new GetMembersQuery();
+			var result = await _mediator.Send(query);
+			return Ok(result);
+		}
+
 		[HttpGet("profile/{id}")]
 		public async Task<IActionResult> GetAdminProfile(string id)
 		{

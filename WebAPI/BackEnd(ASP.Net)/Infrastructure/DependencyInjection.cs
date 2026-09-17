@@ -87,6 +87,7 @@ public static class DependencyInjection
 			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
 			options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 			options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+			options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 		})
 		.AddCookie(options =>
 		{
@@ -109,6 +110,7 @@ public static class DependencyInjection
 		})
 	   .AddGoogle(options =>
 	   {
+		   options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 		   options.ClientId = googleSettings["ClientId"]!;
 		   options.ClientSecret = googleSettings["ClientSecret"]!;
 		   options.CallbackPath = "/signin-google";

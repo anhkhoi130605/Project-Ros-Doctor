@@ -46,24 +46,33 @@ public class LoginController : ControllerBase
     [HttpGet("google-login-response")]
 	public async Task<IActionResult> GoogleResponse()
 	{
+		var frontendBaseUrl = (_configuration["Frontend:BaseUrl"] ?? "https://localhost:5173").TrimEnd('/');
+
 		// 1. Hứng lấy thông tin từ Cookie trung gian của Google
 		var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
 		if (!authenticateResult.Succeeded)
-			return BadRequest("Xác thực từ Google thất bại.");
+			return Redirect($"{frontendBaseUrl}/login?error={Uri.EscapeDataString("Xác thực từ Google thất bại hoặc đã bị hủy.")}");
 
-		// 2. Bắn vào MediatR để xử lý logic (Lưu DB, Tạo User nếu chưa có, sinh mã JWT)
-		var command = new GoogleLoginCommand(authenticateResult.Principal);
-		var loginResult = await _mediator.Send(command); // loginResult này là LoginResponseDTO
+		try
+		{
+			// 2. Bắn vào MediatR để xử lý logic (Lưu DB, Tạo User nếu chưa có, sinh mã JWT)
+			var command = new GoogleLoginCommand(authenticateResult.Principal);
+			var loginResult = await _mediator.Send(command); // loginResult này là LoginResponseDTO
 
-		// 3. Đăng xuất Cookie trung gian ngay để làm sạch bộ nhớ
-		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			// 3. Đăng xuất Cookie trung gian ngay để làm sạch bộ nhớ
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-		// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
-		var frontendBaseUrl = (_configuration["Frontend:BaseUrl"] ?? "https://localhost:5173").TrimEnd('/');
-		var reactFrontendUrl = $"{frontendBaseUrl}/login-success?token={loginResult.AccessToken}";
+			// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
+			var reactFrontendUrl = $"{frontendBaseUrl}/login-success?token={loginResult.AccessToken}";
 
-		return Redirect(reactFrontendUrl);
+			return Redirect(reactFrontendUrl);
+		}
+		catch (Exception ex)
+		{
+			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+			return Redirect($"{frontendBaseUrl}/login?error={Uri.EscapeDataString(ex.Message)}");
+		}
 	}
 	[HttpPost("login")]
 	public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
