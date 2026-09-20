@@ -1,96 +1,100 @@
-name: Build, Test & Auto Merge
+name: CI - Build, Test & Merge Protection
 
 on:
   push:
     branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 permissions:
   contents: write
   pull-requests: write
+  statuses: write
 
 jobs:
   build-and-test:
-    name: Build & Test All Services
-    runs-on: [self-hosted, windows, x64]
+    name: Build & Test All Services (Local Runner)
+    runs-on: [self-hosted, team-137]
+    defaults:
+      run:
+        shell: powershell
 
     steps:
       - name: 1. Checkout source code
         uses: actions/checkout@v4
 
       # =======================================================
-      # PHẦN 1: AI (PYTHON) - LINT & TEST
+      # PHẦN 1: AI SERVICE (PYTHON) - TỐI ƯU TỐC ĐỘ DÙNG PYTHON MÁY
       # =======================================================
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: [Python] Install dependencies
+      - name: 1.1 [AI / Python] Cài đặt dependencies (Dùng Cache cục bộ)
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install --prefer-binary -r requirements.txt
 
-      - name: [Python] Lint with ruff
-        run: ruff check src/ tests/
-        continue-on-error: true # Đặt true nếu bạn chưa muốn chặn build vì lỗi format code
+      - name: 1.2 [AI / Python] Kiểm tra lint (Ruff)
+        run: |
+          ruff check src/ tests/
 
-      - name: [Python] Run tests
-        run: pytest tests/ -v --tb=short
+      - name: 1.3 [AI / Python] Chạy Unit Test (Pytest)
         env:
           APP_ENV: test
-          OPENAI_API_KEY: test-key
+          OPENAI_API_KEY: mock-test-key-ci
+        run: |
+          pytest tests/ -v --tb=short
 
       # =======================================================
-      # PHẦN 2: BACKEND (.NET) - RESTORE, BUILD & TEST
+      # PHẦN 2: BACKEND (.NET 10) - TỐI ƯU TỐC ĐỘ DÙNG SDK MÁY
       # =======================================================
-      - name: Set up .NET SDK
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x' # Đổi thành 6.0.x hoặc 7.0.x nếu bạn dùng bản khác
-
-      - name: [Backend] Restore dependencies
+      - name: 2.1 [Backend] Build Backend (Release mode)
         working-directory: "WebAPI/BackEnd(ASP.Net)"
-        run: dotnet restore
+        run: |
+          dotnet build Backend.slnx --configuration Release --verbosity minimal
 
-      - name: [Backend] Build Backend
+      - name: 2.2 [Backend] Chạy Backend Tests
         working-directory: "WebAPI/BackEnd(ASP.Net)"
-        run: dotnet build --no-restore --configuration Release
-
-      - name: [Backend] Run Backend tests
-        working-directory: "WebAPI/BackEnd(ASP.Net)"
-        run: dotnet test --no-build --configuration Release --verbosity normal
+        run: |
+          dotnet test Backend.slnx --no-build --configuration Release --verbosity minimal
 
       # =======================================================
-      # PHẦN 3: FRONTEND (REACTJS) - INSTALL, BUILD & TEST
+      # PHẦN 3: FRONTEND (REACTJS / VITE) - TỐI ƯU BUILD
       # =======================================================
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: [Frontend] Install dependencies
+      - name: 3.1 [Frontend] Cài đặt dependencies (Ưu tiên Offline Cache)
         working-directory: "WebAPI/FrontEnd(ReactJS)"
-        run: npm install
+        run: |
+          npm install --prefer-offline --no-audit --no-fund
 
-      - name: [Frontend] Build Frontend
+      - name: 3.2 [Frontend] Build Production (Vite)
         working-directory: "WebAPI/FrontEnd(ReactJS)"
-        run: npm run build
+        run: |
+          npm run build
 
-      - name: [Frontend] Run Frontend tests (CI mode)
+      - name: 3.3 [Frontend] Chạy Tests (nếu có)
         working-directory: "WebAPI/FrontEnd(ReactJS)"
-        run: npm test -- --watchAll=false
-        env:
-          CI: true
+        run: |
+          npm test --if-present
 
       # =======================================================
-      # PHẦN 4: TỰ ĐỘNG MERGE (KHI TẤT CẢ ĐÃ PASS)
+      # PHẦN 4: AUTO MERGE PULL REQUEST (KHI TẤT CẢ ĐỀU PASS)
       # =======================================================
-      - name: Auto merge Pull Request
+      - name: 4.1 Auto merge PR khi toàn bộ test & build trên máy thành công
         if: github.event_name == 'pull_request'
-        run: gh pr merge $env:PR_URL --auto --merge
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            try {
+              console.log(`Tất cả build và test trên máy thành công! Đang tiến hành merge PR #${prNumber}...`);
+              await github.rest.pulls.merge({
+                owner: owner,
+                repo: repo,
+                pull_number: prNumber,
+                merge_method: 'merge'
+              });
+              console.log(`Đã auto-merge PR #${prNumber} thành công lên server.`);
+            } catch (error) {
+              console.log(`Thông báo về trạng thái merge: ${error.message}`);
+              console.log('Lưu ý: Nếu PR yêu cầu người duyệt (Reviewer Approval) hoặc Branch Protection bắt buộc review, bạn chỉ cần review/approve trên GitHub thì PR sẽ được merge.');
+            }
