@@ -11,7 +11,7 @@ export default function SystemStatusPanel({
       <div className="panel-header">
         <h3>{title}</h3>
         <span className="status-pill">Ổn định</span>
-      </div>
+      </div>    
 
       <div className="system-score">
         <strong>{score}</strong>
