@@ -72,4 +72,4 @@ public class GlobalExceptionMiddleware
 		var jsonResult = JsonSerializer.Serialize(response);
 		return context.Response.WriteAsync(jsonResult);
 	}
-}
+}       
