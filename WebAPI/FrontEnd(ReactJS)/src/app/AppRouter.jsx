@@ -1,0 +1,69 @@
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useApp } from '../stored/appStore';
+
+// Layout
+import AppLayout from '../components/layout/AppLayout';
+
+// Public Pages
+import LandingPage from '../feature/auth/pages/LandingPage';
+import LoginPage from '../feature/auth/pages/LoginPage';
+import RegisterPage from '../feature/auth/pages/RegisterPage';
+import LoginSuccessPage from '../feature/auth/pages/LoginSuccessPage';
+
+// Feature Pages
+import DashboardOverviewPage from '../feature/dashboard/pages/DashboardOverviewPage';
+import BagsListPage from '../feature/bags/pages/BagsListPage';
+import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
+import UploadPage from '../feature/bags/pages/UploadPage';
+import ReportsListPage from '../feature/reports/pages/ReportsListPage';
+import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
+import ChatPage from '../feature/chat/pages/ChatPage';
+import AdminOverviewPage from '../feature/admin/pages/AdminOverviewPage';
+import SettingsPage from '../feature/admin/pages/SettingsPage';
+
+function ProtectedRoute({ children }) {
+  const { state } = useApp();
+  if (!state.signedIn && !localStorage.getItem('accessToken')) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+export default function AppRouter() {
+  return (
+    <Routes>
+      {/* Public Landing & Auth Routes */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/login-success" element={<LoginSuccessPage />} />
+
+      {/* Authenticated Dashboard App Routes */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/dashboard" element={<DashboardOverviewPage />} />
+        <Route path="/bags" element={<BagsListPage />} />
+        <Route path="/bags/:bagId" element={<BagsListPage />} />
+        <Route path="/sessions/:id" element={<SessionDetailPage />} />
+        <Route path="/upload" element={<UploadPage />} />
+        <Route path="/reports" element={<ReportsListPage />} />
+        <Route path="/reports/:id" element={<ReportsListPage />} />
+        <Route path="/reviews" element={<ReviewsListPage />} />
+        <Route path="/chat" element={<ChatPage />} />
+        <Route path="/admin" element={<AdminOverviewPage />} />
+        <Route path="/admin/users" element={<AdminOverviewPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/usage" element={<SettingsPage />} />
+      </Route>
+
+      {/* Fallback Catch-All */}
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}

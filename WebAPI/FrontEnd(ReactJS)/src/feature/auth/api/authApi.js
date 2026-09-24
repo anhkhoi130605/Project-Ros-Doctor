@@ -19,3 +19,7 @@ export async function resetPasswordApi({ email, otpCode, newPassword }) {
 export function getGoogleLoginUrl() {
   return `${apiClient.baseUrl}/api/auth/login-google`;
 }
+
+export function getGoogleRegisterUrl() {
+  return `${apiClient.baseUrl}/api/auth/register-google`;
+}
