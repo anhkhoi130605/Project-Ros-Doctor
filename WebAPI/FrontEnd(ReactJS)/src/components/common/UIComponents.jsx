@@ -1,0 +1,366 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { STATUS_MAP } from '../../domain/appTypes';
+
+// SVG Icon Component matching prototype
+export function Icon({ name = 'activity', size = 19, className = '', ...props }) {
+  const getSvgPath = (iconName) => {
+    switch (iconName) {
+      case 'activity':
+      case 'grid':
+        return <path d="M22 12h-4l-3 9L9 3l-3 9H2" />;
+      case 'hard-drive':
+        return (
+          <>
+            <line x1="22" y1="12" x2="2" y2="12" />
+            <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z" />
+            <line x1="6" y1="16" x2="6.01" y2="16" />
+            <line x1="10" y1="16" x2="10.01" y2="16" />
+          </>
+        );
+      case 'file-text':
+        return (
+          <>
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+            <polyline points="10 9 9 9 8 9" />
+          </>
+        );
+      case 'message-square':
+        return <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />;
+      case 'database':
+        return (
+          <>
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M21 19c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14" />
+            <path d="M21 5v14" />
+          </>
+        );
+      case 'shield':
+        return <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />;
+      case 'settings':
+        return (
+          <>
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </>
+        );
+      case 'clock':
+        return (
+          <>
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </>
+        );
+      case 'chevron':
+      case 'right':
+        return <polyline points="9 18 15 12 9 6" />;
+      case 'down':
+        return <polyline points="6 9 12 15 18 9" />;
+      case 'search':
+        return (
+          <>
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </>
+        );
+      case 'menu':
+        return (
+          <>
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </>
+        );
+      case 'close':
+      case 'x':
+        return (
+          <>
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </>
+        );
+      case 'bell':
+        return (
+          <>
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </>
+        );
+      case 'logout':
+        return (
+          <>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </>
+        );
+      case 'arrow':
+        return (
+          <>
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </>
+        );
+      case 'plus':
+        return (
+          <>
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </>
+        );
+      case 'check':
+      case 'success':
+        return <polyline points="20 6 9 17 4 12" />;
+      case 'alert':
+      case 'warning':
+        return (
+          <>
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </>
+        );
+      case 'info':
+        return (
+          <>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </>
+        );
+      case 'upload':
+        return (
+          <>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="17 8 12 3 7 8" />
+            <line x1="12" y1="3" x2="12" y2="15" />
+          </>
+        );
+      default:
+        return <path d="M22 12h-4l-3 9L9 3l-3 9H2" />;
+    }
+  };
+
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+      {...props}
+    >
+      {getSvgPath(name)}
+    </svg>
+  );
+}
+
+// Prototype Logo
+export function Logo({ compact = false }) {
+  return (
+    <span className="logo">
+      <span className="logo-mark">
+        <Icon name="activity" size={23} />
+      </span>
+      {!compact && (
+        <span>
+          CTRN <small>SHIFT N</small>
+        </span>
+      )}
+    </span>
+  );
+}
+
+// Prototype Button
+export function Button({
+  children,
+  to,
+  variant = 'primary',
+  icon,
+  className = '',
+  loading = false,
+  ...props
+}) {
+  const content = (
+    <>
+      {icon && <Icon name={loading ? 'loader' : icon} className={loading ? 'spin' : ''} />}
+      <span>{children}</span>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className={`button ${variant} ${className}`} {...props}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" className={`button ${variant} ${className}`} disabled={props.disabled || loading} {...props}>
+      {content}
+    </button>
+  );
+}
+
+// Prototype Badge
+export function Badge({ status, tone, children }) {
+  const defaultToneMap = {
+    pending: 'orange',
+    approved: 'green',
+    partial: 'orange',
+    changes: 'cyan',
+    rejected: 'red',
+    complete: 'green',
+    ready: 'blue',
+    invalid: 'red',
+    outdated: 'red',
+    processing: 'blue',
+    draft: 'muted',
+    high: 'red',
+    medium: 'orange',
+  };
+  const activeTone = tone || defaultToneMap[status] || 'cyan';
+  const labelText = children || STATUS_MAP[status] || status;
+
+  return (
+    <span className={`badge ${activeTone}`}>
+      <i />
+      {labelText}
+    </span>
+  );
+}
+
+// Prototype Card
+export function Card({ title, subtitle, action, className = '', children, ...props }) {
+  return (
+    <section className={`card ${className}`} {...props}>
+      {(title || action) && (
+        <div className="card-heading">
+          <div>
+            {title && <h2>{title}</h2>}
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          {action}
+        </div>
+      )}
+      {children}
+    </section>
+  );
+}
+
+// Prototype Page Header
+export function PageHeader({ title, subtitle, eyebrow, children }) {
+  return (
+    <div className="page-title">
+      <div>
+        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      {children && <div className="page-actions">{children}</div>}
+    </div>
+  );
+}
+
+// Prototype Form Field
+export function FormField({ label, hint, error, children, className = '' }) {
+  return (
+    <label className={`field ${className}`}>
+      <span>{label}</span>
+      {children}
+      {(hint || error) && (
+        <small className={error ? 'field-error' : ''} role={error ? 'alert' : undefined}>
+          {error || hint}
+        </small>
+      )}
+    </label>
+  );
+}
+
+// Prototype Notice
+export function Notice({ children, tone = 'blue', icon = 'info', className = '' }) {
+  return (
+    <div className={`notice ${tone} ${className}`}>
+      <Icon name={icon} />
+      <div>{children}</div>
+    </div>
+  );
+}
+
+// Prototype Empty State
+export function EmptyState({ title, description, icon = 'folder', children }) {
+  return (
+    <div className="empty-state">
+      <div className="empty-icon">
+        <Icon name={icon} size={34} />
+      </div>
+      <h2>{title}</h2>
+      <p>{description}</p>
+      {children && <div className="button-row">{children}</div>}
+    </div>
+  );
+}
+
+// Prototype Stat Widget
+export function StatWidget({ title, value, note, tone = 'default', icon }) {
+  return (
+    <div className={`card ${tone}`}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>{title}</span>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', margin: '4px 0', color: 'var(--text)' }}>{value}</div>
+          {note && <span style={{ fontSize: '12px', color: 'var(--cyan)' }}>{note}</span>}
+        </div>
+        {icon && <div style={{ color: 'var(--cyan)' }}><Icon name={icon} size={24} /></div>}
+      </div>
+    </div>
+  );
+}
+
+// Prototype Data Table
+export function DataTable({ columns = [], rows = [], empty = 'Không có dữ liệu phù hợp.', label = 'Bảng dữ liệu' }) {
+  return (
+    <div className="table-scroll" tabIndex={0} role="region" aria-label={label}>
+      <table>
+        <thead>
+          <tr>
+            {columns.map((col) => (
+              <th key={col.key} scope="col">
+                {col.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, idx) => (
+            <tr key={row.id || idx}>
+              {columns.map((col) => (
+                <td key={col.key}>
+                  {col.render ? col.render(row, idx) : row[col.key]}
+                </td>
+              ))}
+            </tr>
+          ))}
+          {!rows.length && (
+            <tr>
+              <td colSpan={columns.length} className="table-empty">
+                {empty}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
