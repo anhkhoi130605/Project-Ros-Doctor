@@ -1,5 +1,8 @@
+using System;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Application.Interfaces;
@@ -41,26 +44,26 @@ namespace Infrastructure.Services
             string safeUserName = WebUtility.HtmlEncode(userName ?? string.Empty);
             string safeOtpCode = WebUtility.HtmlEncode(otpCode ?? string.Empty);
 
-            string templatePath = Path.Combine(AppContext.BaseDirectory, "Templates", "OtpEmailTemplate.html");
-            if (!File.Exists(templatePath))
-            {
-                templatePath = Path.Combine(Directory.GetCurrentDirectory(), "Infrastructure", "Templates", "OtpEmailTemplate.html");
-            }
-
-            string htmlBody;
-            if (File.Exists(templatePath))
-            {
-                string templateContent = await File.ReadAllTextAsync(templatePath);
-                htmlBody = templateContent
-                    .Replace("{{UserName}}", safeUserName)
-                    .Replace("{{OtpCode}}", safeOtpCode);
-            }
-            else
-            {
-                htmlBody = $"<div style='font-family: Arial, sans-serif; padding: 20px;'><p>Xin chào <strong>{safeUserName}</strong>,</p><p>Mã OTP khôi phục mật khẩu của bạn là: <strong style='font-size: 24px; color: #1c5c43;'>{safeOtpCode}</strong> (Hiệu lực 10 phút).</p></div>";
-            }
+            string templateContent = LoadEmbeddedEmailTemplate("Infrastructure.Templates.OtpEmailTemplate.html");
+            string htmlBody = templateContent
+                .Replace("{{UserName}}", safeUserName)
+                .Replace("{{OtpCode}}", safeOtpCode);
 
             await SendEmailAsync(to, "Mã OTP khôi phục mật khẩu - Ctrl Shift N", htmlBody);
+        }
+
+        private static string LoadEmbeddedEmailTemplate(string resourceName)
+        {
+            var assembly = typeof(SmtpEmailService).Assembly;
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+
+            if (stream == null)
+            {
+                throw new InvalidOperationException($"Không tìm thấy template nhúng (Embedded Resource): '{resourceName}'.");
+            }
+
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
         }
     }
 }

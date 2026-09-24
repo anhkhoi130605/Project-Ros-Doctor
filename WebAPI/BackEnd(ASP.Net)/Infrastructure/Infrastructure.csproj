@@ -30,7 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="Templates\**" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Templates\**" />
   </ItemGroup>
 
 </Project>

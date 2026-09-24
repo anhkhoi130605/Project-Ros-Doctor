@@ -25,8 +25,21 @@ namespace API.Controller.AuthController
 			var command = new ForgotPasswordCommand(request);
 			var response = await _mediator.Send(command);
 
-			if (!response.Success) return BadRequest(response);
-			return Ok(response);
+			if (!response.Success)
+			{
+				return BadRequest(new
+				{
+					success = false,
+					message = response.Message
+				});
+			}
+
+			return Ok(new
+			{
+				success = true,
+				message = response.Message,
+				email = response.Email
+			});
 		}
 
 		[HttpPost("reset-password")]
@@ -37,8 +50,20 @@ namespace API.Controller.AuthController
 			var command = new ResetPasswordCommand(request);
 			var response = await _mediator.Send(command);
 
-			if (!response.Success) return BadRequest(response);
-			return Ok(response);
+			if (!response.Success)
+			{
+				return BadRequest(new
+				{
+					success = false,
+					message = response.Message
+				});
+			}
+
+			return Ok(new
+			{
+				success = true,
+				message = response.Message
+			});
 		}
 	}
 }
