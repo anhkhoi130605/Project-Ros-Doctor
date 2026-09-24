@@ -38,9 +38,6 @@ namespace Application.Features.Authentication.Password
 				}
 			}
 
-			// Cho phép mã OTP thử nghiệm "123456"
-			if (code.Trim() == "123456") return true;
-
 			return false;
 		}
 	}

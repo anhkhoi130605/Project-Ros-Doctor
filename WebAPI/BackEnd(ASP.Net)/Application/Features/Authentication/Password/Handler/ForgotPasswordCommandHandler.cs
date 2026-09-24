@@ -24,10 +24,25 @@ namespace Application.Features.Authentication.Password.Handler
 		{
 			var email = request.Dto.Email.Trim();
 
+			if (string.IsNullOrWhiteSpace(email))
+			{
+				return new ForgotPasswordResponse
+				{
+					Success = false,
+					Message = "Email không hợp lệ."
+				};
+			}
+
 			var user = await _unitOfWork.User.FindByEmailAsync(email);
+			// Chống User Enumeration: Nếu không có user, giả vờ thành công nhưng không gửi mail
 			if (user == null)
 			{
-				throw new Exception($"Không tìm thấy tài khoản tương ứng với Email: {email}");
+				return new ForgotPasswordResponse
+				{
+					Success = true,
+					Message = "Nếu email hợp lệ và tồn tại trên hệ thống, mã OTP đã được gửi đến hòm thư của bạn.",
+					Email = email
+				};
 			}
 
 			// Sinh mã OTP
@@ -43,7 +58,12 @@ namespace Application.Features.Authentication.Password.Handler
 			}
 			catch (Exception)
 			{
-				// Nếu SMTP chưa gửi được do mạng/cấu hình, hệ thống vẫn cho phép dùng OTP thử nghiệm
+				return new ForgotPasswordResponse
+				{
+					Success = false,
+					Message = "Không thể gửi email OTP vào lúc này. Vui lòng kiểm tra lại cấu hình hoặc thử lại sau.",
+					Email = email
+				};
 			}
 
 			return new ForgotPasswordResponse
@@ -51,7 +71,6 @@ namespace Application.Features.Authentication.Password.Handler
 				Success = true,
 				Message = $"Đã gửi mã OTP về Email ({email}) thành công. Vui lòng kiểm tra hộp thư Hộp thư đến (Inbox) hoặc Thư rác (Spam).",
 				Email = email,
-				OtpCode = otpCode
 			};
 		}
 	}
