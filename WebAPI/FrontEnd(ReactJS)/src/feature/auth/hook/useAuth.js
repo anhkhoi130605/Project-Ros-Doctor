@@ -23,13 +23,17 @@ export function useAuth() {
       const user = data?.user || {};
       const rawRole = parseUserRole(data, user) || '';
 
-      const normalizedRole = rawRole.toLowerCase().includes('admin')
-        ? 'admin'
-        : rawRole.toLowerCase().includes('viewer')
-        ? 'viewer'
-        : rawRole.toLowerCase().includes('user')
-        ? 'viewer'
-        : 'engineer';
+      const rawRoleLower = rawRole.toLowerCase().trim();
+      let normalizedRole = 'User';
+      if (rawRoleLower.includes('admin')) {
+        normalizedRole = 'Admin';
+      } else if (rawRoleLower.includes('engineer')) {
+        normalizedRole = 'Engineering';
+      } else if (rawRoleLower.includes('user')) {
+        normalizedRole = 'User';
+      } else {
+        normalizedRole = 'User';
+      }
 
       if (token) localStorage.setItem('accessToken', token);
       localStorage.setItem('userRole', normalizedRole);

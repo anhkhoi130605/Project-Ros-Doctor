@@ -204,9 +204,46 @@ export default function AdminOverviewPage() {
 
   useEffect(() => {
     loadMembers();
-    loadSystemLogs();
     loadUserLogs();
-  }, [loadMembers, loadSystemLogs, loadUserLogs]);
+  }, [loadMembers, loadUserLogs]);
+
+  // Fetch System Logs Data with Debounce & AbortController to prevent Race Condition & Spam
+  useEffect(() => {
+    const controller = new AbortController();
+    const delay = sysSearch ? 350 : 0;
+
+    const timer = setTimeout(async () => {
+      try {
+        setSysLoading(true);
+        setSysError(null);
+        const data = await fetchSystemLogsApi(
+          {
+            search: sysSearch,
+            logLevel: sysLogLevel,
+            pageIndex: sysPageIndex,
+            pageSize: sysPageSize,
+          },
+          { signal: controller.signal }
+        );
+        if (!controller.signal.aborted) {
+          setSysLogs(data.items || []);
+          setSysTotalCount(data.totalCount || 0);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError' || controller.signal.aborted) return;
+        setSysError(err.message || 'Không thể tải danh sách nhật ký hệ thống.');
+      } finally {
+        if (!controller.signal.aborted) {
+          setSysLoading(false);
+        }
+      }
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [sysSearch, sysLogLevel, sysPageIndex, sysPageSize]);
 
   // Handle Triggering Test Error
   const handleTriggerTestError = async () => {

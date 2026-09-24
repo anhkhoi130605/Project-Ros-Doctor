@@ -70,11 +70,12 @@ export default function LoginSuccessPage() {
 
       const fullName = payload?.name || payload?.FullName || (email ? email.split('@')[0] : 'User');
 
-      const normalizedRole = roleClaim.toLowerCase().includes('admin')
-        ? 'admin'
-        : roleClaim.toLowerCase().includes('engineer')
-        ? 'engineer'
-        : 'viewer';
+      const lowerRole = roleClaim.toLowerCase().trim();
+      const normalizedRole = lowerRole.includes('admin')
+        ? 'Admin'
+        : lowerRole.includes('engineer')
+        ? 'Engineering'
+        : 'User';
 
       localStorage.setItem('userRole', normalizedRole);
       localStorage.setItem('userEmail', email);

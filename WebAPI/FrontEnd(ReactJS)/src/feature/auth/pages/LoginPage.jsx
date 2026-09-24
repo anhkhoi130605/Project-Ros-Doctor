@@ -23,7 +23,7 @@ export default function LoginPage() {
     // If using real backend credentials
     const loginResult = await login({ email, password });
     if (loginResult && loginResult.success) {
-      const userRole = loginResult.role || 'engineer';
+      const userRole = loginResult.role || 'Engineering';
       const userName = loginResult.user?.fullName || loginResult.user?.FullName || email.split('@')[0];
 
       dispatch({
@@ -34,10 +34,10 @@ export default function LoginPage() {
         userId: loginResult.user?.id || loginResult.user?.Id || null,
       });
 
-      const roleDisplay = userRole === 'admin' ? 'Quản trị viên (Admin)' : userRole === 'viewer' ? 'Người xem' : 'Kỹ sư Robotics';
+      const roleDisplay = ROLE_NAMES[userRole] || userRole;
       notify(`Đăng nhập hệ thống thành công với vai trò ${roleDisplay}!`, 'success');
 
-      if (userRole === 'admin') {
+      if (userRole.toLowerCase() === 'admin') {
         navigate('/admin');
       } else {
         navigate('/dashboard');
