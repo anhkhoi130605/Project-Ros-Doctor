@@ -13,11 +13,16 @@ namespace Application.Features.Authentication.Password.Handler
 	{
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IEmailService _emailService;
+		private readonly IOtpService _otpService;
 
-		public ForgotPasswordCommandHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+		public ForgotPasswordCommandHandler(
+			IUnitOfWork unitOfWork,
+			IEmailService emailService,
+			IOtpService otpService)
 		{
 			_unitOfWork = unitOfWork;
 			_emailService = emailService;
+			_otpService = otpService;
 		}
 
 		public async Task<ForgotPasswordResponse> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
@@ -45,8 +50,8 @@ namespace Application.Features.Authentication.Password.Handler
 				};
 			}
 
-			// Sinh mã OTP
-			string otpCode = OtpStore.GenerateAndSaveOtp(email);
+			// Sinh mã OTP và lưu vào Redis Cache (IDistributedCache)
+			string otpCode = await _otpService.GenerateAndSaveOtpAsync(email);
 
 			// Gửi Email HTML bằng SmtpEmailService
 			try

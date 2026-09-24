@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
+using Application.Interfaces;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.ManageTrancsaction;
 
@@ -13,19 +14,24 @@ namespace Application.Features.Authentication.Password.Handler
 	{
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IPasswordHasher _passwordHasher;
+		private readonly IOtpService _otpService;
 
-		public ResetPasswordCommandHandler(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher)
+		public ResetPasswordCommandHandler(
+			IUnitOfWork unitOfWork,
+			IPasswordHasher passwordHasher,
+			IOtpService otpService)
 		{
 			_unitOfWork = unitOfWork;
 			_passwordHasher = passwordHasher;
+			_otpService = otpService;
 		}
 
 		public async Task<ResetPasswordResponse> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
 		{
 			var email = request.Dto.Email.Trim();
 
-			// 1. Xác thực OTP
-			bool isValidOtp = OtpStore.ValidateOtp(email, request.Dto.OtpCode);
+			// 1. Xác thực mã OTP trong Redis Cache
+			bool isValidOtp = await _otpService.ValidateOtpAsync(email, request.Dto.OtpCode);
 			if (!isValidOtp)
 			{
 				throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
