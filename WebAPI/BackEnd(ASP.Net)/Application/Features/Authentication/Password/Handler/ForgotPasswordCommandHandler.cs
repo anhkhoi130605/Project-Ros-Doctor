@@ -13,25 +13,45 @@ namespace Application.Features.Authentication.Password.Handler
 	{
 		private readonly IUnitOfWork _unitOfWork;
 		private readonly IEmailService _emailService;
+		private readonly IOtpService _otpService;
 
-		public ForgotPasswordCommandHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+		public ForgotPasswordCommandHandler(
+			IUnitOfWork unitOfWork,
+			IEmailService emailService,
+			IOtpService otpService)
 		{
 			_unitOfWork = unitOfWork;
 			_emailService = emailService;
+			_otpService = otpService;
 		}
 
 		public async Task<ForgotPasswordResponse> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
 		{
 			var email = request.Dto.Email.Trim();
 
-			var user = await _unitOfWork.User.FindByEmailAsync(email);
-			if (user == null)
+			if (string.IsNullOrWhiteSpace(email))
 			{
-				throw new Exception($"Không tìm thấy tài khoản tương ứng với Email: {email}");
+				return new ForgotPasswordResponse
+				{
+					Success = false,
+					Message = "Email không hợp lệ."
+				};
 			}
 
-			// Sinh mã OTP
-			string otpCode = OtpStore.GenerateAndSaveOtp(email);
+			var user = await _unitOfWork.User.FindByEmailAsync(email);
+			// Chống User Enumeration: Nếu không có user, giả vờ thành công nhưng không gửi mail
+			if (user == null)
+			{
+				return new ForgotPasswordResponse
+				{
+					Success = true,
+					Message = "Nếu email hợp lệ và tồn tại trên hệ thống, mã OTP đã được gửi đến hòm thư của bạn.",
+					Email = email
+				};
+			}
+
+			// Sinh mã OTP và lưu vào Redis Cache (IDistributedCache)
+			string otpCode = await _otpService.GenerateAndSaveOtpAsync(email);
 
 			// Gửi Email HTML bằng SmtpEmailService
 			try
@@ -43,7 +63,12 @@ namespace Application.Features.Authentication.Password.Handler
 			}
 			catch (Exception)
 			{
-				// Nếu SMTP chưa gửi được do mạng/cấu hình, hệ thống vẫn cho phép dùng OTP thử nghiệm
+				return new ForgotPasswordResponse
+				{
+					Success = false,
+					Message = "Không thể gửi email OTP vào lúc này. Vui lòng kiểm tra lại cấu hình hoặc thử lại sau.",
+					Email = email
+				};
 			}
 
 			return new ForgotPasswordResponse
@@ -51,7 +76,6 @@ namespace Application.Features.Authentication.Password.Handler
 				Success = true,
 				Message = $"Đã gửi mã OTP về Email ({email}) thành công. Vui lòng kiểm tra hộp thư Hộp thư đến (Inbox) hoặc Thư rác (Spam).",
 				Email = email,
-				OtpCode = otpCode
 			};
 		}
 	}

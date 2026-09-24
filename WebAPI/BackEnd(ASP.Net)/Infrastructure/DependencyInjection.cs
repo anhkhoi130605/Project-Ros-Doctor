@@ -63,6 +63,7 @@ public static class DependencyInjection
 		services.AddScoped<ISystemErrorLogService, SystemErrorLogService>();
 		services.AddScoped<INotificationService, NotificationService>();
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+		services.AddScoped<IOtpService, OtpService>();
 
 		// 3. Configure Redis Cache
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
