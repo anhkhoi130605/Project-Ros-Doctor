@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hook/useAuth';
 import { getGoogleLoginUrl } from '../api/authApi';
 import ForgotPasswordModal from '../component/ForgotPasswordModal';
+import robotPearl from '../../../assets/robot-pearl.png';
 import '../auth.css';
 
 export default function LoginPage() {
@@ -28,25 +29,43 @@ export default function LoginPage() {
 	}
 
 	return (
-		<main className="auth-shell">
-			<section className="auth-visual">
-				<div className="visual-mark">CSN</div>
-				<p className="eyebrow">Ctrl Shift N / Member space</p>
-				<h1>Build something worth belonging to.</h1>
-				<p className="visual-copy">Kết nối cộng đồng, khám phá hoạt động và cùng nhau tạo nên những trải nghiệm đáng nhớ.</p>
-				<div className="visual-note"><span>01</span><span>Connect with your club</span></div>
-			</section>
+		<main className="login-page">
+			<header className="login-topbar">
+				<Link className="login-brand" to="/login" aria-label="Ctrl Shift N">
+					<span className="brand-pulse" aria-hidden="true">
+						<span></span>
+					</span>
+					<span className="brand-copy">
+						<strong>CTRN</strong>
+						<small>SHIFT N</small>
+					</span>
+				</Link>
+				<div className="login-toplinks">
+					<span>Chưa có tài khoản?</span>
+					<Link to="/register">Đăng ký</Link>
+				</div>
+			</header>
 
-			<section className="auth-panel">
-				<div className="auth-card">
-					<div className="mobile-mark">CSN</div>
-					<p className="eyebrow">Welcome back</p>
-					<h2>Đăng nhập</h2>
-					<p className="form-intro">Đăng nhập để tiếp tục hành trình cùng Ctrl Shift N.</p>
+			<section className="login-stage">
+				<div className="login-hero" aria-hidden="true">
+					<p className="login-kicker">RAV-13 / ROBOTICS INTELLIGENCE</p>
+					<h1>
+						Hiểu dữ liệu.
+						<span>Giải mã robot.</span>
+					</h1>
+					<div className="robot-orbit">
+						<img src={robotPearl} alt="" />
+					</div>
+				</div>
+
+				<section className="login-panel" aria-labelledby="login-title">
+					<p className="login-kicker">KHÔNG GIAN CHẨN ĐOÁN</p>
+					<h2 id="login-title">Chào mừng trở lại.</h2>
+					<p className="form-intro">Đăng nhập để tiếp tục công việc của bạn.</p>
 
 					<form onSubmit={handleSubmit} noValidate>
 						<label htmlFor="login-email">Email</label>
-						<input id="login-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} />
+						<input id="login-email" name="email" type="email" autoComplete="email" placeholder="engineer@ros2doctor.local" value={form.email} onChange={handleChange} />
 
 						<div className="label-row">
 							<label htmlFor="login-password">Mật khẩu</label>
@@ -57,10 +76,26 @@ export default function LoginPage() {
 						<input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Nhập mật khẩu" value={form.password} onChange={handleChange} />
 
 						{status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
-						<button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}</button>
+						<button className="primary-button" type="submit" disabled={isSubmitting}>
+							<span aria-hidden="true">→</span>
+							{isSubmitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+						</button>
 					</form>
 
-					<div className="divider"><span>hoặc</span></div>
+					<div className="demo-credential">
+						<span>Bản preview sử dụng mật khẩu mẫu</span>
+						<strong>demo123</strong>
+					</div>
+
+					<div className="sample-flow">
+						<p>XEM LUỒNG MẪU</p>
+						<div>
+							<button type="button">Admin</button>
+							<button type="button">Engineer</button>
+							<button type="button">User</button>
+						</div>
+					</div>
+
 					<a className="google-button" href={getGoogleLoginUrl()}>
 						<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
 							<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -70,8 +105,8 @@ export default function LoginPage() {
 						</svg>
 						<span>Đăng nhập bằng Google</span>
 					</a>
-					<p className="switch-copy">Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link></p>
-				</div>
+					<p className="switch-copy">Chưa có tài khoản? <Link to="/register">Tạo tài khoản</Link></p>
+				</section>
 			</section>
 
 			<ForgotPasswordModal
