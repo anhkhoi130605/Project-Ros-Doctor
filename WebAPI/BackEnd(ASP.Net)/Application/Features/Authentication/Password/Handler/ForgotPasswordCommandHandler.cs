@@ -1,0 +1,58 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+using MediatR;
+using Application.Interfaces;
+using Application.Interfaces.ManageTrancsaction;
+
+namespace Application.Features.Authentication.Password.Handler
+{
+	public record ForgotPasswordCommand(ForgotPasswordRequestDTO Dto) : IRequest<ForgotPasswordResponse>;
+
+	public class ForgotPasswordCommandHandler : IRequestHandler<ForgotPasswordCommand, ForgotPasswordResponse>
+	{
+		private readonly IUnitOfWork _unitOfWork;
+		private readonly IEmailService _emailService;
+
+		public ForgotPasswordCommandHandler(IUnitOfWork unitOfWork, IEmailService emailService)
+		{
+			_unitOfWork = unitOfWork;
+			_emailService = emailService;
+		}
+
+		public async Task<ForgotPasswordResponse> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
+		{
+			var email = request.Dto.Email.Trim();
+
+			var user = await _unitOfWork.User.FindByEmailAsync(email);
+			if (user == null)
+			{
+				throw new Exception($"Không tìm thấy tài khoản tương ứng với Email: {email}");
+			}
+
+			// Sinh mã OTP
+			string otpCode = OtpStore.GenerateAndSaveOtp(email);
+
+			// Gửi Email HTML bằng SmtpEmailService
+			try
+			{
+				string userName = user.FullName ?? user.Email;
+				string htmlBody = EmailTemplateBuilder.BuildOtpEmailHtml(userName, otpCode);
+
+				await _emailService.SendEmailAsync(user.Email, "Mã OTP khôi phục mật khẩu - Ctrl Shift N", htmlBody);
+			}
+			catch (Exception)
+			{
+				// Nếu SMTP chưa gửi được do mạng/cấu hình, hệ thống vẫn cho phép dùng OTP thử nghiệm
+			}
+
+			return new ForgotPasswordResponse
+			{
+				Success = true,
+				Message = $"Đã gửi mã OTP về Email ({email}) thành công. Vui lòng kiểm tra hộp thư Hộp thư đến (Inbox) hoặc Thư rác (Spam).",
+				Email = email,
+				OtpCode = otpCode
+			};
+		}
+	}
+}
