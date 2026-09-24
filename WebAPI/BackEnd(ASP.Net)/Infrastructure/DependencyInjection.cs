@@ -63,8 +63,9 @@ public static class DependencyInjection
 		services.AddScoped<ISystemErrorLogService, SystemErrorLogService>();
 		services.AddScoped<INotificationService, NotificationService>();
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+		services.AddScoped<IOtpService, OtpService>();
 
-		// 3. Configure Redis Cache
+		// 3. Configure Redis Cache (with Memory Cache fallback for resilience)
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
 		if (redisSettings != null && !string.IsNullOrEmpty(redisSettings.Configuration))
 		{
@@ -73,6 +74,10 @@ public static class DependencyInjection
 				options.Configuration = redisSettings.Configuration;
 				options.InstanceName = redisSettings.InstanceName;
 			});
+		}
+		else
+		{
+			services.AddDistributedMemoryCache();
 		}
 
 		// 5. Register AutoMapper: scan the Application assembly for Profile classes so

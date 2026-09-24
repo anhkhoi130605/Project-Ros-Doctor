@@ -15,10 +15,22 @@ public class RequestResponseLoggingMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        // Skip response body buffering for GET requests to optimize read performance and memory usage
+        if (context.Request.Method == HttpMethods.Get)
+        {
+            await _next(context);
+            _logger.LogInformation(
+                "HTTP {Method} {Path} responded {StatusCode}",
+                context.Request.Method,
+                context.Request.Path,
+                context.Response.StatusCode);
+            return;
+        }
+
         var requestBody = string.Empty;
         var originalBodyStream = context.Response.Body;
 
-        if (context.Request.Method != HttpMethods.Get && context.Request.ContentLength > 0)
+        if (context.Request.ContentLength > 0)
         {
             context.Request.EnableBuffering();
             using var reader = new StreamReader(

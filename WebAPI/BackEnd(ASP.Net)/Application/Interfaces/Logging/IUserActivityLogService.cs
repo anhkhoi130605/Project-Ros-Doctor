@@ -12,7 +12,9 @@ namespace Application.Interfaces.Logging
         string? RequestPath = null,
         string? HttpMethod = null,
         string? IpAddress = null,
-        string? UserAgent = null);
+        string? UserAgent = null,
+        string? UserName = null,
+        string? Email = null);
 
     /// <summary>
     /// Ghi lại hành động của người dùng (tạo, xoá, cập nhật...) phục vụ audit trail.
@@ -30,6 +32,8 @@ namespace Application.Interfaces.Logging
             string? requestPath = null,
             string? httpMethod = null,
             string? ipAddress = null,
-            string? userAgent = null);
+            string? userAgent = null,
+            string? userName = null,
+            string? email = null);
     }
 }

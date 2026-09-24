@@ -15,6 +15,8 @@ jobs:
   build-and-test:
     name: Build & Test All Services (Local Runner)
     runs-on: [self-hosted, team-137]
+    env:
+      MSBUILDDISABLENODEREUSE: '1'
     defaults:
       run:
         shell: powershell
@@ -47,12 +49,18 @@ jobs:
       - name: 2.1 [Backend] Build Backend (Release mode)
         working-directory: "WebAPI/BackEnd(ASP.Net)"
         run: |
-          dotnet build Backend.slnx --configuration Release --verbosity minimal
+          dotnet build Backend.slnx --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
 
       - name: 2.2 [Backend] Chạy Backend Tests
         working-directory: "WebAPI/BackEnd(ASP.Net)"
         run: |
-          dotnet test Backend.slnx --no-build --configuration Release --verbosity minimal
+          dotnet test Backend.slnx --no-build --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
+
+      - name: 2.3 [Backend] Tắt .NET Build Server (Ngăn VBCSCompiler treo runner)
+        if: always()
+        working-directory: "WebAPI/BackEnd(ASP.Net)"
+        run: |
+          dotnet build-server shutdown
 
       # =======================================================
       # PHẦN 3: FRONTEND (REACTJS / VITE) - TỐI ƯU BUILD

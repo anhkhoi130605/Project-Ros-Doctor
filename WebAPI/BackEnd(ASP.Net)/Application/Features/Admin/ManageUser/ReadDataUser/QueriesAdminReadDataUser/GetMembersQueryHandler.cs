@@ -27,10 +27,16 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 
 			// 2. Lấy danh sách Role để map RoleName tương ứng
 			var roles = await _unitOfWork.Roles.GetAllAsync();
-			var roleMap = roles.ToDictionary(r => r.Id, r => r.RoleName?.ToString() ?? "User");
+			var roleMap = (roles ?? Enumerable.Empty<Role>())
+				.Where(r => !string.IsNullOrEmpty(r.Id))
+				.GroupBy(r => r.Id!)
+				.ToDictionary(g => g.Key, g => g.First().RoleName?.ToString() ?? "User");
 
-			// 3. Lấy nhật ký hoạt động gần nhất để ước lượng trạng thái Online/Offline
-			var recentLogs = await _unitOfWork.UserActivityLogs.GetAllAsync();
+			// 3. Lấy nhật ký hoạt động trong 2 giờ gần nhất để ước lượng trạng thái Online/Offline
+			var threshold = DateTimeHelper.GetVietnamTime().AddHours(-2);
+			var recentLogs = await _unitOfWork.UserActivityLogs.GetAllAsync(
+				filter: l => l.CreatedAt >= threshold
+			);
 			var latestLogByUser = recentLogs
 				.Where(l => !string.IsNullOrEmpty(l.UserId))
 				.GroupBy(l => l.UserId!)

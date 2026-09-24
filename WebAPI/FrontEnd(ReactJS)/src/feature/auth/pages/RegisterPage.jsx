@@ -1,15 +1,22 @@
-import React from 'react';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../hook/useAuth';
+import { apiClient } from '../../../service/apiClient';
 import '../auth.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 
 export default function RegisterPage() {
 	const navigate = useNavigate();
-	const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
-	const [status, setStatus] = useState({ type: '', message: '' });
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const { isSubmitting, status, setStatus, register } = useAuth();
+	const [form, setForm] = useState({
+		fullName: '',
+		email: '',
+		phone: '',
+		gender: 'Male',
+		dateOfBirth: '',
+		bio: '',
+		password: '',
+		confirmPassword: ''
+	});
 
 	function handleChange(event) {
 		setForm({ ...form, [event.target.name]: event.target.value });
@@ -17,9 +24,8 @@ export default function RegisterPage() {
 
 	async function handleSubmit(event) {
 		event.preventDefault();
-		setStatus({ type: '', message: '' });
 		if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
-			setStatus({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin.' });
+			setStatus({ type: 'error', message: 'Vui lòng điền đầy đủ các thông tin bắt buộc (*).' });
 			return;
 		}
 		if (form.password !== form.confirmPassword) {
@@ -27,24 +33,23 @@ export default function RegisterPage() {
 			return;
 		}
 
-		setIsSubmitting(true);
 		try {
-			const response = await fetch(`${API_URL}/api/auth/register`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(form),
-			});
-			const data = await response.json().catch(() => ({}));
+			const payload = {
+				fullName: form.fullName.trim(),
+				email: form.email.trim(),
+				phone: form.phone ? form.phone.trim() : null,
+				gender: form.gender || null,
+				dateOfBirth: form.dateOfBirth ? form.dateOfBirth : null,
+				bio: form.bio ? form.bio.trim() : null,
+				password: form.password,
+				confirmPassword: form.confirmPassword
+			};
 
-			if (!response.ok) {
-				throw new Error(data.message || data.title || 'Đăng ký không thành công.');
-			}
+			await register(payload);
 			setStatus({ type: 'success', message: 'Đăng ký thành công. Đang chuyển đến trang đăng nhập...' });
 			setTimeout(() => navigate('/login'), 900);
 		} catch (error) {
-			setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
-		} finally {
-			setIsSubmitting(false);
+			// Handled in useAuth
 		}
 	}
 
@@ -67,10 +72,49 @@ export default function RegisterPage() {
 
 					<form onSubmit={handleSubmit} noValidate>
 						<div className="form-grid">
-							<div className="field full-width"><label htmlFor="register-name">Họ và tên</label><input id="register-name" name="fullName" autoComplete="name" placeholder="Nguyễn Văn A" value={form.fullName} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-email">Email</label><input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-password">Mật khẩu</label><input id="register-password" name="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 6 ký tự" value={form.password} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-confirm-password">Nhập lại mật khẩu</label><input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" value={form.confirmPassword} onChange={handleChange} /></div>
+							<div className="field full-width">
+								<label htmlFor="register-name">Họ và tên *</label>
+								<input id="register-name" name="fullName" autoComplete="name" placeholder="Nguyễn Văn A" value={form.fullName} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-email">Email *</label>
+								<input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-phone">Số điện thoại</label>
+								<input id="register-phone" name="phone" type="tel" autoComplete="tel" placeholder="0912 345 678" value={form.phone} onChange={handleChange} />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-gender">Giới tính</label>
+								<select id="register-gender" name="gender" value={form.gender} onChange={handleChange}>
+									<option value="Male">Nam</option>
+									<option value="Female">Nữ</option>
+									<option value="Other">Khác</option>
+								</select>
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-dob">Ngày sinh</label>
+								<input id="register-dob" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} />
+							</div>
+
+							<div className="field full-width">
+								<label htmlFor="register-bio">Giới thiệu ngắn (Bio)</label>
+								<input id="register-bio" name="bio" placeholder="Sở thích, chuyên ngành hoặc đôi nét về bạn..." value={form.bio} onChange={handleChange} />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-password">Mật khẩu *</label>
+								<input id="register-password" name="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 6 ký tự" value={form.password} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-confirm-password">Nhập lại mật khẩu *</label>
+								<input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" value={form.confirmPassword} onChange={handleChange} required />
+							</div>
 						</div>
 
 						{status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
@@ -78,7 +122,7 @@ export default function RegisterPage() {
 					</form>
 
 					<div className="divider"><span>hoặc</span></div>
-					<a className="google-button" href={`${API_URL}/api/auth/register-google`}>
+					<a className="google-button" href={`${apiClient.baseUrl}/api/auth/register-google`}>
 						<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
 							<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
 							<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />

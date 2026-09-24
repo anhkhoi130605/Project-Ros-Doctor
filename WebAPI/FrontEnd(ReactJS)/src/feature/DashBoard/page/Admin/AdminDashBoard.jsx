@@ -8,6 +8,7 @@ import ActivityLogPanel from './components/ActivityLog/ActivityLogPanel';
 import SystemLogPanel from './components/SystemLog/SystemLogPanel';
 import SystemLogTaskbar from './components/SystemLog/SystemLogTaskbar';
 import useAdminActivityLogs from './hook/useAdminActivityLogs';
+import useSystemLogs from './hook/useSystemLogs';
 
 const widgets = [
   { label: 'Total Members', value: '1,284', tone: 'green', detail: 'vs last month' },
@@ -28,15 +29,10 @@ const activityLogEntries = [
   { title: 'Permission changed', detail: 'admin role access was updated', time: '10:30 AM' },
 ];
 
-const systemLogEntries = [
-  { title: 'API heartbeat', detail: 'stable response time across all services', status: 'Healthy' },
-  { title: 'Database backup', detail: 'nightly backup completed successfully', status: 'Success' },
-  { title: 'Security scan', detail: 'no critical vulnerabilities detected', status: 'Verified' },
-];
-
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const { logs, loading, error } = useAdminActivityLogs();
+  const { logs: sysLogs } = useSystemLogs(5);
 
   const scrollToSection = (label, path) => {
     if (label === 'User Activity Logs' && path) {
@@ -127,7 +123,23 @@ export default function AdminDashboardPage() {
           title={loading ? 'Activity Log' : 'Activity Log'}
           items={error ? [{ title: 'Load error', detail: error, time: 'Now' }] : activityLogEntries}
         />
-        <SystemLogPanel title="System Log" items={systemLogEntries} />
+        <SystemLogPanel
+          title="System Error Logs"
+          items={
+            sysLogs && sysLogs.length > 0
+              ? sysLogs.map((l) => ({
+                  id: l.id,
+                  title: l.requestPath || l.exceptionType,
+                  detail: l.translatedMessage || l.errorMessage,
+                  exceptionType: l.exceptionType,
+                  status: l.logLevel || 'Error',
+                }))
+              : [
+                  { title: 'API heartbeat', detail: 'Tất cả các endpoint đang phản hồi bình thường.', status: 'Healthy' },
+                  { title: 'Database backup', detail: 'Backup đã chạy thành công.', status: 'Success' },
+                ]
+          }
+        />
       </div>
     </DashboardPage>
   );

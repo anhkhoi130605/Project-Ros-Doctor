@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
+import { fetchAdminActivityLogsApi } from '../../../api/dashboardApi';
 
 export default function useAdminActivityLogs() {
   const [logs, setLogs] = useState([]);
@@ -9,26 +8,10 @@ export default function useAdminActivityLogs() {
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const token = localStorage.getItem('accessToken');
-
       try {
         setLoading(true);
         setError(null);
-
-        const response = await fetch(`${API_URL}/api/user-activity?take=20`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.message || 'Không thể tải lịch sử hoạt động người dùng.');
-        }
-
-        const data = await response.json();
+        const data = await fetchAdminActivityLogsApi(20);
         setLogs(Array.isArray(data) ? data : []);
       } catch (err) {
         setLogs([]);
