@@ -4,11 +4,22 @@ import { useApp } from '../../stored/appStore';
 import { Logo, Button, Badge, Icon } from '../common/UIComponents';
 import { ROLE_NAMES } from '../../domain/appTypes';
 
+function getUserInitials(name) {
+  if (!name) return 'U';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
+}
+
 export default function AppLayout() {
   const { state, dispatch, notify } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   const handleLogout = () => {
     dispatch({ type: 'LOGOUT' });
@@ -232,6 +243,157 @@ export default function AppLayout() {
             );
           })}
         </nav>
+
+        {/* Sidebar Footer Account Badge Button at Bottom-Left */}
+        <div
+          className="sidebar-footer"
+          style={{
+            marginTop: 'auto',
+            paddingTop: '16px',
+            borderTop: '1px solid var(--border, #cbd5e1)',
+            position: 'relative',
+          }}
+        >
+          <button
+            type="button"
+            aria-label="Menu tài khoản"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: '10px',
+              background: userMenuOpen ? '#f1f5f9' : 'transparent',
+              border: '1px solid #cbd5e1',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <div
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: '50%',
+                background: '#1c5c43',
+                color: '#ffffff',
+                display: 'grid',
+                placeItems: 'center',
+                fontWeight: 700,
+                fontSize: 13,
+                flexShrink: 0,
+              }}
+            >
+              {getUserInitials(state.profile?.name || state.role)}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <strong
+                style={{
+                  fontSize: 13,
+                  display: 'block',
+                  color: '#0f172a',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {state.profile?.name || ROLE_NAMES[state.role] || state.role}
+              </strong>
+              <span style={{ fontSize: 11, color: '#64748b', display: 'block' }}>
+                {ROLE_NAMES[state.role] || state.role}
+              </span>
+            </div>
+            <Icon
+              name="chevron"
+              size={14}
+              style={{
+                transform: userMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+                color: '#64748b',
+              }}
+            />
+          </button>
+
+          {/* Popover Menu with 2 buttons */}
+          {userMenuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 'calc(100% + 8px)',
+                left: 0,
+                right: 0,
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                borderRadius: 10,
+                boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12)',
+                padding: '6px',
+                zIndex: 100,
+                display: 'grid',
+                gap: '4px',
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  setShowProfileModal(true);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: 6,
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#334155',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+              >
+                <Icon name="user" size={16} />
+                <span>Thông tin cá nhân</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  handleLogout();
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: 6,
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#ef4444',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+              >
+                <Icon name="logout" size={16} />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          )}
+        </div>
       </aside>
 
       <div className="workspace-main">
@@ -272,6 +434,122 @@ export default function AppLayout() {
           <span>AI đề xuất · Kỹ sư quyết định</span>
         </footer>
       </div>
+
+      {/* Profile Modal Dialog excluding User ID */}
+      {showProfileModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px',
+          }}
+          onClick={() => setShowProfileModal(false)}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              width: '100%',
+              maxWidth: '460px',
+              borderRadius: '14px',
+              padding: '24px',
+              boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)',
+              display: 'grid',
+              gap: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                👤 Thông tin cá nhân
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowProfileModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div
+                style={{
+                  width: 52,
+                  height: 52,
+                  borderRadius: '50%',
+                  background: '#1c5c43',
+                  color: '#ffffff',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontWeight: 700,
+                  fontSize: 20,
+                  flexShrink: 0,
+                }}
+              >
+                {getUserInitials(state.profile?.name || state.role)}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <strong style={{ fontSize: '16px', color: '#0f172a', display: 'block' }}>
+                  {state.profile?.name || ROLE_NAMES[state.role] || state.role}
+                </strong>
+                <span style={{ fontSize: '12px', color: '#64748b', wordBreak: 'break-all' }}>
+                  {state.profile?.email || `${(state.role || 'user').toLowerCase()}@ros2doctor.local`}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Họ & Tên</span>
+                <strong style={{ color: '#0f172a' }}>{state.profile?.name || ROLE_NAMES[state.role] || state.role}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Email</span>
+                <strong style={{ color: '#0f172a' }}>{state.profile?.email || `${(state.role || 'user').toLowerCase()}@ros2doctor.local`}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Vai trò / Phân quyền</span>
+                <span className="badge green" style={{ fontSize: '11px' }}>
+                  <i /> {ROLE_NAMES[state.role] || state.role}
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Không gian làm việc</span>
+                <strong style={{ color: '#0f172a' }}>{state.profile?.workspace || 'Robotics Lab / RAV-13'}</strong>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Trạng thái tài khoản</span>
+                <span style={{ color: '#16a34a', fontWeight: 700 }}>● Đang hoạt động (Online)</span>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>Giới hạn AI Requests</span>
+                <strong style={{ color: '#0f172a' }}>{state.aiSettings?.dailyRequests || 100} requests / ngày</strong>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => setShowProfileModal(false)}
+                style={{ minHeight: '38px', padding: '0 24px' }}
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

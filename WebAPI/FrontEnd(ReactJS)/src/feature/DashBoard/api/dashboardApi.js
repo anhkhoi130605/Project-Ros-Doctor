@@ -8,7 +8,7 @@ export async function fetchAdminMembersApi() {
   return apiClient.get('/api/admin/members');
 }
 
-export async function fetchSystemLogsApi(queryParams = {}) {
+export async function fetchSystemLogsApi(queryParams = {}, options = {}) {
   const params = new URLSearchParams();
   if (queryParams.search?.trim()) params.append('search', queryParams.search.trim());
   if (queryParams.logLevel) params.append('logLevel', queryParams.logLevel);
@@ -17,7 +17,7 @@ export async function fetchSystemLogsApi(queryParams = {}) {
   if (queryParams.pageSize) params.append('pageSize', String(queryParams.pageSize));
 
   const endpoint = `/api/system-logs?${params.toString()}`;
-  return apiClient.get(endpoint);
+  return apiClient.get(endpoint, options);
 }
 
 export async function triggerTestErrorApi({ errorType, message }) {

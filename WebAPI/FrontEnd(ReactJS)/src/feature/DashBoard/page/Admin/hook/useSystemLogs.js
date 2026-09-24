@@ -37,8 +37,44 @@ export default function useSystemLogs(initialPageSize = 20) {
   }, [search, logLevel, exceptionType, pageIndex, pageSize]);
 
   useEffect(() => {
-    fetchLogs();
-  }, [fetchLogs]);
+    const controller = new AbortController();
+    const delay = search ? 350 : 0;
+
+    const timer = setTimeout(async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const data = await fetchSystemLogsApi(
+          {
+            search,
+            logLevel,
+            exceptionType,
+            pageIndex,
+            pageSize,
+          },
+          { signal: controller.signal }
+        );
+
+        if (!controller.signal.aborted) {
+          setLogs(data.items || []);
+          setTotalCount(data.totalCount || 0);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError' || controller.signal.aborted) return;
+        setError(err.message || 'Không thể tải danh sách nhật ký hệ thống');
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [search, logLevel, exceptionType, pageIndex, pageSize]);
 
   const triggerTestError = async (type, customMessage) => {
     try {
