@@ -25,6 +25,7 @@ namespace API.Controller.AuthController
 			var command = new ForgotPasswordCommand(request);
 			var response = await _mediator.Send(command);
 
+			if (!response.Success) return BadRequest(response);
 			return Ok(response);
 		}
 
@@ -36,6 +37,7 @@ namespace API.Controller.AuthController
 			var command = new ResetPasswordCommand(request);
 			var response = await _mediator.Send(command);
 
+			if (!response.Success) return BadRequest(response);
 			return Ok(response);
 		}
 	}

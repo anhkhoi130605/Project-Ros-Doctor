@@ -27,7 +27,7 @@ namespace Application.Features.Authentication.Password.Handler
 
 		public async Task<ForgotPasswordResponse> Handle(ForgotPasswordCommand request, CancellationToken cancellationToken)
 		{
-			var email = request.Dto.Email.Trim();
+			var email = request.Dto.Email.Trim().ToLowerInvariant();
 
 			if (string.IsNullOrWhiteSpace(email))
 			{
@@ -53,13 +53,11 @@ namespace Application.Features.Authentication.Password.Handler
 			// Sinh mã OTP và lưu vào Redis Cache (IDistributedCache)
 			string otpCode = await _otpService.GenerateAndSaveOtpAsync(email);
 
-			// Gửi Email HTML bằng SmtpEmailService
+			// Gửi Email HTML bằng SmtpEmailService ở tầng Infrastructure
 			try
 			{
 				string userName = user.FullName ?? user.Email;
-				string htmlBody = EmailTemplateBuilder.BuildOtpEmailHtml(userName, otpCode);
-
-				await _emailService.SendEmailAsync(user.Email, "Mã OTP khôi phục mật khẩu - Ctrl Shift N", htmlBody);
+				await _emailService.SendOtpEmailAsync(user.Email, userName, otpCode);
 			}
 			catch (Exception)
 			{

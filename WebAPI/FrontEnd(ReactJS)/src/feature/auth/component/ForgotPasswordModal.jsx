@@ -25,14 +25,25 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
     e.preventDefault();
     closeToast();
 
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
       showToast('error', 'Lỗi nhập liệu', 'Vui lòng nhập địa chỉ Email đăng ký.');
       return;
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      showToast('error', 'Lỗi nhập liệu', 'Định dạng Email không hợp lệ.');
+      return;
+    }
+
     try {
-      const res = await requestForgotPassword({ email: email.trim() });
-      showToast('success', 'Đã gửi mã OTP', res.message || 'Vui lòng kiểm tra hộp thư Hộp thư đến (Inbox) hoặc Thư rác (Spam).');
+      const res = await requestForgotPassword({ email: trimmedEmail });
+      if (res && res.success === false) {
+        showToast('error', 'Gửi OTP thất bại', res.message || 'Không thể gửi mã OTP.');
+        return;
+      }
+      showToast('success', 'Đã gửi mã OTP', res?.message || 'Vui lòng kiểm tra hộp thư Hộp thư đến (Inbox) hoặc Thư rác (Spam).');
       setStep(2);
     } catch (err) {
       showToast('error', 'Gửi OTP thất bại', err.message || 'Không thể gửi mã OTP. Vui lòng kiểm tra lại Email.');
@@ -63,7 +74,12 @@ export default function ForgotPasswordModal({ isOpen, onClose }) {
         newPassword,
       });
 
-      showToast('success', 'Thành công', res.message || 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.');
+      if (res && res.success === false) {
+        showToast('error', 'Đổi mật khẩu thất bại', res.message || 'Mã OTP không chính xác hoặc đã hết hạn.');
+        return;
+      }
+
+      showToast('success', 'Thành công', res?.message || 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.');
 
       setTimeout(() => {
         handleClose();
