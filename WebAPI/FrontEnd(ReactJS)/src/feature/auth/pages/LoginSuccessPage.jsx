@@ -95,49 +95,118 @@ export default function LoginSuccessPage() {
       notify('Đăng nhập bằng tài khoản Google thành công!', 'success');
 
       const timer = setTimeout(() => {
-        navigate('/dashboard', { replace: true });
+        if (normalizedRole === 'Admin') {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
       }, 500);
 
       return () => clearTimeout(timer);
     } catch (err) {
-      console.error('Error handling google login callback:', err);
+      console.error('Lỗi khi lưu token đăng nhập:', err);
       setStatus({
         isProcessing: false,
         isSuccess: false,
-        message: 'Đã xảy ra lỗi khi lưu thông tin đăng nhập.',
+        message: 'Lỗi trong quá trình xử lý dữ liệu token.',
       });
     }
   }, [searchParams, navigate, dispatch, notify]);
 
   return (
-    <div className="editorial-login">
-      <header>
-        <Link to="/" aria-label="CTRN SHIFT N, trang chủ">
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#f8fafc',
+        padding: '24px',
+      }}
+    >
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          border: '1px solid #e2e8f0',
+          padding: '36px',
+          maxWidth: '480px',
+          width: '100%',
+          textAlign: 'center',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.06)',
+        }}
+      >
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}>
           <Logo />
-        </Link>
-      </header>
-
-      <main className="editorial-login-grid" style={{ minHeight: '500px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-        <div className="card" style={{ maxWidth: '480px', width: '100%', textAlign: 'center', padding: '36px 28px' }}>
-          <span className="section-kicker">GOOGLE AUTHENTICATION</span>
-          <h2>{status.isSuccess ? 'Xác thực thành công!' : status.isProcessing ? 'Đang xử lý...' : 'Thông báo'}</h2>
-          <p style={{ margin: '16px 0 24px', fontSize: '13px', color: 'var(--muted)' }}>
-            {status.message}
-          </p>
-
-          {status.isSuccess && (
-            <Notice tone="green" icon="check" style={{ marginBottom: '20px' }}>
-              Phiên đăng nhập đã sẵn sàng. Bạn đang được chuyển vào hệ thống.
-            </Notice>
-          )}
-
-          {!status.isProcessing && !status.isSuccess && (
-            <Button to="/login" icon="arrow" style={{ marginTop: '16px' }}>
-              Quay lại đăng nhập
-            </Button>
-          )}
         </div>
-      </main>
+
+        {status.isProcessing ? (
+          <div>
+            <div
+              style={{
+                width: '40px',
+                height: '40px',
+                border: '3px solid #e2e8f0',
+                borderTopColor: '#0284c7',
+                borderRadius: '50%',
+                margin: '0 auto 16px',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+            <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '18px' }}>Đang xác thực tài khoản</h3>
+            <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>{status.message}</p>
+          </div>
+        ) : status.isSuccess ? (
+          <div>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                background: '#dcfce7',
+                color: '#16a34a',
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                margin: '0 auto 16px',
+                fontSize: '24px',
+                fontWeight: 700,
+              }}
+            >
+              ✓
+            </div>
+            <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '18px' }}>Đăng nhập thành công!</h3>
+            <p style={{ margin: '0 0 20px', color: '#64748b', fontSize: '13px' }}>{status.message}</p>
+            <Button to="/admin" variant="primary" style={{ background: '#0f172a', color: '#ffffff' }}>
+              Vào trang Quản trị
+            </Button>
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                width: '48px',
+                height: '48px',
+                background: '#fef2f2',
+                color: '#dc2626',
+                borderRadius: '50%',
+                display: 'grid',
+                placeItems: 'center',
+                margin: '0 auto 16px',
+                fontSize: '24px',
+                fontWeight: 700,
+              }}
+            >
+              ✕
+            </div>
+            <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '18px' }}>Đăng nhập thất bại</h3>
+            <p style={{ margin: '0 0 20px', color: '#dc2626', fontSize: '13px' }}>{status.message}</p>
+            <Button to="/login" variant="primary">
+              Quay lại trang Đăng nhập
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,372 +1,426 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card, Button, Badge, Icon } from '../../../components/common/UIComponents';
-
-function MiniDonutChart({ data, size = 150, thickness = 18, centerValue, centerLabel }) {
-  const total = data.reduce((sum, item) => sum + item.value, 0) || 1;
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  let accumulatedOffset = 0;
-
-  return (
-    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0, margin: '0 auto' }}>
-      <svg viewBox="0 0 100 100" width={size} height={size} style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
-        {data.map((item, idx) => {
-          const sliceAngle = (item.value / total) * circumference;
-          const strokeDasharray = `${sliceAngle} ${circumference - sliceAngle}`;
-          const strokeDashoffset = -accumulatedOffset;
-          accumulatedOffset += sliceAngle;
-
-          return (
-            <circle
-              key={idx}
-              cx="50"
-              cy="50"
-              r={radius}
-              fill="transparent"
-              stroke={item.color}
-              strokeWidth={thickness}
-              strokeDasharray={strokeDasharray}
-              strokeDashoffset={strokeDashoffset}
-              strokeLinecap="butt"
-              style={{
-                transition: 'all 0.3s ease-in-out',
-                cursor: 'pointer',
-                filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.06))',
-              }}
-            >
-              <title>{`${item.label}: ${item.value} (${Math.round((item.value / total) * 100)}%)`}</title>
-            </circle>
-          );
-        })}
-      </svg>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          pointerEvents: 'none',
-        }}
-      >
-        <strong style={{ fontSize: '22px', color: 'var(--text)', fontWeight: '750', lineHeight: 1 }}>
-          {centerValue}
-        </strong>
-        {centerLabel && (
-          <small style={{ fontSize: '9px', color: 'var(--muted)', marginTop: '3px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {centerLabel}
-          </small>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RosbagBarChart({ bags }) {
-  const [activeMetric, setActiveMetric] = useState('size');
-  const maxMb = Math.max(...bags.map((b) => b.sizeMb || 100), 500);
-  const maxTopics = Math.max(...bags.map((b) => b.topicCount || 10), 30);
-
-  return (
-    <div style={{ background: 'var(--panel)', padding: '20px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
-        <div>
-          <strong style={{ fontSize: '14px', color: 'var(--text)' }}>Biểu đồ cột so sánh bản ghi Rosbag</strong>
-          <small style={{ display: 'block', color: 'var(--muted)', fontSize: '11px', marginTop: '2px' }}>
-            Trực quan hóa chỉ số giữa các tập dữ liệu gần đây
-          </small>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={() => setActiveMetric('size')}
-            style={{
-              padding: '5px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              border: '1px solid var(--border)',
-              background: activeMetric === 'size' ? 'var(--cyan)' : 'var(--panel)',
-              color: activeMetric === 'size' ? '#fff' : 'var(--muted)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            📊 Dung lượng (MB)
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveMetric('topics')}
-            style={{
-              padding: '5px 12px',
-              fontSize: '11px',
-              fontWeight: 600,
-              borderRadius: '6px',
-              border: '1px solid var(--border)',
-              background: activeMetric === 'topics' ? 'var(--green)' : 'var(--panel)',
-              color: activeMetric === 'topics' ? '#fff' : 'var(--muted)',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}
-          >
-            📈 Số lượng Topics
-          </button>
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: '20px', height: '190px', paddingBottom: '32px', borderBottom: '1px solid var(--border)', position: 'relative' }}>
-        {/* Background Grid Lines */}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', pointerEvents: 'none', opacity: 0.2 }}>
-          <div style={{ borderTop: '1px dashed var(--muted)' }} />
-          <div style={{ borderTop: '1px dashed var(--muted)' }} />
-          <div style={{ borderTop: '1px dashed var(--muted)' }} />
-        </div>
-
-        {bags.map((bag) => {
-          const val = activeMetric === 'size' ? (bag.sizeMb || 120) : (bag.topicCount || 12);
-          const maxVal = activeMetric === 'size' ? maxMb : maxTopics;
-          const heightPercent = Math.max(14, Math.round((val / maxVal) * 100));
-          const color = activeMetric === 'size' ? '#176cdd' : '#128267';
-          const unit = activeMetric === 'size' ? 'MB' : 'topics';
-
-          return (
-            <div
-              key={bag.id || bag.name}
-              style={{
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                height: '100%',
-                justifyContent: 'flex-end',
-                position: 'relative',
-                zIndex: 1,
-              }}
-            >
-              <div style={{ fontSize: '11px', fontWeight: '700', color: color, marginBottom: '6px' }}>
-                {val} {unit}
-              </div>
-              <div
-                style={{
-                  width: '65%',
-                  maxWidth: '52px',
-                  height: `${heightPercent}%`,
-                  background: `linear-gradient(180deg, ${color} 0%, ${color}c0 100%)`,
-                  borderRadius: '6px 6px 0 0',
-                  boxShadow: '0 4px 14px rgba(0,0,0,0.08)',
-                  transition: 'height 0.4s ease-out, background 0.3s',
-                  cursor: 'pointer',
-                }}
-                title={`${bag.name}: ${val} ${unit}`}
-              />
-              <span
-                style={{
-                  position: 'absolute',
-                  bottom: '-24px',
-                  fontSize: '10px',
-                  color: 'var(--muted)',
-                  whiteSpace: 'nowrap',
-                  textOverflow: 'ellipsis',
-                  overflow: 'hidden',
-                  maxWidth: '90%',
-                  textAlign: 'center',
-                  fontWeight: 500,
-                }}
-              >
-                {bag.name.length > 16 ? bag.name.substring(0, 13) + '...' : bag.name}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+import robotHeroImg from '../../../assets/robot-hero.jpg';
 
 export default function DashboardOverviewPage() {
   const { state } = useApp();
 
-  const pendingFindings = (state.findings || []).filter((f) => f.review?.status === 'pending');
-  const highSeverityFindings = (state.findings || []).filter(
-    (f) => f.severity === 'high' && f.review?.status !== 'rejected'
-  );
-
-  const totalBags = (state.bags || []).length || 4;
-  const totalSessions = (state.sessions || []).length || 2;
-  const totalReports = (state.reports || []).length || 1;
-  const totalPending = pendingFindings.length || 5;
-
-  const statsData = [
-    { label: 'Tổng số Rosbag', value: totalBags, color: '#176cdd' },
-    { label: 'Phiên chẩn đoán', value: totalSessions, color: '#128267' },
-    { label: 'Báo cáo đã xuất', value: totalReports, color: '#ac650d' },
-    { label: 'Chờ kỹ sư duyệt', value: totalPending, color: '#c2435b' },
-  ];
-  const statsTotalSum = statsData.reduce((acc, d) => acc + d.value, 0);
-
-  const priorityData = [
-    { label: 'Kết luận chờ duyệt', value: totalPending, color: '#ac650d', sub: 'Kỹ sư robotics cần kiểm tra xác nhận' },
-    { label: 'Cảnh báo mức cao', value: highSeverityFindings.length || 3, color: '#c2435b', sub: 'Đối chiếu bằng chứng của phiên phân tích' },
-  ];
-  const priorityTotalSum = priorityData.reduce((acc, d) => acc + d.value, 0);
-
-  const recentBags = (state.bags && state.bags.length > 0) ? state.bags.slice(0, 5) : [
-    { id: '1', name: 'agv_lab_2026_09_22.mcap', sizeMb: 245, topicCount: 12, status: 'complete' },
-    { id: '2', name: 'warehouse_route_03.mcap', sizeMb: 380, topicCount: 18, status: 'complete' },
-    { id: '3', name: 'sensor_test_02.db3', sizeMb: 120, topicCount: 8, status: 'ready' },
-    { id: '4', name: 'agv_split_recording.zip', sizeMb: 510, topicCount: 24, status: 'invalid' },
-  ];
+  const pendingCount = (state.findings || []).filter((f) => f.review?.status === 'pending').length || 5;
+  const bagsCount = (state.bags || []).length || 4;
+  const sessionsCount = (state.sessions || []).length || 2;
+  const highWarningsCount = 5;
 
   return (
-    <div className="dashboard-overview">
+    <div className="dashboard-overview" style={{ display: 'grid', gap: '24px' }}>
+      {/* Page Header */}
       <PageHeader
-        eyebrow="TỔNG QUAN HỆ THỐNG"
-        title="Trung tâm chẩn đoán ROS2"
-        subtitle={`Xin chào ${state.profile?.name || 'Kỹ sư'}. Theo dõi dữ liệu, bằng chứng và các kết luận cần duyệt.`}
+        title="Trung tâm chẩn đoán"
+        subtitle={`Xin chào ${state.profile?.name?.split(' ')[0] || 'An'}. Theo dõi dữ liệu, bằng chứng và các kết luận cần duyệt.`}
       >
-        {state.role === 'engineer' && (
-          <Button to="/upload" icon="plus">
+        {state.role === 'Engineering' && (
+          <Button to="/upload" icon="plus" style={{ background: '#0f172a', color: '#ffffff', borderRadius: '8px' }}>
             Phân tích mới
           </Button>
         )}
       </PageHeader>
 
-      <section className="robot-hero" style={{ marginBottom: '24px' }}>
-        <span className="section-kicker">CTRL SHIFT N / AI ASSISTED</span>
-        <h2>
-          Chẩn đoán tự động<br />
-          <em>từ một bản ghi rosbag.</em>
-        </h2>
-        <p>Tự động đọc tín hiệu. Đối chiếu bằng chứng. Đề xuất nguyên nhân sự cố.</p>
-        <div className="button-row" style={{ marginTop: '16px' }}>
-          <Button to="/upload" icon="arrow">
-            Nạp & phân tích rosbag
-          </Button>
+      {/* Hero & Priority Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2.2fr) minmax(300px, 1fr)', gap: '20px' }}>
+        {/* Hero Banner Card */}
+        <div
+          style={{
+            position: 'relative',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '32px',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            minHeight: '260px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+          }}
+        >
+          {/* Background Robot Image on right */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '50%',
+              backgroundImage: `url(${robotHeroImg})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+              maskImage: 'linear-gradient(to right, transparent 0%, black 35%)',
+              WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 35%)',
+              pointerEvents: 'none',
+              opacity: 0.9,
+            }}
+          />
+
+          <div style={{ position: 'relative', zIndex: 2, maxWidth: '58%' }}>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.8px',
+                color: '#64748b',
+                textTransform: 'uppercase',
+                display: 'block',
+                marginBottom: '10px',
+              }}
+            >
+              CTRN SHIFT N / AI ASSISTED
+            </span>
+            <h2
+              style={{
+                fontSize: '32px',
+                fontWeight: 800,
+                color: '#0f172a',
+                lineHeight: 1.2,
+                margin: '0 0 12px 0',
+                letterSpacing: '-0.5px',
+              }}
+            >
+              Chẩn đoán bắt đầu<br />từ một rosbag.
+            </h2>
+            <p style={{ fontSize: '14px', color: '#475569', margin: '0 0 24px 0' }}>
+              Đọc tín hiệu. Đối chiếu bằng chứng.
+            </p>
+            <Button
+              to="/upload"
+              icon="upload"
+              style={{
+                background: '#0f172a',
+                color: '#ffffff',
+                padding: '12px 22px',
+                borderRadius: '10px',
+                fontWeight: 700,
+                fontSize: '13px',
+                border: 'none',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
+              }}
+            >
+              Nạp & phân tích rosbag
+            </Button>
+          </div>
         </div>
-      </section>
 
-      {/* Row of Donut/Pie Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-        <Card title="Biểu đồ ưu tiên xử lý" action={<Badge tone="cyan">{priorityTotalSum} mục chờ</Badge>}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '14px', flexWrap: 'wrap' }}>
-            <MiniDonutChart
-              data={priorityData}
-              size={150}
-              thickness={18}
-              centerValue={priorityTotalSum}
-              centerLabel="Mục chờ"
-            />
-            <div style={{ flex: 1, minWidth: '180px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {priorityData.map((item, idx) => (
-                <Link
-                  key={idx}
-                  to="/reviews"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '10px 12px',
-                    background: 'var(--panel)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    textDecoration: 'none',
-                    transition: 'border-color 0.2s',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: item.color, flexShrink: 0 }} />
-                    <div>
-                      <strong style={{ fontSize: '12px', color: 'var(--text)', display: 'block' }}>
-                        {item.value} {item.label}
-                      </strong>
-                      <small style={{ fontSize: '10px', color: 'var(--muted)', display: 'block' }}>{item.sub}</small>
-                    </div>
-                  </div>
-                  <Icon name="arrow" size={14} />
-                </Link>
-              ))}
-            </div>
+        {/* Priority Today Card */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <strong style={{ fontSize: '16px', color: '#0f172a', fontWeight: 700 }}>Ưu tiên hôm nay</strong>
+            <span
+              style={{
+                background: '#e0f2fe',
+                color: '#0369a1',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '12px',
+              }}
+            >
+              ● 3 mục
+            </span>
           </div>
-        </Card>
 
-        <Card title="Biểu đồ thống kê hệ thống" action={<Badge tone="blue">ROS2 Agent v2.4</Badge>}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: '14px', flexWrap: 'wrap' }}>
-            <MiniDonutChart
-              data={statsData}
-              size={150}
-              thickness={18}
-              centerValue={statsTotalSum}
-              centerLabel="Tổng cộng"
-            />
-            <div style={{ flex: 1, minWidth: '180px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              {statsData.map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '10px 12px',
-                    background: 'var(--panel)',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }} />
-                    <span style={{ fontSize: '11px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>{item.label}</span>
-                  </div>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: item.color }}>
-                    {item.value}
-                    <small style={{ fontSize: '10px', color: 'var(--muted)', marginLeft: '4px', fontWeight: '400' }}>
-                      ({Math.round((item.value / statsTotalSum) * 100)}%)
-                    </small>
-                  </div>
+          <div style={{ display: 'grid', gap: '14px' }}>
+            <Link
+              to="/reviews"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: '#fafbfd',
+                border: '1px solid #f1f5f9',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#f1f5f9')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#d97706' }} />
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>5 kết luận chờ duyệt</strong>
+                  <small style={{ fontSize: '11px', color: '#64748b' }}>Cần người duyệt kiểm tra</small>
                 </div>
-              ))}
-            </div>
+              </div>
+              <Icon name="chevron" size={16} style={{ color: '#94a3b8' }} />
+            </Link>
+
+            <Link
+              to="/reviews"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: '#fafbfd',
+                border: '1px solid #f1f5f9',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#f1f5f9')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#dc2626' }} />
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>3 cảnh báo mức cao</strong>
+                  <small style={{ fontSize: '11px', color: '#64748b' }}>Đối chiếu bằng chứng của phiên</small>
+                </div>
+              </div>
+              <Icon name="chevron" size={16} style={{ color: '#94a3b8' }} />
+            </Link>
+
+            <Link
+              to="/bags"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                background: '#fafbfd',
+                border: '1px solid #f1f5f9',
+                textDecoration: 'none',
+                transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#cbd5e1')}
+              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#f1f5f9')}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#2563eb' }} />
+                <div>
+                  <strong style={{ fontSize: '13px', color: '#0f172a', display: 'block' }}>1 bag chưa đủ dữ liệu</strong>
+                  <small style={{ fontSize: '11px', color: '#64748b' }}>Kiểm tra các phần đã ghi</small>
+                </div>
+              </div>
+              <Icon name="chevron" size={16} style={{ color: '#94a3b8' }} />
+            </Link>
           </div>
-        </Card>
+        </div>
       </div>
 
-      {/* Recent Section with Bar Chart & Streamlined Table */}
-      <Card title="Gần đây" subtitle="Biểu đồ cột & Danh sách bản ghi rosbag vừa được nạp vào không gian làm việc.">
-        <RosbagBarChart bags={recentBags} />
+      {/* 4 Stat Cards Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: '16px' }}>
+        {/* Card 1 */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '14px',
+            padding: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '8px' }}>Phiên phân tích</span>
+            <strong style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{sessionsCount}</strong>
+            <small style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '8px' }}>Trong không gian làm việc</small>
+          </div>
+          <div style={{ background: '#f0f9ff', color: '#0284c7', padding: '10px', borderRadius: '10px' }}>
+            <Icon name="activity" size={20} />
+          </div>
+        </div>
 
-        <div className="table-scroll" tabIndex={0} role="region" aria-label="Rosbag gần đây">
-          <table>
+        {/* Card 2 */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '14px',
+            padding: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '8px' }}>Rosbag đã nạp</span>
+            <strong style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{bagsCount}</strong>
+            <small style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginTop: '8px' }}>Dữ liệu mẫu và tệp đã chọn</small>
+          </div>
+          <div style={{ background: '#f0f9ff', color: '#0284c7', padding: '10px', borderRadius: '10px' }}>
+            <Icon name="database" size={20} />
+          </div>
+        </div>
+
+        {/* Card 3 */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '14px',
+            padding: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '8px' }}>Sự cố cần kiểm tra</span>
+            <strong style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{highWarningsCount}</strong>
+            <small style={{ fontSize: '11px', color: '#dc2626', display: 'block', marginTop: '8px' }}>3 mức cao trong dữ liệu mẫu</small>
+          </div>
+          <div style={{ background: '#fef2f2', color: '#dc2626', padding: '10px', borderRadius: '10px' }}>
+            <Icon name="alert" size={20} />
+          </div>
+        </div>
+
+        {/* Card 4 */}
+        <div
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '14px',
+            padding: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}
+        >
+          <div>
+            <span style={{ fontSize: '12px', color: '#64748b', display: 'block', marginBottom: '8px' }}>Kết luận chờ duyệt</span>
+            <strong style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>{pendingCount}</strong>
+            <small style={{ fontSize: '11px', color: '#d97706', display: 'block', marginTop: '8px' }}>Kỹ sư kiểm tra trước khi xuất</small>
+          </div>
+          <div style={{ background: '#fffbeb', color: '#d97706', padding: '10px', borderRadius: '10px' }}>
+            <Icon name="file-text" size={20} />
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Analysis Sessions Table */}
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e2e8f0',
+          borderRadius: '16px',
+          padding: '24px',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>Phiên phân tích gần đây</h3>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+              Toàn bộ kết quả chẩn đoán trong bản này là dữ liệu mô phỏng.
+            </p>
+          </div>
+          <Link
+            to="/analysis"
+            style={{
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#2563eb',
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            Xem tất cả <Icon name="arrow" size={14} />
+          </Link>
+        </div>
+
+        <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr>
-                <th>Tên file</th>
-                <th>Kích thước</th>
-                <th>Số topic</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>PHIÊN / ROSBAG</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>THỜI ĐIỂM</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>TOPIC</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>CẢNH BÁO</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>TRẠNG THÁI</th>
               </tr>
             </thead>
             <tbody>
-              {recentBags.map((bag) => (
-                <tr key={bag.id}>
-                  <td>
-                    <strong>{bag.name}</strong>
-                  </td>
-                  <td>{bag.sizeMb} MB</td>
-                  <td>{bag.topicCount || 12} topics</td>
-                  <td>
-                    <Badge status={bag.status || 'complete'} />
-                  </td>
-                  <td>
-                    <Button to={`/bags/${bag.id}`} variant="ghost" icon="arrow">
-                      Chi tiết
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '16px' }}>
+                  <Link to="/sessions/024" style={{ textDecoration: 'none' }}>
+                    <strong style={{ fontSize: '14px', color: '#0f172a', display: 'block' }}>AGV-Lab - phiên # 024</strong>
+                    <small style={{ fontSize: '12px', color: '#64748b' }}>agv_lab_2026.09_22.mcap</small>
+                  </Link>
+                </td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>09:24 22/09/2026</td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>12</td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#dc2626', fontWeight: 700 }}>5</td>
+                <td style={{ padding: '16px' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#fffbeb',
+                      color: '#d97706',
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    ● Chờ duyệt
+                  </span>
+                </td>
+              </tr>
+
+              <tr>
+                <td style={{ padding: '16px' }}>
+                  <Link to="/sessions/023" style={{ textDecoration: 'none' }}>
+                    <strong style={{ fontSize: '14px', color: '#0f172a', display: 'block' }}>Warehouse - phiên # 023</strong>
+                    <small style={{ fontSize: '12px', color: '#64748b' }}>warehouse_route_03.mcap</small>
+                  </Link>
+                </td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>08:42 22/09/2026</td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>18</td>
+                <td style={{ padding: '16px', fontSize: '13px', color: '#16a34a', fontWeight: 700 }}>0</td>
+                <td style={{ padding: '16px' }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#f0fdf4',
+                      color: '#16a34a',
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    ● Hoàn tất
+                  </span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
-
