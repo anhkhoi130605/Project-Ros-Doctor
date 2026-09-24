@@ -22,7 +22,7 @@ public partial class User : BaseEntity
 
 	public UserStatusEnum? Status { get; set; }
 
-	public bool? IsBanned { get; set; }
+	public bool? IsBanned { get; set; } = false;
 	public string? Bio { get; set; }
 
 	public DateTime? ReactivateAt { get; set; }

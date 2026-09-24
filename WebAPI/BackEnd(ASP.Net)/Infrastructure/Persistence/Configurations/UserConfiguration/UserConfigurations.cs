@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -54,6 +54,9 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 				.WithMany()
 				.HasForeignKey(x => x.UserId)
 				.OnDelete(DeleteBehavior.SetNull);
+
+			builder.HasIndex(x => x.CreatedAt);
+			builder.HasIndex(x => new { x.UserId, x.CreatedAt });
 		}
 	}
 }

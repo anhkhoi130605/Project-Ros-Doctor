@@ -78,7 +78,9 @@ namespace Application.Features.Authentication.Login.Handler
                 targetType: TargetType.User,
                 description: "User logged in successfully via Google",
                 requestPath: "/api/auth/google-login-response",
-                httpMethod: "GET");
+                httpMethod: "GET",
+                userName: user.FullName ?? user.Email,
+                email: user.Email);
 
             return new LoginResponseDTO
             {

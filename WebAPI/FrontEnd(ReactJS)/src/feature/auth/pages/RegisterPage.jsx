@@ -7,7 +7,16 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 
 export default function RegisterPage() {
 	const navigate = useNavigate();
-	const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' });
+	const [form, setForm] = useState({
+		fullName: '',
+		email: '',
+		phone: '',
+		gender: 'Male',
+		dateOfBirth: '',
+		bio: '',
+		password: '',
+		confirmPassword: ''
+	});
 	const [status, setStatus] = useState({ type: '', message: '' });
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -19,7 +28,7 @@ export default function RegisterPage() {
 		event.preventDefault();
 		setStatus({ type: '', message: '' });
 		if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
-			setStatus({ type: 'error', message: 'Vui lòng điền đầy đủ thông tin.' });
+			setStatus({ type: 'error', message: 'Vui lòng điền đầy đủ các thông tin bắt buộc (*).' });
 			return;
 		}
 		if (form.password !== form.confirmPassword) {
@@ -29,10 +38,21 @@ export default function RegisterPage() {
 
 		setIsSubmitting(true);
 		try {
+			const payload = {
+				fullName: form.fullName.trim(),
+				email: form.email.trim(),
+				phone: form.phone ? form.phone.trim() : null,
+				gender: form.gender || null,
+				dateOfBirth: form.dateOfBirth ? form.dateOfBirth : null,
+				bio: form.bio ? form.bio.trim() : null,
+				password: form.password,
+				confirmPassword: form.confirmPassword
+			};
+
 			const response = await fetch(`${API_URL}/api/auth/register`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(form),
+				body: JSON.stringify(payload),
 			});
 			const data = await response.json().catch(() => ({}));
 
@@ -67,10 +87,49 @@ export default function RegisterPage() {
 
 					<form onSubmit={handleSubmit} noValidate>
 						<div className="form-grid">
-							<div className="field full-width"><label htmlFor="register-name">Họ và tên</label><input id="register-name" name="fullName" autoComplete="name" placeholder="Nguyễn Văn A" value={form.fullName} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-email">Email</label><input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-password">Mật khẩu</label><input id="register-password" name="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 6 ký tự" value={form.password} onChange={handleChange} /></div>
-							<div className="field"><label htmlFor="register-confirm-password">Nhập lại mật khẩu</label><input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" value={form.confirmPassword} onChange={handleChange} /></div>
+							<div className="field full-width">
+								<label htmlFor="register-name">Họ và tên *</label>
+								<input id="register-name" name="fullName" autoComplete="name" placeholder="Nguyễn Văn A" value={form.fullName} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-email">Email *</label>
+								<input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-phone">Số điện thoại</label>
+								<input id="register-phone" name="phone" type="tel" autoComplete="tel" placeholder="0912 345 678" value={form.phone} onChange={handleChange} />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-gender">Giới tính</label>
+								<select id="register-gender" name="gender" value={form.gender} onChange={handleChange}>
+									<option value="Male">Nam</option>
+									<option value="Female">Nữ</option>
+									<option value="Other">Khác</option>
+								</select>
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-dob">Ngày sinh</label>
+								<input id="register-dob" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} />
+							</div>
+
+							<div className="field full-width">
+								<label htmlFor="register-bio">Giới thiệu ngắn (Bio)</label>
+								<input id="register-bio" name="bio" placeholder="Sở thích, chuyên ngành hoặc đôi nét về bạn..." value={form.bio} onChange={handleChange} />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-password">Mật khẩu *</label>
+								<input id="register-password" name="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 6 ký tự" value={form.password} onChange={handleChange} required />
+							</div>
+
+							<div className="field">
+								<label htmlFor="register-confirm-password">Nhập lại mật khẩu *</label>
+								<input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" value={form.confirmPassword} onChange={handleChange} required />
+							</div>
 						</div>
 
 						{status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}

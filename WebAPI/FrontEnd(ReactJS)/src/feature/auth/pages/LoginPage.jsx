@@ -52,6 +52,7 @@ export default function LoginPage() {
 
 			if (token) localStorage.setItem('accessToken', token);
 			if (role) localStorage.setItem('userRole', role);
+			if (user) localStorage.setItem('currentUser', JSON.stringify(user));
 
 			setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
 
@@ -66,7 +67,7 @@ export default function LoginPage() {
 					return;
 				}
 				navigate('/dashboard');
-			}, 500);
+			}, 50);
 		} catch (error) {
 			setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
 		} finally {

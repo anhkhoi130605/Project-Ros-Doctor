@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import UserAvatarDropdown from '../components/UserAvatarDropdown';
 import './dashboard.css';
 
 const defaultNav = [
@@ -74,7 +75,10 @@ export default function DashboardPage({
             {subtitle && <p className="dashboard-subtitle">{subtitle}</p>}
           </div>
 
-          {actions ? <div className="dashboard-actions">{actions}</div> : <button type="button" className="dashboard-ghost-button">Log out</button>}
+          <div className="dashboard-topbar-right">
+            {actions && <div className="dashboard-actions">{actions}</div>}
+            <UserAvatarDropdown />
+          </div>
         </header>
 
         <div className="dashboard-content dashboard-content-animated">{children}</div>
