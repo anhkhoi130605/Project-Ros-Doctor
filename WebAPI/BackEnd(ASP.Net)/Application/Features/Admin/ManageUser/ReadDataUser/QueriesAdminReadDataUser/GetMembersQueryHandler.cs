@@ -29,8 +29,11 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 			var roles = await _unitOfWork.Roles.GetAllAsync();
 			var roleMap = roles.ToDictionary(r => r.Id, r => r.RoleName?.ToString() ?? "User");
 
-			// 3. Lấy nhật ký hoạt động gần nhất để ước lượng trạng thái Online/Offline
-			var recentLogs = await _unitOfWork.UserActivityLogs.GetAllAsync();
+			// 3. Lấy nhật ký hoạt động trong 2 giờ gần nhất để ước lượng trạng thái Online/Offline
+			var threshold = DateTimeHelper.GetVietnamTime().AddHours(-2);
+			var recentLogs = await _unitOfWork.UserActivityLogs.GetAllAsync(
+				filter: l => l.CreatedAt >= threshold
+			);
 			var latestLogByUser = recentLogs
 				.Where(l => !string.IsNullOrEmpty(l.UserId))
 				.GroupBy(l => l.UserId!)

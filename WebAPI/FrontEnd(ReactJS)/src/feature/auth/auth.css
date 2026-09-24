@@ -23,8 +23,8 @@ button, input { font: inherit; }
 .form-intro { color: var(--muted); margin: 0 0 32px; line-height: 1.6; }
 form { display: grid; gap: 10px; }
 label { display: block; font-size: 12px; font-weight: 700; margin: 11px 0 7px; }
-input { width: 100%; border: 1px solid var(--line); border-radius: 2px; background: rgba(255,255,255,.65); padding: 14px 15px; outline: none; color: var(--ink); transition: border-color .2s, box-shadow .2s; }
-input:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(28,92,67,.1); }
+input, select, textarea { width: 100%; border: 1px solid var(--line); border-radius: 2px; background: rgba(255,255,255,.65); padding: 14px 15px; outline: none; color: var(--ink); font-family: inherit; font-size: 14px; transition: border-color .2s, box-shadow .2s; box-sizing: border-box; }
+input:focus, select:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(28,92,67,.1); }
 .label-row { display: flex; justify-content: space-between; align-items: center; margin-top: 11px; }
 .label-row label { margin: 0; }
 .text-button { border: 0; background: none; color: var(--green); padding: 0; cursor: pointer; font-size: 12px; font-weight: 600; }

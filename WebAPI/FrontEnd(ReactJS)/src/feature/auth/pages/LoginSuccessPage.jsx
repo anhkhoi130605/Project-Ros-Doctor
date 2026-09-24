@@ -76,6 +76,14 @@ export default function LoginSuccessPage() {
 				localStorage.setItem('userEmail', email);
 			}
 
+			const currentUser = {
+				id: payload?.['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || payload?.sub || '',
+				email: email,
+				fullName: payload?.name || (email ? email.split('@')[0] : 'User'),
+				role: role
+			};
+			localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
 			setStatus({
 				isProcessing: false,
 				isSuccess: true,

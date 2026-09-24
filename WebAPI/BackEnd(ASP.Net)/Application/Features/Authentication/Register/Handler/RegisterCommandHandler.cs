@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using MediatR;
 using DomainUser = Domain.Entities.AboutUser.User;
 using DomainRole = Domain.Entities.AboutUser.Role;
@@ -65,6 +65,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
             PasswordHash = securedPassword, // store raw for now (replace with hash in production)
 			RoleId = roleEntity.Id,
 			Role = roleEntity,
+			Phone = dto.Phone,
+			Gender = dto.Gender,
+			DateOfBirth = dto.DateOfBirth,
+			Bio = dto.Bio,
+			Status = UserStatusEnum.Active,
+			IsBanned = false,
 		};
 
 		await _unitOfWork.User.CreateAsync(newUser);
@@ -77,7 +83,9 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 			targetType: TargetType.User,
 			description: "User registered a new account",
 			requestPath: "/api/auth/register",
-			httpMethod: "POST");
+			httpMethod: "POST",
+			userName: newUser.FullName ?? newUser.Email,
+			email: newUser.Email);
 
 		// 4. Sinh Token JWT lập tức để người dùng đăng ký xong là tự động vào app luôn
 		var roleName = roleEntity.RoleName?.ToString() ?? RoleEnum.User.ToString();

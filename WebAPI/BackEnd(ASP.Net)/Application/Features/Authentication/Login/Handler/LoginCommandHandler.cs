@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -55,7 +55,9 @@ namespace Application.Features.Authentication.Login.Handler
 				targetType: TargetType.User,
 				description: "User logged in successfully",
 				requestPath: "/api/auth/login",
-				httpMethod: "POST");
+				httpMethod: "POST",
+				userName: user.FullName ?? user.Email,
+				email: user.Email);
 
 			// Bước D: Đóng gói toàn bộ kết quả trả về đúng định dạng cấu trúc LoginResponseDTO của bạn
 			return new LoginResponseDTO
@@ -64,13 +66,11 @@ namespace Application.Features.Authentication.Login.Handler
 				RefreshToken = refreshToken,
 				User = new LoggedinUserDTO
 				{
-					// Đoạn này map dữ liệu từ Entity User của bạn sang DTO
-					// Ví dụ: 
-					// Id = user.Id,
-					// Email = user.Email
 					Id = user.Id,
 					Email = user.Email,
-                    Role = user.Role?.RoleName.ToString() ?? string.Empty
+					FullName = user.FullName ?? string.Empty,
+					AvatarUrl = user.AvatarUrl,
+					Role = user.Role?.RoleName.ToString() ?? string.Empty
 				}
 			};
 		}

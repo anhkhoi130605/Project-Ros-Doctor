@@ -7,7 +7,11 @@ using ResUpClub.Infrastructure.ConfigModel;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddMediatR(config =>
     config.RegisterServicesFromAssembly(typeof(LoginCommandHandler).Assembly));
 builder.Services.AddCors(options =>
