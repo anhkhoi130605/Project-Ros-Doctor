@@ -1,0 +1,62 @@
+{
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information",
+            "Microsoft.AspNetCore": "Warning"
+        }
+    },
+    "AllowedHosts": "*",
+    "AppSettings": {
+        "BaseUrl": "https://localhost:7149/"
+    },
+    "Frontend": {
+        "BaseUrl": "https://localhost:5173"
+    },
+    "ConnectionStrings": {
+        "DefaultConnection": "Server=gateway01.ap-southeast-1.prod.aws.tidbcloud.com;Port=4000;Database=Ctrl_Shift_N;User=39sy8XxRuGtz58Y.root;Password=geMR2GY083v88Rcv;SslMode=Required;AllowPublicKeyRetrieval=True;Pooling=true;MinimumPoolSize=5;MaximumPoolSize=50;ConnectionReset=true;Keepalive=30;ConnectionTimeout=15;"
+
+    },
+    "Jwt": {
+        "Issuer": "http://localhost:7000/",
+        "Audience": "http://localhost:7000/",
+        "ExpiresMinutes": 60,
+        "Key": "p8sDb7aQz3vR9yW1xN4fE0gH5jK2mL6u"
+    },
+    "Authentication": {
+        "Google": {
+            "ClientId": "331566658400-20im149ktb9h27176j26cb0hls70lr5g.apps.googleusercontent.com",
+            "ClientSecret": "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"
+        }
+    },
+    "Cloudinary": {
+        "CloudName": "dzotdcsm3",
+        "ApiKey": "848118892774423",
+        "ApiSecret": "oZcEXYnJwGaTD2fNVvNBbxZ9D0c"
+    },
+    "Storage": {
+        "BaseFolder": "aems",
+        "ImagesFolder": "images",
+        "VideosFolder": "videos",
+        "AudioFolder": "audio",
+        "DocumentsFolder": "documents",
+        "TextsFolder": "texts",
+        "ArchivesFolder": "archives",
+        "FilesFolder": "files",
+        "Avatars": "avatars",
+        "Certificates": "certificates",
+        "Materials": "materials",
+        "IdentityDocuments": "identity"
+    },
+    "EmailSettings": {
+        "SmtpServer": "smtp.gmail.com",
+        "Port": 587,
+        "SenderName": "Ctrl SHift N System",
+        "SenderEmail": "kpham6488@gmail.com",
+        "Password": "wmbr yres evvd hrri"
+    },
+    "Redis": {
+        "Configuration": "beloved-dove-281715.upstash.io:6379,password=gQAAAAAABExzAAIgcDE0YzJlYjlkOWI5NTc0NGM3YTdkMTBjMWI5YmYyODc5MQ,ssl=True,abortConnect=False",
+        "ConnectionString": "beloved-dove-281715.upstash.io:6379,password=gQAAAAAABExzAAIgcDE0YzJlYjlkOWI5NTc0NGM3YTdkMTBjMWI5YmYyODc5MQ,ssl=True,abortConnect=False",
+        "InstanceName": "CtrlShiftN: "
+    }
+}
