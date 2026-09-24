@@ -13,37 +13,41 @@ export function useAuth() {
 
     if (!email || !password) {
       setStatus({ type: 'error', message: 'Vui lòng nhập email và mật khẩu.' });
-      return false;
+      return null;
     }
 
     setIsSubmitting(true);
     try {
       const data = await loginApi({ email, password });
-      const token = data.accessToken || data.token;
-      const user = data.user || {};
-      const role = parseUserRole(data, user);
+      const token = data?.accessToken || data?.token;
+      const user = data?.user || {};
+      const rawRole = parseUserRole(data, user) || '';
+
+      const normalizedRole = rawRole.toLowerCase().includes('admin')
+        ? 'admin'
+        : rawRole.toLowerCase().includes('viewer')
+        ? 'viewer'
+        : rawRole.toLowerCase().includes('user')
+        ? 'viewer'
+        : 'engineer';
 
       if (token) localStorage.setItem('accessToken', token);
-      if (role) localStorage.setItem('userRole', role);
+      localStorage.setItem('userRole', normalizedRole);
       if (user) localStorage.setItem('currentUser', JSON.stringify(user));
 
       setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
 
-      setTimeout(() => {
-        const normalizedRole = role.toLowerCase();
-        if (normalizedRole.includes('admin')) {
-          navigate('/admin-dashboard');
-        } else if (normalizedRole.includes('user')) {
-          navigate('/user-dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      }, 50);
-
-      return true;
+      return {
+        success: true,
+        token,
+        user,
+        role: normalizedRole,
+        rawRole,
+        data,
+      };
     } catch (error) {
       setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
-      return false;
+      return null;
     } finally {
       setIsSubmitting(false);
     }

@@ -21,6 +21,7 @@ import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
 import ChatPage from '../feature/chat/pages/ChatPage';
 import AdminOverviewPage from '../feature/admin/pages/AdminOverviewPage';
 import SettingsPage from '../feature/admin/pages/SettingsPage';
+import AiConfigPage from '../feature/admin/pages/AiConfigPage';
 
 function ProtectedRoute({ children }) {
   const { state } = useApp();
@@ -56,9 +57,16 @@ export default function AppRouter() {
         <Route path="/reports/:id" element={<ReportsListPage />} />
         <Route path="/reviews" element={<ReviewsListPage />} />
         <Route path="/chat" element={<ChatPage />} />
-        <Route path="/admin" element={<AdminOverviewPage />} />
-        <Route path="/admin/users" element={<AdminOverviewPage />} />
+        <Route path="/admin" element={<Navigate to="/admin/members" replace />} />
+        <Route path="/admin/overview" element={<Navigate to="/admin/members" replace />} />
+        <Route path="/admin/ai-config" element={<AiConfigPage />} />
+        <Route path="/admin/:tab" element={<AdminOverviewPage />} />
+        <Route path="/admin/user-activity/:id" element={<AdminOverviewPage />} />
+        <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />
+        <Route path="/admin-dashboard/*" element={<Navigate to="/admin" replace />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/ai-config" element={<AiConfigPage />} />
+        <Route path="/settings/:tab" element={<AdminOverviewPage />} />
         <Route path="/usage" element={<SettingsPage />} />
       </Route>
 

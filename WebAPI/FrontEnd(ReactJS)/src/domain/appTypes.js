@@ -1,13 +1,16 @@
 export const ROLES = {
-  ADMIN: 'admin',
-  ENGINEER: 'engineer',
-  VIEWER: 'viewer',
+  ADMIN: 'Admin',
+  ENGINEERING: 'Engineering',
+  USER: 'User',
 };
 
 export const ROLE_NAMES = {
+  Admin: 'Quản trị viên (Admin)',
+  Engineering: 'Kỹ sư Robotics (Engineer)',
+  User: 'Người dùng (User)',
   admin: 'Quản trị viên (Admin)',
-  engineer: 'Kỹ sư Robotics (Engineer)',
-  viewer: 'Người quan sát (Viewer)',
+  engineering: 'Kỹ sư Robotics (Engineer)',
+  user: 'Người dùng (User)',
 };
 
 export const DEFAULT_SETTINGS = {

@@ -53,7 +53,7 @@ function getInitialState() {
   return {
     schema: 2,
     signedIn: false,
-    role: ROLES.ENGINEER,
+    role: ROLES.ENGINEERING,
     profile: {
       name: 'An Nguyễn',
       email: 'engineer@ros2doctor.local',
@@ -162,7 +162,7 @@ function getInitialState() {
         id: 'u1',
         name: 'Admin RAV-13',
         email: 'admin@ros2doctor.local',
-        role: 'admin',
+        role: 'Admin',
         project: 'Robotics Lab',
         active: true,
       },
@@ -170,15 +170,15 @@ function getInitialState() {
         id: 'u2',
         name: 'An Nguyễn',
         email: 'engineer@ros2doctor.local',
-        role: 'engineer',
+        role: 'Engineering',
         project: 'Robotics Lab',
         active: true,
       },
       {
         id: 'u3',
-        name: 'Khách quan sát',
-        email: 'viewer@ros2doctor.local',
-        role: 'viewer',
+        name: 'Người dùng',
+        email: 'user@ros2doctor.local',
+        role: 'User',
         project: 'Robotics Lab',
         active: true,
       },
@@ -199,18 +199,34 @@ function getInitialState() {
 
 function loadSavedState(savedJson) {
   const initial = getInitialState();
+  const savedRole = localStorage.getItem('userRole');
+  const token = localStorage.getItem('accessToken');
   try {
     const parsed = JSON.parse(savedJson);
-    if (!parsed) return initial;
+    const stateObj = parsed
+      ? {
+          ...initial,
+          ...parsed,
+          settings: { ...initial.settings, ...parsed.settings },
+          profile: { ...initial.profile, ...parsed.profile },
+          signedIn: !!parsed.signedIn || !!token,
+        }
+      : {
+          ...initial,
+          signedIn: !!token,
+        };
 
-    return {
-      ...initial,
-      ...parsed,
-      settings: { ...initial.settings, ...parsed.settings },
-      profile: { ...initial.profile, ...parsed.profile },
-      signedIn: !!parsed.signedIn,
-    };
+    if (savedRole) {
+      const norm = savedRole.toLowerCase();
+      stateObj.role = norm.includes('admin') ? 'Admin' : norm.includes('user') ? 'User' : 'Engineering';
+    }
+    return stateObj;
   } catch {
+    if (savedRole) {
+      const norm = savedRole.toLowerCase();
+      initial.role = norm.includes('admin') ? 'Admin' : norm.includes('user') ? 'User' : 'Engineering';
+    }
+    initial.signedIn = !!token;
     return initial;
   }
 }
