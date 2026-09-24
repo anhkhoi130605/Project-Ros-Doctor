@@ -12,13 +12,16 @@ import RegisterPage from '../feature/auth/pages/RegisterPage';
 import LoginSuccessPage from '../feature/auth/pages/LoginSuccessPage';
 
 // Feature Pages
-import DashboardOverviewPage from '../feature/dashboard/pages/DashboardOverviewPage';
+import DashboardOverviewPage from '../feature/DashBoard/pages/DashboardOverviewPage';
 import BagsListPage from '../feature/bags/pages/BagsListPage';
 import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
+import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
 import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
 import ChatPage from '../feature/chat/pages/ChatPage';
+import BenchmarkPage from '../feature/benchmark/pages/BenchmarkPage';
+import CostPerformancePage from '../feature/admin/pages/CostPerformancePage';
 import AdminOverviewPage from '../feature/admin/pages/AdminOverviewPage';
 import SettingsPage from '../feature/admin/pages/SettingsPage';
 import AiConfigPage from '../feature/admin/pages/AiConfigPage';
@@ -51,12 +54,15 @@ export default function AppRouter() {
         <Route path="/dashboard" element={<DashboardOverviewPage />} />
         <Route path="/bags" element={<BagsListPage />} />
         <Route path="/bags/:bagId" element={<BagsListPage />} />
+        <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/reports" element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportsListPage />} />
         <Route path="/reviews" element={<ReviewsListPage />} />
         <Route path="/chat" element={<ChatPage />} />
+        <Route path="/benchmark" element={<BenchmarkPage />} />
+        <Route path="/usage" element={<CostPerformancePage />} />
         <Route path="/admin" element={<Navigate to="/admin/members" replace />} />
         <Route path="/admin/overview" element={<Navigate to="/admin/members" replace />} />
         <Route path="/admin/ai-config" element={<AiConfigPage />} />
@@ -67,7 +73,6 @@ export default function AppRouter() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/settings/ai-config" element={<AiConfigPage />} />
         <Route path="/settings/:tab" element={<AdminOverviewPage />} />
-        <Route path="/usage" element={<SettingsPage />} />
       </Route>
 
       {/* Fallback Catch-All */}
