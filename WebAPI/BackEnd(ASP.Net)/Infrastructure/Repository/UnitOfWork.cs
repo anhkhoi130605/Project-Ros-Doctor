@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Domain.Entities.Config;
 using Domain.Entities.AboutUser;
+using Domain.Entities.System;
 using Infrastructure.Persistence;
 using Application.Interfaces.ManageTrancsaction;
 
@@ -48,6 +49,7 @@ namespace Infrastructure.Repository
 		public IGenericRepository<Role> Roles { get; }
 		public IGenericRepository<Notification> Notifications { get; }
 		public IGenericRepository<UserActivityLog> UserActivityLogs { get; }
+		public IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
 
 		public UnitOfWork(AppDbContext ctx, IUserRepository userRepository)
 		{
@@ -58,6 +60,7 @@ namespace Infrastructure.Repository
 			Roles = new GenericRepository<Role>(_ctx);
 			Notifications = new GenericRepository<Notification>(_ctx);
 			UserActivityLogs = new GenericRepository<UserActivityLog>(_ctx);
+			SystemErrorLogs = new GenericRepository<SystemErrorLog>(_ctx);
 		}
 
 		public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

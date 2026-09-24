@@ -1,6 +1,7 @@
-﻿// API/Middlewares/GlobalExceptionMiddleware.cs
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json;
+using Application.Interfaces.Logging;
 
 namespace API.Middlewares;
 
@@ -15,61 +16,85 @@ public class GlobalExceptionMiddleware
 		_logger = logger;
 	}
 
-	public async Task InvokeAsync(HttpContext context)
+	public async Task InvokeAsync(HttpContext context, ISystemErrorLogService errorLogService)
 	{
 		try
 		{
-			// Cho request đi tiếp sang các Middleware tiếp theo (hoặc vào Controller)
 			await _next(context);
 		}
 		catch (Exception ex)
 		{
-			// Nếu có bất kỳ lỗi nào xảy ra ở các tầng dưới (Application, Infrastructure...) 
-			// nó sẽ bị "bắt" tại đây
 			_logger.LogError(ex, "Một lỗi không mong muốn đã xảy ra: {Message}", ex.Message);
 
-			await HandleExceptionAsync(context, ex);
+			var statusCode = MapExceptionToStatusCode(ex);
+			var userId = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value 
+			             ?? context.User?.FindFirst("sub")?.Value 
+			             ?? context.User?.FindFirst("id")?.Value;
+			var ipAddress = context.Connection.RemoteIpAddress?.ToString();
+			var userAgent = context.Request.Headers["User-Agent"].ToString();
+
+			// Persist into system error logs
+			try
+			{
+				await errorLogService.LogErrorAsync(
+					ex: ex,
+					requestPath: context.Request.Path,
+					httpMethod: context.Request.Method,
+					statusCode: (int)statusCode,
+					userId: userId,
+					ipAddress: ipAddress,
+					userAgent: userAgent,
+					logLevel: statusCode == HttpStatusCode.InternalServerError ? "Critical" : "Error"
+				);
+			}
+			catch (Exception logEx)
+			{
+				_logger.LogError(logEx, "Không thể ghi system log tự động");
+			}
+
+			await HandleExceptionResponseAsync(context, ex, statusCode);
 		}
 	}
 
-	private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+	private static HttpStatusCode MapExceptionToStatusCode(Exception exception)
+	{
+		return exception switch
+		{
+			UnauthorizedAccessException => HttpStatusCode.Unauthorized,
+			KeyNotFoundException => HttpStatusCode.NotFound,
+			ArgumentException => HttpStatusCode.BadRequest,
+			InvalidOperationException => HttpStatusCode.BadRequest,
+			FormatException => HttpStatusCode.BadRequest,
+			NotImplementedException => HttpStatusCode.NotImplemented,
+			TimeoutException => HttpStatusCode.RequestTimeout,
+			_ => HttpStatusCode.InternalServerError
+		};
+	}
+
+	private static Task HandleExceptionResponseAsync(HttpContext context, Exception exception, HttpStatusCode statusCode)
 	{
 		context.Response.ContentType = "application/json";
-
-		// 1. Mặc định là lỗi 500
-		var statusCode = HttpStatusCode.InternalServerError;
-		var message = "Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau.";
-
-		// 2. Phân loại lỗi dựa trên loại Exception ném lên từ tầng Application/Domain
-		switch (exception)
-		{
-			case UnauthorizedAccessException:
-				statusCode = HttpStatusCode.Unauthorized;
-				message = "Bạn không có quyền truy cập vào tài nguyên này.";
-				break;
-
-			case KeyNotFoundException:
-				statusCode = HttpStatusCode.NotFound;
-				message = "Không tìm thấy dữ liệu yêu cầu.";
-				break;
-
-			case ArgumentException:
-				// Hoặc bất kỳ Custom Exception nào của bạn (ví dụ: BadHttpRequestException)
-				statusCode = HttpStatusCode.BadRequest;
-				message = exception.Message; // Trả về câu thông báo lỗi cụ thể (ví dụ: "Mật khẩu không chính xác")
-				break;
-		}
-
 		context.Response.StatusCode = (int)statusCode;
+
+		var message = statusCode switch
+		{
+			HttpStatusCode.Unauthorized => "Bạn không có quyền truy cập vào tài nguyên này.",
+			HttpStatusCode.NotFound => "Không tìm thấy dữ liệu yêu cầu.",
+			HttpStatusCode.BadRequest => exception.Message,
+			HttpStatusCode.NotImplemented => "Chức năng chưa được triển khai.",
+			HttpStatusCode.RequestTimeout => "Yêu cầu đã quá thời gian chờ.",
+			_ => "Đã có lỗi hệ thống xảy ra. Vui lòng thử lại sau."
+		};
 
 		var response = new
 		{
 			StatusCode = context.Response.StatusCode,
 			Message = message,
-			Detail = exception.Message
+			Detail = exception.Message,
+			ExceptionType = exception.GetType().FullName
 		};
 
 		var jsonResult = JsonSerializer.Serialize(response);
 		return context.Response.WriteAsync(jsonResult);
 	}
-}       
+}
