@@ -28,7 +28,7 @@ namespace Application.Features.Authentication.Password.Handler
 
 		public async Task<ResetPasswordResponse> Handle(ResetPasswordCommand request, CancellationToken cancellationToken)
 		{
-			var email = request.Dto.Email.Trim();
+			var email = request.Dto.Email.Trim().ToLowerInvariant();
 
 			// 1. Xác thực mã OTP trong Redis Cache
 			bool isValidOtp = await _otpService.ValidateOtpAsync(email, request.Dto.OtpCode);
