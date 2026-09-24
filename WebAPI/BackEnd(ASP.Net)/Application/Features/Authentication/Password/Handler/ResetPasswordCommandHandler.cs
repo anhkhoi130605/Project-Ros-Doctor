@@ -34,14 +34,22 @@ namespace Application.Features.Authentication.Password.Handler
 			bool isValidOtp = await _otpService.ValidateOtpAsync(email, request.Dto.OtpCode);
 			if (!isValidOtp)
 			{
-				throw new Exception("Mã OTP không chính xác hoặc đã hết hạn.");
+				return new ResetPasswordResponse
+				{
+					Success = false,
+					Message = "Mã OTP không chính xác hoặc đã hết hạn."
+				};
 			}
 
 			// 2. Tìm người dùng theo email
 			var user = await _unitOfWork.User.FindByEmailAsync(email);
 			if (user == null)
 			{
-				throw new Exception("Không tìm thấy tài khoản người dùng.");
+				return new ResetPasswordResponse
+				{
+					Success = false,
+					Message = "Không tìm thấy tài khoản người dùng."
+				};
 			}
 
 			// 3. Đổi mật khẩu
