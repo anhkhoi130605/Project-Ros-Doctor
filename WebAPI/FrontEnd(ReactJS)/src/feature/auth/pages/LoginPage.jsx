@@ -1,22 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../hook/useAuth';
+import { getGoogleLoginUrl } from '../api/authApi';
 import '../auth.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
-
 export default function LoginPage() {
-	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const [form, setForm] = useState({ email: '', password: '' });
-	const [status, setStatus] = useState({ type: '', message: '' });
-	const [isSubmitting, setIsSubmitting] = useState(false);
+	const { isSubmitting, status, setStatus, login } = useAuth();
 
 	useEffect(() => {
 		const errorParam = searchParams.get('error');
 		if (errorParam) {
 			setStatus({ type: 'error', message: decodeURIComponent(errorParam) });
 		}
-	}, [searchParams]);
+	}, [searchParams, setStatus]);
 
 	function handleChange(event) {
 		setForm({ ...form, [event.target.name]: event.target.value });
@@ -24,55 +22,7 @@ export default function LoginPage() {
 
 	async function handleSubmit(event) {
 		event.preventDefault();
-		setStatus({ type: '', message: '' });
-
-		if (!form.email || !form.password) {
-			setStatus({ type: 'error', message: 'Vui lòng nhập email và mật khẩu.' });
-			return;
-		}
-
-		setIsSubmitting(true);
-		try {
-			const response = await fetch(`${API_URL}/api/auth/login`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					email: form.email,
-					password: form.password
-				})
-			});
-			const data = await response.json().catch(() => ({}));
-			if (!response.ok) {
-				throw new Error(data.message || data.title || 'Email hoặc mật khẩu không đúng.');
-			}
-
-			const token = data.accessToken || data.token;
-			const user = data.user || {};
-			const role = (user.role ?? user.Role ?? data.role ?? data.Role ?? '').toString().trim();
-
-			if (token) localStorage.setItem('accessToken', token);
-			if (role) localStorage.setItem('userRole', role);
-			if (user) localStorage.setItem('currentUser', JSON.stringify(user));
-
-			setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
-
-			setTimeout(() => {
-				const normalizedRole = role.toLowerCase();
-				if (normalizedRole.includes('admin')) {
-					navigate('/admin-dashboard');
-					return;
-				}
-				if (normalizedRole.includes('user')) {
-					navigate('/user-dashboard');
-					return;
-				}
-				navigate('/dashboard');
-			}, 50);
-		} catch (error) {
-			setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
-		} finally {
-			setIsSubmitting(false);
-		}
+		await login({ email: form.email, password: form.password });
 	}
 
 	return (
@@ -107,7 +57,7 @@ export default function LoginPage() {
 					</form>
 
 					<div className="divider"><span>hoặc</span></div>
-					<a className="google-button" href={`${API_URL}/api/auth/login-google`}>
+					<a className="google-button" href={getGoogleLoginUrl()}>
 						<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
 							<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
 							<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
