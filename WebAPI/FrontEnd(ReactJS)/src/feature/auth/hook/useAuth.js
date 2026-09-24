@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginApi, registerApi } from '../api/authApi';
+import { loginApi, registerApi, forgotPasswordApi, resetPasswordApi } from '../api/authApi';
 import { parseUserRole } from '../type/authTypes';
 
 export function useAuth() {
@@ -64,11 +64,37 @@ export function useAuth() {
     }
   };
 
+  const requestForgotPassword = async ({ email }) => {
+    setIsSubmitting(true);
+    try {
+      const res = await forgotPasswordApi({ email });
+      return res;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const verifyAndResetPassword = async ({ email, otpCode, newPassword }) => {
+    setIsSubmitting(true);
+    try {
+      const res = await resetPasswordApi({ email, otpCode, newPassword });
+      return res;
+    } catch (error) {
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return {
     isSubmitting,
     status,
     setStatus,
     login,
     register,
+    requestForgotPassword,
+    verifyAndResetPassword,
   };
 }

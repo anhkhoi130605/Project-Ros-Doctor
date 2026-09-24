@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hook/useAuth';
 import { getGoogleLoginUrl } from '../api/authApi';
+import ForgotPasswordModal from '../component/ForgotPasswordModal';
 import '../auth.css';
 
 export default function LoginPage() {
 	const [searchParams] = useSearchParams();
 	const [form, setForm] = useState({ email: '', password: '' });
+	const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
 	const { isSubmitting, status, setStatus, login } = useAuth();
 
 	useEffect(() => {
@@ -48,7 +50,9 @@ export default function LoginPage() {
 
 						<div className="label-row">
 							<label htmlFor="login-password">Mật khẩu</label>
-							<button type="button" className="text-button">Quên mật khẩu?</button>
+							<button type="button" className="text-button" onClick={() => setIsForgotPasswordOpen(true)}>
+								Quên mật khẩu?
+							</button>
 						</div>
 						<input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="Nhập mật khẩu" value={form.password} onChange={handleChange} />
 
@@ -69,6 +73,11 @@ export default function LoginPage() {
 					<p className="switch-copy">Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link></p>
 				</div>
 			</section>
+
+			<ForgotPasswordModal
+				isOpen={isForgotPasswordOpen}
+				onClose={() => setIsForgotPasswordOpen(false)}
+			/>
 		</main>
 	);
 }
