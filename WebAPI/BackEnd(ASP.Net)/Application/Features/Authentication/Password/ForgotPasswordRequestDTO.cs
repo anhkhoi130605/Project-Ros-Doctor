@@ -14,7 +14,6 @@ namespace Application.Features.Authentication.Password
 		public bool Success { get; set; }
 		public string Message { get; set; } = string.Empty;
 		public string Email { get; set; } = string.Empty;
-		public string OtpCode { get; set; } = string.Empty;
 	}
 
 	public class ResetPasswordRequestDTO
