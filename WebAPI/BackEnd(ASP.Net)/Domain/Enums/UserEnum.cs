@@ -15,7 +15,9 @@ namespace Domain.Enums
 		public enum RoleEnum
 		{
 			User,
-			Admin
+			Admin,
+
+			Engineering,
 		}
 		public enum Gender
 		{

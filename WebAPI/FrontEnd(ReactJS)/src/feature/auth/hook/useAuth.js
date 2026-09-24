@@ -1,0 +1,74 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { loginApi, registerApi } from '../api/authApi';
+import { parseUserRole } from '../type/authTypes';
+
+export function useAuth() {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState({ type: '', message: '' });
+
+  const login = async ({ email, password }) => {
+    setStatus({ type: '', message: '' });
+
+    if (!email || !password) {
+      setStatus({ type: 'error', message: 'Vui lòng nhập email và mật khẩu.' });
+      return false;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const data = await loginApi({ email, password });
+      const token = data.accessToken || data.token;
+      const user = data.user || {};
+      const role = parseUserRole(data, user);
+
+      if (token) localStorage.setItem('accessToken', token);
+      if (role) localStorage.setItem('userRole', role);
+      if (user) localStorage.setItem('currentUser', JSON.stringify(user));
+
+      setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
+
+      setTimeout(() => {
+        const normalizedRole = role.toLowerCase();
+        if (normalizedRole.includes('admin')) {
+          navigate('/admin-dashboard');
+        } else if (normalizedRole.includes('user')) {
+          navigate('/user-dashboard');
+        } else {
+          navigate('/dashboard');
+        }
+      }, 50);
+
+      return true;
+    } catch (error) {
+      setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const register = async (formData) => {
+    setStatus({ type: '', message: '' });
+    setIsSubmitting(true);
+    try {
+      const data = await registerApi(formData);
+      setStatus({ type: 'success', message: 'Đăng ký tài khoản thành công.' });
+      return data;
+    } catch (error) {
+      setStatus({ type: 'error', message: error.message || 'Đăng ký thất bại.' });
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return {
+    isSubmitting,
+    status,
+    setStatus,
+    login,
+    register,
+  };
+}

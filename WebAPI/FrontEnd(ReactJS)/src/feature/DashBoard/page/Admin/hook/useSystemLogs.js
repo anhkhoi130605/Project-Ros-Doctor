@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
+import { fetchSystemLogsApi, triggerTestErrorApi } from '../../../api/dashboardApi';
 
 export default function useSystemLogs(initialPageSize = 20) {
   const [logs, setLogs] = useState([]);
@@ -16,31 +15,18 @@ export default function useSystemLogs(initialPageSize = 20) {
   const [triggerSuccess, setTriggerSuccess] = useState(null);
 
   const fetchLogs = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
     try {
       setLoading(true);
       setError(null);
 
-      const params = new URLSearchParams();
-      if (search.trim()) params.append('search', search.trim());
-      if (logLevel) params.append('logLevel', logLevel);
-      if (exceptionType) params.append('exceptionType', exceptionType);
-      params.append('pageIndex', String(pageIndex));
-      params.append('pageSize', String(pageSize));
-
-      const response = await fetch(`${API_URL}/api/system-logs?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+      const data = await fetchSystemLogsApi({
+        search,
+        logLevel,
+        exceptionType,
+        pageIndex,
+        pageSize,
       });
 
-      if (!response.ok) {
-        throw new Error(`Lỗi kết nối máy chủ (${response.status})`);
-      }
-
-      const data = await response.json();
       setLogs(data.items || []);
       setTotalCount(data.totalCount || 0);
     } catch (err) {
@@ -55,22 +41,11 @@ export default function useSystemLogs(initialPageSize = 20) {
   }, [fetchLogs]);
 
   const triggerTestError = async (type, customMessage) => {
-    const token = localStorage.getItem('accessToken');
     try {
       setTriggering(true);
       setTriggerSuccess(null);
 
-      await fetch(`${API_URL}/api/system-logs/trigger-test-error`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          errorType: type,
-          message: customMessage || undefined,
-        }),
-      });
+      await triggerTestErrorApi({ errorType: type, message: customMessage });
 
       setTriggerSuccess(`Đã kích hoạt lỗi thử nghiệm [${type}] thành công! Hệ thống đã tự động bắt và dịch lỗi.`);
       
