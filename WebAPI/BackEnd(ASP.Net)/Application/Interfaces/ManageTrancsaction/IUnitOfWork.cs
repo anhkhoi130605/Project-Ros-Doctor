@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Data;
 using Domain.Entities.Config;
 using Domain.Entities.AboutUser;
+using Domain.Entities.System;
 
 namespace Application.Interfaces.ManageTrancsaction
 {
@@ -14,6 +15,7 @@ namespace Application.Interfaces.ManageTrancsaction
 		IGenericRepository<Role> Roles { get; }
 		IGenericRepository<Notification> Notifications { get; }
 		IGenericRepository<UserActivityLog> UserActivityLogs { get; }
+		IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
 	}
 }
 
