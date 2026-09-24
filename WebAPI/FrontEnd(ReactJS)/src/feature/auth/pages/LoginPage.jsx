@@ -21,16 +21,27 @@ export default function LoginPage() {
     setError('');
 
     // If using real backend credentials
-    const success = await login({ email, password });
-    if (success) {
+    const loginResult = await login({ email, password });
+    if (loginResult && loginResult.success) {
+      const userRole = loginResult.role || 'engineer';
+      const userName = loginResult.user?.fullName || loginResult.user?.FullName || email.split('@')[0];
+
       dispatch({
         type: 'LOGIN',
         email,
-        userName: email.split('@')[0],
-        role: 'engineer',
+        userName,
+        role: userRole,
+        userId: loginResult.user?.id || loginResult.user?.Id || null,
       });
-      notify('Đăng nhập hệ thống thành công!', 'success');
-      navigate('/dashboard');
+
+      const roleDisplay = userRole === 'admin' ? 'Quản trị viên (Admin)' : userRole === 'viewer' ? 'Người xem' : 'Kỹ sư Robotics';
+      notify(`Đăng nhập hệ thống thành công với vai trò ${roleDisplay}!`, 'success');
+
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
       return;
     }
 
@@ -40,8 +51,8 @@ export default function LoginPage() {
     );
 
     if (password === 'demo123') {
-      const role = demoUser?.role || (email.includes('admin') ? 'admin' : email.includes('viewer') ? 'viewer' : 'engineer');
-      const name = demoUser?.name || (role === 'admin' ? 'Quản trị viên' : role === 'viewer' ? 'Người xem' : 'Kỹ sư Robotics');
+      const role = demoUser?.role || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('user') ? 'User' : 'Engineering');
+      const name = demoUser?.name || (role === 'Admin' ? 'Quản trị viên' : role === 'User' ? 'Người dùng' : 'Kỹ sư Robotics');
       dispatch({
         type: 'LOGIN',
         role,
@@ -52,7 +63,12 @@ export default function LoginPage() {
       localStorage.setItem('accessToken', 'demo-token-' + role);
       localStorage.setItem('userRole', role);
       notify(`Đăng nhập thành công với vai trò ${role}!`, 'success');
-      navigate('/dashboard');
+
+      if (role.toLowerCase() === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     } else {
       setError('Email hoặc mật khẩu chưa đúng. Với bản thử nghiệm, hãy dùng mật khẩu demo123.');
     }
@@ -64,11 +80,11 @@ export default function LoginPage() {
 
   const handleRoleSwitch = (role) => {
     const userMap = {
-      admin: { email: 'admin@ros2doctor.local', name: 'Quản trị viên' },
-      engineer: { email: 'engineer@ros2doctor.local', name: 'Kỹ sư Robotics' },
-      viewer: { email: 'viewer@ros2doctor.local', name: 'Người xem' },
+      Admin: { email: 'admin@ros2doctor.local', name: 'Quản trị viên' },
+      Engineering: { email: 'engineer@ros2doctor.local', name: 'Kỹ sư Robotics' },
+      User: { email: 'user@ros2doctor.local', name: 'Người dùng' },
     };
-    const u = userMap[role];
+    const u = userMap[role] || userMap.Engineering;
     setEmail(u.email);
     setPassword('demo123');
     dispatch({
@@ -79,8 +95,13 @@ export default function LoginPage() {
     });
     localStorage.setItem('accessToken', 'demo-token-' + role);
     localStorage.setItem('userRole', role);
-    notify(`Đã chuyển sang luồng ${role === 'admin' ? 'Admin' : role === 'engineer' ? 'Engineer' : 'User'}`, 'success');
-    navigate('/dashboard');
+    notify(`Đã chuyển sang luồng ${role}`, 'success');
+
+    if (role.toLowerCase() === 'admin') {
+      navigate('/admin');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -168,21 +189,21 @@ export default function LoginPage() {
               <div className="login-demo-roles">
                 <button
                   type="button"
-                  onClick={() => handleRoleSwitch('admin')}
+                  onClick={() => handleRoleSwitch('Admin')}
                   aria-label="Xem luồng Admin"
                 >
                   Admin
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRoleSwitch('engineer')}
-                  aria-label="Xem luồng Engineer"
+                  onClick={() => handleRoleSwitch('Engineering')}
+                  aria-label="Xem luồng Engineering"
                 >
-                  Engineer
+                  Engineering
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRoleSwitch('viewer')}
+                  onClick={() => handleRoleSwitch('User')}
                   aria-label="Xem luồng User"
                 >
                   User

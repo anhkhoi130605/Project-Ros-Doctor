@@ -3,8 +3,9 @@
  */
 
 export const AuthRoles = {
-  ADMIN: 'admin',
-  USER: 'user',
+  ADMIN: 'Admin',
+  ENGINEERING: 'Engineering',
+  USER: 'User',
 };
 
 export function parseUserRole(data, user) {

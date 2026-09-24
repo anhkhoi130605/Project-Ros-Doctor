@@ -34,31 +34,12 @@ export default function AdminDashboardPage() {
   const { logs, loading, error } = useAdminActivityLogs();
   const { logs: sysLogs } = useSystemLogs(5);
 
-  const scrollToSection = (label, path) => {
-    if (label === 'User Activity Logs' && path) {
+  const handleNavClick = (label, path) => {
+    if (path) {
       navigate(path);
       return false;
     }
-
-    if (label === 'Overview' && path) {
-      navigate(path);
-      return false;
-    }
-
-    const map = {
-      Overview: 'overview-section',
-      Activity: 'activity-feed-section',
-    };
-
-    const sectionId = map[label];
-    if (!sectionId) return true;
-
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-
-    return false;
+    return true;
   };
 
   const feed = (logs || []).slice(0, 5).map((item) => ({
@@ -90,7 +71,7 @@ export default function AdminDashboardPage() {
       title="Admin Dashboard"
       subtitle="Administrative operations overview"
       sidebarTitle="ADMIN CONSOLE"
-      onNavItemClick={scrollToSection}
+      onNavItemClick={handleNavClick}
       actions={<button type="button" className="dashboard-ghost-button">+ Add new</button>}
       navItems={[
         { label: 'Overview', active: true, icon: '◈', path: '/admin-dashboard/overview' },
