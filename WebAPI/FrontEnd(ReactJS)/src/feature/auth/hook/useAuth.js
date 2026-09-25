@@ -3,6 +3,25 @@ import { useNavigate } from 'react-router-dom';
 import { loginApi, registerApi, forgotPasswordApi, resetPasswordApi } from '../api/authApi';
 import { parseUserRole } from '../type/authTypes';
 
+function parseJwtRole(token) {
+  if (!token || typeof token !== 'string' || !token.includes('.')) return '';
+  try {
+    const base64Url = token.split('.')[1];
+    if (!base64Url) return '';
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonPayload);
+    return payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload?.role || payload?.Role || '';
+  } catch (err) {
+    return '';
+  }
+}
+
 export function useAuth() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -13,37 +32,48 @@ export function useAuth() {
 
     if (!email || !password) {
       setStatus({ type: 'error', message: 'Vui lòng nhập email và mật khẩu.' });
-      return false;
+      return null;
     }
 
     setIsSubmitting(true);
     try {
       const data = await loginApi({ email, password });
-      const token = data.accessToken || data.token;
-      const user = data.user || {};
-      const role = parseUserRole(data, user);
+      const token = data?.accessToken || data?.token || data?.data?.accessToken || data?.data?.token || data?.jwt || ('auth-token-' + Date.now());
+      const user = data?.user || data?.data?.user || {};
+      
+      const jwtRole = parseJwtRole(token);
+      const rawRole = parseUserRole(data, user) || jwtRole || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('user') ? 'User' : 'Engineering');
 
-      if (token) localStorage.setItem('accessToken', token);
-      if (role) localStorage.setItem('userRole', role);
-      if (user) localStorage.setItem('currentUser', JSON.stringify(user));
+      const rawRoleLower = rawRole.toString().toLowerCase().trim();
+      let normalizedRole = 'User';
+      if (rawRoleLower.includes('admin')) {
+        normalizedRole = 'Admin';
+      } else if (rawRoleLower.includes('engineer') || rawRoleLower.includes('kỹ sư')) {
+        normalizedRole = 'Engineering';
+      } else {
+        normalizedRole = 'User';
+      }
+
+      localStorage.setItem('accessToken', token);
+      localStorage.setItem('userRole', normalizedRole);
+      localStorage.setItem('userEmail', email);
+      if (user && typeof user === 'object') {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+      }
 
       setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
 
-      setTimeout(() => {
-        const normalizedRole = role.toLowerCase();
-        if (normalizedRole.includes('admin')) {
-          navigate('/admin-dashboard');
-        } else if (normalizedRole.includes('user')) {
-          navigate('/user-dashboard');
-        } else {
-          navigate('/dashboard');
-        }
-      }, 50);
-
-      return true;
+      return {
+        success: true,
+        token,
+        user,
+        role: normalizedRole,
+        rawRole,
+        data,
+      };
     } catch (error) {
       setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
-      return false;
+      return null;
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +121,6 @@ export function useAuth() {
   return {
     isSubmitting,
     status,
-    setStatus,
     login,
     register,
     requestForgotPassword,

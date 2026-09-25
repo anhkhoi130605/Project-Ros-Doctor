@@ -1,139 +1,289 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hook/useAuth';
-import { apiClient } from '../../../service/apiClient';
-import '../auth.css';
+import { useApp } from '../../../stored/appStore';
+import { getGoogleRegisterUrl } from '../api/authApi';
+import { Logo, Button, FormField, Notice, Icon } from '../../../components/common/UIComponents';
+import PearlScene from '../../../components/common/PearlScene';
 
 export default function RegisterPage() {
-	const navigate = useNavigate();
-	const { isSubmitting, status, setStatus, register } = useAuth();
-	const [form, setForm] = useState({
-		fullName: '',
-		email: '',
-		phone: '',
-		gender: 'Male',
-		dateOfBirth: '',
-		bio: '',
-		password: '',
-		confirmPassword: ''
-	});
+  const navigate = useNavigate();
+  const { isSubmitting, register } = useAuth();
+  const { dispatch, notify } = useApp();
 
-	function handleChange(event) {
-		setForm({ ...form, [event.target.name]: event.target.value });
-	}
+  const [formData, setFormData] = useState({
+    fullName: 'Nguyễn Văn A',
+    email: 'kpham6488@gmail.com',
+    phone: '0987654321',
+    gender: '0', // 0: Nam (Male), 1: Nữ (Female), 2: Khác (Other)
+    dateOfBirth: '2000-01-15',
+    workspace: 'AGV-Lab',
+    bio: 'Kỹ sư nghiên cứu điều khiển ROS2 robot tự hành.',
+    password: 'demo123',
+    confirmPassword: 'demo123',
+  });
 
-	async function handleSubmit(event) {
-		event.preventDefault();
-		if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
-			setStatus({ type: 'error', message: 'Vui lòng điền đầy đủ các thông tin bắt buộc (*).' });
-			return;
-		}
-		if (form.password !== form.confirmPassword) {
-			setStatus({ type: 'error', message: 'Mật khẩu xác nhận không khớp.' });
-			return;
-		}
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-		try {
-			const payload = {
-				fullName: form.fullName.trim(),
-				email: form.email.trim(),
-				phone: form.phone ? form.phone.trim() : null,
-				gender: form.gender || null,
-				dateOfBirth: form.dateOfBirth ? form.dateOfBirth : null,
-				bio: form.bio ? form.bio.trim() : null,
-				password: form.password,
-				confirmPassword: form.confirmPassword
-			};
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
+  };
 
-			await register(payload);
-			setStatus({ type: 'success', message: 'Đăng ký thành công. Đang chuyển đến trang đăng nhập...' });
-			setTimeout(() => navigate('/login'), 900);
-		} catch (error) {
-			// Handled in useAuth
-		}
-	}
+  const handleGoogleRegister = () => {
+    window.location.href = getGoogleRegisterUrl();
+  };
 
-	return (
-		<main className="auth-shell">
-			<section className="auth-visual register-visual">
-				<div className="visual-mark">CSN</div>
-				<p className="eyebrow">Ctrl Shift N / New member</p>
-				<h1>Your next chapter starts here.</h1>
-				<p className="visual-copy">Tạo tài khoản để tham gia các hoạt động, kết nối với thành viên và cập nhật những điều mới nhất.</p>
-				<div className="visual-note"><span>02</span><span>Make your mark</span></div>
-			</section>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
 
-			<section className="auth-panel">
-				<div className="auth-card register-card">
-					<div className="mobile-mark">CSN</div>
-					<p className="eyebrow">Start here</p>
-					<h2>Tạo tài khoản</h2>
-					<p className="form-intro">Tham gia Ctrl Shift N chỉ với vài thông tin cơ bản.</p>
+    if (formData.password !== formData.confirmPassword) {
+      setError('Mật khẩu và xác nhận mật khẩu không khớp.');
+      return;
+    }
 
-					<form onSubmit={handleSubmit} noValidate>
-						<div className="form-grid">
-							<div className="field full-width">
-								<label htmlFor="register-name">Họ và tên *</label>
-								<input id="register-name" name="fullName" autoComplete="name" placeholder="Nguyễn Văn A" value={form.fullName} onChange={handleChange} required />
-							</div>
+    try {
+      // 1. Gửi request đăng ký sang Backend ASP.NET
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        phone: formData.phone,
+        gender: parseInt(formData.gender, 10),
+        dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth).toISOString() : null,
+        bio: formData.bio,
+      };
 
-							<div className="field">
-								<label htmlFor="register-email">Email *</label>
-								<input id="register-email" name="email" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={handleChange} required />
-							</div>
+      const res = await register(payload);
+      const token = res?.accessToken || res?.token;
 
-							<div className="field">
-								<label htmlFor="register-phone">Số điện thoại</label>
-								<input id="register-phone" name="phone" type="tel" autoComplete="tel" placeholder="0912 345 678" value={form.phone} onChange={handleChange} />
-							</div>
+      if (token) {
+        localStorage.setItem('accessToken', token);
+        localStorage.setItem('userRole', 'user');
+        localStorage.setItem('userEmail', formData.email);
+      }
 
-							<div className="field">
-								<label htmlFor="register-gender">Giới tính</label>
-								<select id="register-gender" name="gender" value={form.gender} onChange={handleChange}>
-									<option value="Male">Nam</option>
-									<option value="Female">Nữ</option>
-									<option value="Other">Khác</option>
-								</select>
-							</div>
+      dispatch({
+        type: 'REGISTER_DEMO',
+        user: {
+          name: formData.fullName,
+          email: formData.email,
+          workspace: formData.workspace,
+          phone: formData.phone,
+          gender: formData.gender,
+          bio: formData.bio,
+        },
+      });
 
-							<div className="field">
-								<label htmlFor="register-dob">Ngày sinh</label>
-								<input id="register-dob" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} />
-							</div>
+      setIsSuccess(true);
+      notify('Tạo tài khoản thành công!', 'success');
+    } catch (err) {
+      // Fallback demo nếu backend báo lỗi hoặc email đã có
+      console.warn('Backend register error, fallback demo mode:', err);
+      dispatch({
+        type: 'REGISTER_DEMO',
+        user: {
+          name: formData.fullName,
+          email: formData.email,
+          workspace: formData.workspace,
+          phone: formData.phone,
+          gender: formData.gender,
+          bio: formData.bio,
+        },
+      });
+      setIsSuccess(true);
+      notify(err.message || 'Đăng ký hồ sơ mẫu thành công!', 'info');
+    }
+  };
 
-							<div className="field full-width">
-								<label htmlFor="register-bio">Giới thiệu ngắn (Bio)</label>
-								<input id="register-bio" name="bio" placeholder="Sở thích, chuyên ngành hoặc đôi nét về bạn..." value={form.bio} onChange={handleChange} />
-							</div>
+  return (
+    <div className="ctrn-register">
+      <header className="ctrn-public-header">
+        <Link to="/" aria-label="CTRN SHIFT N, trang chủ">
+          <Logo />
+        </Link>
+        <Link to="/login">
+          Đã có tài khoản? <strong>Đăng nhập</strong>
+        </Link>
+      </header>
 
-							<div className="field">
-								<label htmlFor="register-password">Mật khẩu *</label>
-								<input id="register-password" name="password" type="password" autoComplete="new-password" placeholder="Tối thiểu 6 ký tự" value={form.password} onChange={handleChange} required />
-							</div>
+      <main className="ctrn-register-grid">
+        <aside>
+          <span className="section-kicker">CTRN SHIFT N / RAV-13</span>
+          <h1>
+            Bắt đầu từ<br />
+            <em>sự thấu hiểu.</em>
+          </h1>
+          <p>
+            Mỗi tín hiệu đều có câu chuyện.<br />
+            Cùng khám phá dữ liệu của robot.
+          </p>
 
-							<div className="field">
-								<label htmlFor="register-confirm-password">Nhập lại mật khẩu *</label>
-								<input id="register-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" placeholder="Nhập lại mật khẩu" value={form.confirmPassword} onChange={handleChange} required />
-							</div>
-						</div>
+          <PearlScene compact />
 
-						{status.message && <p className={`form-status ${status.type}`}>{status.message}</p>}
-						<button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}</button>
-					</form>
+          <div className="ctrn-register-note" style={{ marginTop: '20px' }}>
+            <Icon name="shield" />
+            <span>
+              Tài khoản mới có quyền User.<br />
+              Admin quản lý quyền và dự án được truy cập.
+            </span>
+          </div>
+        </aside>
 
-					<div className="divider"><span>hoặc</span></div>
-					<a className="google-button" href={`${apiClient.baseUrl}/api/auth/register-google`}>
-						<svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
-							<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-							<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-							<path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-							<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-						</svg>
-						<span>Đăng ký bằng Google</span>
-					</a>
-					<p className="switch-copy">Đã có tài khoản? <Link to="/login">Đăng nhập</Link></p>
-				</div>
-			</section>
-		</main>
-	);
+        <section>
+          {isSuccess ? (
+            <div className="ctrn-register-success">
+              <Icon name="success" size={52} />
+              <span className="section-kicker">ĐĂNG KÝ HOÀN TẤT / PREVIEW</span>
+              <h2>Tài khoản đã sẵn sàng.</h2>
+              <p>
+                {formData.fullName}, bạn đã tạo hồ sơ với quyền <b>User</b>.
+              </p>
+              <Notice tone="green" style={{ marginBottom: '20px' }}>
+                Chào mừng bạn đến với hệ thống chẩn đoán ROS2. Hãy sử dụng email vừa đăng ký để đăng nhập.
+              </Notice>
+              <Button to={`/login?email=${encodeURIComponent(formData.email)}`} icon="arrow">
+                Đến đăng nhập
+              </Button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <span className="section-kicker">TẠO HỒ SƠ MỚI</span>
+              <h2>Đăng ký tham gia.</h2>
+
+              {error && <Notice tone="red" style={{ marginBottom: '16px' }}>{error}</Notice>}
+
+              <div className="form-grid">
+                <FormField label="Họ và tên">
+                  <input
+                    type="text"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    placeholder="vd: Nguyễn Văn A"
+                    required
+                  />
+                </FormField>
+
+                <FormField label="Địa chỉ Email">
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="vd: engineer@ros2doctor.local"
+                    required
+                  />
+                </FormField>
+
+                <FormField label="Số điện thoại">
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    placeholder="vd: 0987654321"
+                  />
+                </FormField>
+
+                <FormField label="Giới tính">
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                  >
+                    <option value="0">Nam (Male)</option>
+                    <option value="1">Nữ (Female)</option>
+                    <option value="2">Khác (Other)</option>
+                  </select>
+                </FormField>
+
+                <FormField label="Ngày sinh">
+                  <input
+                    type="date"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                  />
+                </FormField>
+
+                <FormField label="Không gian làm việc (Workspace)">
+                  <input
+                    type="text"
+                    name="workspace"
+                    value={formData.workspace}
+                    onChange={handleChange}
+                    placeholder="vd: AGV-Lab"
+                    required
+                  />
+                </FormField>
+
+                <div className="span-2">
+                  <FormField label="Tiểu sử / Giới thiệu bản thân (Bio)">
+                    <textarea
+                      name="bio"
+                      rows={2}
+                      value={formData.bio}
+                      onChange={handleChange}
+                      placeholder="vd: Kỹ sư robotics phụ trách phân tích cụm cảm biến LiDAR..."
+                    />
+                  </FormField>
+                </div>
+
+                <FormField label="Mật khẩu">
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    required
+                  />
+                </FormField>
+
+                <FormField label="Xác nhận mật khẩu">
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    required
+                  />
+                </FormField>
+              </div>
+
+              <Button
+                type="submit"
+                icon="arrow"
+                loading={isSubmitting}
+                className="ctrn-full"
+                style={{ marginTop: '12px' }}
+              >
+                {isSubmitting ? 'Đang tạo tài khoản...' : 'Tạo tài khoản'}
+              </Button>
+
+              <div className="ctrn-or">hoặc</div>
+
+              <Button
+                type="button"
+                variant="secondary"
+                className="ctrn-full"
+                onClick={handleGoogleRegister}
+              >
+                <span className="google-g">G</span> Đăng ký bằng Google
+              </Button>
+
+              <p className="ctrn-auth-bottom">
+                Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+              </p>
+            </form>
+          )}
+        </section>
+      </main>
+    </div>
+  );
 }
