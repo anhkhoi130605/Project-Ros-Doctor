@@ -56,6 +56,13 @@ export function Icon({ name = 'activity', size = 19, className = '', ...props })
             <polyline points="12 6 12 12 16 14" />
           </>
         );
+      case 'reset':
+        return (
+          <>
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </>
+        );
       case 'chevron':
       case 'right':
         return <polyline points="9 18 15 12 9 6" />;
@@ -139,6 +146,13 @@ export function Icon({ name = 'activity', size = 19, className = '', ...props })
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
+          </>
+        );
+      case 'send':
+        return (
+          <>
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
           </>
         );
       case 'users':

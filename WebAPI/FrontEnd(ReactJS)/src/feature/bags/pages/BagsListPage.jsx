@@ -73,8 +73,10 @@ export default function BagsListPage() {
               {filteredBags.map((bag) => (
                 <tr key={bag.id}>
                   <td>
-                    <strong>{bag.name}</strong>
-                    <div style={{ fontSize: '11px', color: 'var(--muted)' }}>ID: {bag.id}</div>
+                    <Link className="table-title-link" to={`/bags/${bag.id}`}>
+                      <strong>{bag.name}</strong>
+                      <small>ID: {bag.id}</small>
+                    </Link>
                   </td>
                   <td>
                     <code>{bag.format || 'db3'}</code>
@@ -86,7 +88,11 @@ export default function BagsListPage() {
                     <Badge status={bag.status || 'complete'} />
                   </td>
                   <td>
-                    <Button to={`/sessions/${bag.sessionId || bag.id}`} variant="ghost" icon="arrow">
+                    <Button
+                      to={bag.sessionId ? `/sessions/${bag.sessionId}/overview` : `/sessions/${bag.id}`}
+                      variant="ghost"
+                      icon="arrow"
+                    >
                       Xem chẩn đoán
                     </Button>
                   </td>

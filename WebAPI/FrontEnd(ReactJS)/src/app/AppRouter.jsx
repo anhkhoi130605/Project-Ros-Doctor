@@ -14,7 +14,17 @@ import LoginSuccessPage from '../feature/auth/pages/LoginSuccessPage';
 // Feature Pages
 import DashboardOverviewPage from '../feature/DashBoard/pages/DashboardOverviewPage';
 import BagsListPage from '../feature/bags/pages/BagsListPage';
+import BagDetailPage from '../feature/bags/pages/BagDetailPage';
+import BagValidationPage from '../feature/bags/pages/BagValidationPage';
+import AnalysisConfigurePage from '../feature/bags/pages/AnalysisConfigurePage';
+import AnalysisProcessingPage from '../feature/bags/pages/AnalysisProcessingPage';
 import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
+import SessionOverviewPage from '../feature/bags/pages/SessionOverviewPage';
+import SessionTopicsPage from '../feature/bags/pages/SessionTopicsPage';
+import SessionIssuesPage from '../feature/bags/pages/SessionIssuesPage';
+import SessionTfPage from '../feature/bags/pages/SessionTfPage';
+import SessionSyncPage from '../feature/bags/pages/SessionSyncPage';
+import SessionAgentPage from '../feature/bags/pages/SessionAgentPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
 import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
@@ -53,9 +63,18 @@ export default function AppRouter() {
       >
         <Route path="/dashboard" element={<DashboardOverviewPage />} />
         <Route path="/bags" element={<BagsListPage />} />
-        <Route path="/bags/:bagId" element={<BagsListPage />} />
+        <Route path="/bags/:bagId" element={<BagDetailPage />} />
+        <Route path="/upload/validate" element={<BagValidationPage />} />
+        <Route path="/analysis/configure" element={<AnalysisConfigurePage />} />
+        <Route path="/analysis/processing" element={<AnalysisProcessingPage />} />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
+        <Route path="/sessions/:id/overview" element={<SessionOverviewPage />} />
+        <Route path="/sessions/:id/topics" element={<SessionTopicsPage />} />
+        <Route path="/sessions/:id/issues" element={<SessionIssuesPage />} />
+        <Route path="/sessions/:id/tf" element={<SessionTfPage />} />
+        <Route path="/sessions/:id/sync" element={<SessionSyncPage />} />
+        <Route path="/sessions/:id/agent" element={<SessionAgentPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/reports" element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportsListPage />} />
