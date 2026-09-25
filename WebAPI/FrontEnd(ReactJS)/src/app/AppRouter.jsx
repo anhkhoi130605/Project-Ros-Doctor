@@ -21,6 +21,7 @@ import AnalysisProcessingPage from '../feature/bags/pages/AnalysisProcessingPage
 import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
 import SessionOverviewPage from '../feature/bags/pages/SessionOverviewPage';
 import SessionTopicsPage from '../feature/bags/pages/SessionTopicsPage';
+import SessionIssuesPage from '../feature/bags/pages/SessionIssuesPage';
 import SessionTfPage from '../feature/bags/pages/SessionTfPage';
 import SessionSyncPage from '../feature/bags/pages/SessionSyncPage';
 import SessionAgentPage from '../feature/bags/pages/SessionAgentPage';
@@ -70,6 +71,7 @@ export default function AppRouter() {
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/sessions/:id/overview" element={<SessionOverviewPage />} />
         <Route path="/sessions/:id/topics" element={<SessionTopicsPage />} />
+        <Route path="/sessions/:id/issues" element={<SessionIssuesPage />} />
         <Route path="/sessions/:id/tf" element={<SessionTfPage />} />
         <Route path="/sessions/:id/sync" element={<SessionSyncPage />} />
         <Route path="/sessions/:id/agent" element={<SessionAgentPage />} />

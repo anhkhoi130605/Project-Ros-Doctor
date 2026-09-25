@@ -8,7 +8,7 @@ const PLOT_TOP = 18;
 const PLOT_BOTTOM = 188;
 const CHART_SECONDS = 60;
 
-export default function TopicFrequencyChart({ topic, time, onTimeChange }) {
+export default function TopicFrequencyChart({ topic, time, onTimeChange, showSelection = true }) {
   const [hoverTime, setHoverTime] = useState(null);
   const expected = topic.hz || 1;
   const yMax = expected * 1.2;
@@ -26,7 +26,7 @@ export default function TopicFrequencyChart({ topic, time, onTimeChange }) {
     const seconds = Math.round(((viewX - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT)) * CHART_SECONDS);
     const nextTime = Math.max(0, Math.min(CHART_SECONDS, seconds));
     setHoverTime(nextTime);
-    if (commit) onTimeChange(nextTime);
+    if (commit) onTimeChange?.(nextTime);
   };
 
   return (
@@ -84,26 +84,30 @@ export default function TopicFrequencyChart({ topic, time, onTimeChange }) {
           strokeWidth="3"
           strokeLinejoin="round"
         />
-        <line
-          x1={x(displayTime)}
-          y1={PLOT_TOP}
-          x2={x(displayTime)}
-          y2={PLOT_BOTTOM}
-          stroke="#eaf3ff"
-          strokeWidth="1"
-          opacity="0.8"
-        />
-        <circle
-          cx={x(displayTime)}
-          cy={y(isScan && displayTime >= 35 && displayTime <= 40 ? 2 : (topic.observed ?? expected))}
-          r="4"
-          fill="#51dcf8"
-          stroke="#07101e"
-          strokeWidth="2"
-        />
-        <text className="chart-tooltip" x={Math.min(x(displayTime) + 8, 730)} y="31">
-          {formatTimelineTime(displayTime)}
-        </text>
+        {(showSelection || hoverTime !== null) && (
+          <>
+            <line
+              x1={x(displayTime)}
+              y1={PLOT_TOP}
+              x2={x(displayTime)}
+              y2={PLOT_BOTTOM}
+              stroke="#eaf3ff"
+              strokeWidth="1"
+              opacity="0.8"
+            />
+            <circle
+              cx={x(displayTime)}
+              cy={y(isScan && displayTime >= 35 && displayTime <= 40 ? 2 : (topic.observed ?? expected))}
+              r="4"
+              fill="#51dcf8"
+              stroke="#07101e"
+              strokeWidth="2"
+            />
+            <text className="chart-tooltip" x={Math.min(x(displayTime) + 8, 730)} y="31">
+              {formatTimelineTime(displayTime)}
+            </text>
+          </>
+        )}
       </svg>
 
       <div className="chart-legend" aria-label="Chú thích biểu đồ">
