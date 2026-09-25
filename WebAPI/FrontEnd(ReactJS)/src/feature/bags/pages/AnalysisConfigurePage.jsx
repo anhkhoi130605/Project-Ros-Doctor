@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp, formatDuration } from '../../../stored/appStore';
 import { ROLES } from '../../../domain/appTypes';
 import {
@@ -19,6 +20,7 @@ import {
 } from '../constants/analysisConfig';
 
 export default function AnalysisConfigurePage() {
+  const navigate = useNavigate();
   const { state, dispatch, notify } = useApp();
   const bag = (state.bags || []).find((item) => item.id === state.selectedBagId);
   const [error, setError] = useState('');
@@ -79,7 +81,8 @@ export default function AnalysisConfigurePage() {
     }
 
     dispatch({ type: 'CONFIG', config });
-    notify('Đã lưu cấu hình. Tiến trình E07 sẽ được nối ở phần triển khai tiếp theo.', 'success');
+    notify('Đã lưu cấu hình phân tích.', 'success');
+    navigate('/analysis/processing');
   };
 
   const duration = bag.duration ?? bag.durationSec;
