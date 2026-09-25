@@ -1,3 +1,4 @@
+using Application.Common.Helpers;
 using Application.Interfaces.Logging;
 using Application.Interfaces.ManageTrancsaction;
 using Domain.Entities.System;
@@ -5,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -25,7 +27,7 @@ namespace Infrastructure.Services.Logging
             Exception ex,
             string? requestPath = null,
             string? httpMethod = null,
-            int statusCode = 500,
+            HttpStatusCode? statusCode = null,
             string? userId = null,
             string? ipAddress = null,
             string? userAgent = null,
@@ -34,14 +36,16 @@ namespace Infrastructure.Services.Logging
         {
             if (ex == null) return Task.CompletedTask;
 
+            var finalStatusCode = statusCode ?? HttpStatusTranslator.MapExceptionToStatusCode(ex);
             var exceptionType = ex.GetType().FullName ?? ex.GetType().Name;
             var rawMessage = string.IsNullOrWhiteSpace(customMessage) ? ex.Message : $"{customMessage} | {ex.Message}";
-            var translated = TranslateException(ex, customMessage);
+            var httpStatusMeaning = HttpStatusTranslator.GetVietnameseMessage(finalStatusCode);
+            var translated = $"{httpStatusMeaning} | {TranslateException(ex, customMessage)}";
 
             _logger.LogError(
                 ex,
                 "SystemErrorLog | Type={ExceptionType} Path={Path} Method={Method} Status={StatusCode} Translation={Translation}",
-                exceptionType, requestPath, httpMethod, statusCode, translated);
+                exceptionType, requestPath, httpMethod, (int)finalStatusCode, translated);
 
             // Persist asynchronously in background so we never block or fail the caller
             _ = Task.Run(async () =>
@@ -60,7 +64,7 @@ namespace Infrastructure.Services.Logging
                         StackTrace = ex.StackTrace,
                         RequestPath = requestPath,
                         HttpMethod = httpMethod,
-                        StatusCode = statusCode,
+                        StatusCode = finalStatusCode,
                         UserId = userId,
                         IpAddress = ipAddress,
                         UserAgent = userAgent

@@ -59,7 +59,7 @@ namespace Infrastructure.Services.Logging
                         HttpMethod = request.HttpMethod,
                         IpAddress = request.IpAddress,
                         UserAgent = request.UserAgent,
-                        StatusSystemResponse = SystemLog.SystemLogStatusEnum.Success,
+                        StatusSystemResponse = System.Net.HttpStatusCode.OK,
                     };
 
                     await unitOfWork.UserActivityLogs.CreateAsync(log);
