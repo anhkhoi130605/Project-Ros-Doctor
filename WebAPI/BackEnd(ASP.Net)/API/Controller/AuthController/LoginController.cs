@@ -75,13 +75,13 @@ public class LoginController : ControllerBase
 		}
 	}
 	[HttpPost("login")]
-	public async Task<IActionResult> Login([FromBody] LoginRequestDTO request)
+	public async Task<IActionResult> Login([FromBody] LoginRequestDTO request, CancellationToken cancellationToken)
 	{
 		if (!ModelState.IsValid) return BadRequest(ModelState);
 
 		// 1. Gói dữ liệu vào Command và bắn qua MediatR xuống tầng Application xử lý
 		var command = new LoginCommand(request);
-		var loginResult = await _mediator.Send(command); // Trả về LoginResponseDTO
+		var loginResult = await _mediator.Send(command, cancellationToken); // Trả về LoginResponseDTO
 
 		// 2. Trả thẳng cục dữ liệu JSON về cho Axios của React nhận lấy
 		return Ok(loginResult);
