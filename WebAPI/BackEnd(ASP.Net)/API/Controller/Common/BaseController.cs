@@ -40,12 +40,17 @@ namespace API.Controller.Common
             TargetType targetType = TargetType.None,
             string? notifyRecipient = null)
         {
-            await LogUserActivity(actionType, targetId, targetType, message);
-
+            var activityTask = LogUserActivity(actionType, targetId, targetType, message);
             var recipient = notifyRecipient ?? CurrentUserId;
+
             if (!string.IsNullOrEmpty(recipient))
             {
-                await SendSystemNotification(recipient, message);
+                var notificationTask = SendSystemNotification(recipient, message);
+                await Task.WhenAll(activityTask, notificationTask);
+            }
+            else
+            {
+                await activityTask;
             }
         }
 

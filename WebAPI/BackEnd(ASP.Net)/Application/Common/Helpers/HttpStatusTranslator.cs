@@ -15,7 +15,7 @@ namespace Application.Common.Helpers
         /// <summary>
         /// Ánh xạ các Exception phổ biến sang HttpStatusCode tương ứng.
         /// </summary>
-        public static HttpStatusCode MapExceptionToStatusCode(Exception exception)
+        public static HttpStatusCode MapExceptionToStatusCode(global::System.Exception exception)
         {
             return exception switch
             {
