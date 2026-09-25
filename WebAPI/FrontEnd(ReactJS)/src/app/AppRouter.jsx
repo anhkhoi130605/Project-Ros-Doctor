@@ -16,6 +16,7 @@ import DashboardOverviewPage from '../feature/DashBoard/pages/DashboardOverviewP
 import BagsListPage from '../feature/bags/pages/BagsListPage';
 import BagDetailPage from '../feature/bags/pages/BagDetailPage';
 import BagValidationPage from '../feature/bags/pages/BagValidationPage';
+import AnalysisConfigurePage from '../feature/bags/pages/AnalysisConfigurePage';
 import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
 import AnalysisPage from '../feature/bags/pages/AnalysisPage';
@@ -57,6 +58,7 @@ export default function AppRouter() {
         <Route path="/bags" element={<BagsListPage />} />
         <Route path="/bags/:bagId" element={<BagDetailPage />} />
         <Route path="/upload/validate" element={<BagValidationPage />} />
+        <Route path="/analysis/configure" element={<AnalysisConfigurePage />} />
         <Route path="/analysis" element={<AnalysisPage />} />
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/upload" element={<UploadPage />} />

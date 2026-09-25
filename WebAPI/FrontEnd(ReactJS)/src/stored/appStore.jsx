@@ -305,7 +305,7 @@ function appReducer(state, action) {
       };
 
     case 'CONFIG':
-      if (state.role !== ROLES.ENGINEER) return state;
+      if (state.role !== ROLES.ENGINEERING) return state;
       return {
         ...state,
         analysisConfig: action.config,
