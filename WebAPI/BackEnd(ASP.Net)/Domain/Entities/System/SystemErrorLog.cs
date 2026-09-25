@@ -12,7 +12,7 @@ namespace Domain.Entities.System
 		public string? StackTrace { get; set; }
 		public string? RequestPath { get; set; }
 		public string? HttpMethod { get; set; }
-		public int StatusCode { get; set; } = 500;
+		public SystemLogStatusEnum StatusCode { get; set; } ;
 		public string? UserId { get; set; }
 		public string? IpAddress { get; set; }
 		public string? UserAgent { get; set; }

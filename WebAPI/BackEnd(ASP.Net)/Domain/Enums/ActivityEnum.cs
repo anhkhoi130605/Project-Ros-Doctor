@@ -15,7 +15,5 @@ namespace Domain.Enums
         AssignRole,
 
         Other
-    }
-
-   
+    } 
 }

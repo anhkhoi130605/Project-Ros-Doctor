@@ -3,25 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { loginApi, registerApi, forgotPasswordApi, resetPasswordApi } from '../api/authApi';
 import { parseUserRole } from '../type/authTypes';
 
-function parseJwtRole(token) {
-  if (!token || typeof token !== 'string' || !token.includes('.')) return '';
-  try {
-    const base64Url = token.split('.')[1];
-    if (!base64Url) return '';
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    const payload = JSON.parse(jsonPayload);
-    return payload?.['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || payload?.role || payload?.Role || '';
-  } catch (err) {
-    return '';
-  }
-}
-
 export function useAuth() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,28 +19,23 @@ export function useAuth() {
     setIsSubmitting(true);
     try {
       const data = await loginApi({ email, password });
-      const token = data?.accessToken || data?.token || data?.data?.accessToken || data?.data?.token || data?.jwt || ('auth-token-' + Date.now());
-      const user = data?.user || data?.data?.user || {};
-      
-      const jwtRole = parseJwtRole(token);
-      const rawRole = parseUserRole(data, user) || jwtRole || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('user') ? 'User' : 'Engineering');
+      const token = data?.accessToken || data?.token;
+      const user = data?.user || {};
+      const rawRole = parseUserRole(data, user) || '';
 
-      const rawRoleLower = rawRole.toString().toLowerCase().trim();
+      const rawRoleLower = rawRole.toLowerCase().trim();
       let normalizedRole = 'User';
       if (rawRoleLower.includes('admin')) {
         normalizedRole = 'Admin';
-      } else if (rawRoleLower.includes('engineer') || rawRoleLower.includes('kỹ sư')) {
+      } else if (rawRoleLower.includes('engineer')) {
         normalizedRole = 'Engineering';
       } else {
         normalizedRole = 'User';
       }
 
-      localStorage.setItem('accessToken', token);
+      if (token) localStorage.setItem('accessToken', token);
       localStorage.setItem('userRole', normalizedRole);
-      localStorage.setItem('userEmail', email);
-      if (user && typeof user === 'object') {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-      }
+      if (user) localStorage.setItem('currentUser', JSON.stringify(user));
 
       setStatus({ type: 'success', message: 'Đăng nhập thành công.' });
 
@@ -121,6 +97,7 @@ export function useAuth() {
   return {
     isSubmitting,
     status,
+    setStatus,
     login,
     register,
     requestForgotPassword,

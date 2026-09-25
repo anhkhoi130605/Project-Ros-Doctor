@@ -8,9 +8,6 @@ export const ROLE_NAMES = {
   Admin: 'Quản trị viên (Admin)',
   Engineering: 'Kỹ sư Robotics (Engineer)',
   User: 'Người dùng (User)',
-  admin: 'Quản trị viên (Admin)',
-  engineering: 'Kỹ sư Robotics (Engineer)',
-  user: 'Người dùng (User)',
 };
 
 export const DEFAULT_SETTINGS = {
