@@ -1,8 +1,4 @@
-using System;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Application.Features.User.UserActivityLog.Handler;
 using Application.Interfaces.Logging;
 using Application.Interfaces.ManageTrancsaction;
 using Domain.Entities.AboutUser;
