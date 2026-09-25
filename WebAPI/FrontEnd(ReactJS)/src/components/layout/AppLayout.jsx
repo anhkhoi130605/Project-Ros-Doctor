@@ -108,7 +108,7 @@ export default function AppLayout() {
             const isAdminRoute = to === '/admin';
             const isSettingsRoute = to === '/settings';
             const isSessionAnalysisRoute = to === '/analysis'
-              && /^\/sessions\/[^/]+\/(overview|topics|tf)$/.test(location.pathname);
+              && /^\/sessions\/[^/]+\/(overview|topics|tf|sync)$/.test(location.pathname);
 
             const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/admin/cost', '/settings/ai-config', '/settings/analysis-config', '/settings/cost'];
             const isCurrentConfigPath = configPaths.includes(location.pathname);
