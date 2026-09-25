@@ -1,6 +1,3 @@
-using System;
-using System.Net;
-using System.Threading.Tasks;
 using Application.Interfaces.Logging;
 using Domain.Enums;
 using Microsoft.Extensions.Logging;
