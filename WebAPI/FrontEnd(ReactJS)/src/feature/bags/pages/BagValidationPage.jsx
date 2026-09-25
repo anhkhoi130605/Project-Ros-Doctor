@@ -24,7 +24,7 @@ function ValidationStat({ title, value, note, icon, tone = '' }) {
 }
 
 export default function BagValidationPage() {
-  const { state, notify } = useApp();
+  const { state } = useApp();
   const bag = (state.bags || []).find((item) => item.id === state.selectedBagId);
 
   if (!bag) {
@@ -144,10 +144,7 @@ export default function BagValidationPage() {
 
         <div className="card-actions between">
           <Button to="/upload" variant="secondary">Quay lại</Button>
-          <Button
-            icon="arrow"
-            onClick={() => notify('Bước cấu hình phân tích sẽ được nối khi triển khai màn hình E06.', 'info')}
-          >
+          <Button to="/analysis/configure" icon="arrow">
             Tiếp tục cấu hình
           </Button>
         </div>
