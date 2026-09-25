@@ -297,6 +297,13 @@ function appReducer(state, action) {
         bags: [action.bag, ...state.bags],
       };
 
+    case 'SELECT_BAG':
+      if (!state.bags.some((bag) => bag.id === action.id)) return state;
+      return {
+        ...state,
+        selectedBagId: action.id,
+      };
+
     case 'CONFIG':
       if (state.role !== ROLES.ENGINEER) return state;
       return {
