@@ -1,0 +1,472 @@
+/* SettingsPage.css — Modern High-Tech Robotics Theme */
+.settings-page-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-notice-banner {
+  margin-bottom: 24px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(81, 220, 248, 0.08), rgba(123, 169, 255, 0.05));
+  border: 1px solid rgba(81, 220, 248, 0.25);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: #243f5a;
+}
+
+.settings-notice-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(81, 220, 248, 0.15);
+  color: #0284c7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-notice-content strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.settings-notice-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.settings-layout-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .settings-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(15, 23, 42, 0.02);
+  margin-bottom: 24px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.settings-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.settings-card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-card-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-card-icon.blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.settings-card-icon.purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.settings-card-icon.amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.settings-card-icon.cyan {
+  background: #ecfeff;
+  color: #0891b2;
+}
+
+.settings-card-title-group h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.settings-card-title-group p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Preset Chips */
+.preset-chips-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 10px;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.preset-chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset-chip-btn {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.16s ease;
+}
+
+.preset-chip-btn:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.preset-chip-btn.active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Modern Input Group with Suffix Unit */
+.settings-input-group {
+  margin-bottom: 16px;
+}
+
+.settings-input-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 650;
+  color: #1e293b;
+  margin-bottom: 6px;
+}
+
+.settings-input-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.settings-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.settings-input-wrapper input,
+.settings-input-wrapper select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 7px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 500;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.settings-input-wrapper input:focus,
+.settings-input-wrapper select:focus {
+  border-color: #0284c7;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.settings-input-unit {
+  position: absolute;
+  right: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 7px;
+  pointer-events: none;
+}
+
+/* 2x2 Parameter Grid */
+.settings-param-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .settings-param-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.settings-param-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  padding: 14px;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+
+.settings-param-item:focus-within {
+  background: #ffffff;
+  border-color: #94a3b8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* Topic Threshold Table */
+.settings-topic-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.settings-topic-table th {
+  background: #f8fafc;
+  padding: 10px 14px;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.settings-topic-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.settings-topic-table tr:last-child td {
+  border-bottom: none;
+}
+
+.settings-topic-table tr:hover td {
+  background: #f8fafc;
+}
+
+.topic-code {
+  font-family: 'Cascadia Code', Consolas, Monaco, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #0284c7;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  padding: 3px 8px;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.topic-type-badge {
+  font-size: 10px;
+  font-weight: 600;
+  color: #64748b;
+  margin-left: 8px;
+}
+
+.topic-hz-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  width: 90px;
+}
+
+.topic-hz-input-wrap input {
+  width: 100%;
+  padding: 5px 26px 5px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.topic-hz-input-wrap span {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Modern Toggles */
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: pointer;
+}
+
+.settings-toggle-row:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+.settings-toggle-info strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 650;
+  color: #1e293b;
+}
+
+.settings-toggle-info p {
+  margin: 3px 0 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+/* Modern Switch Input */
+.settings-switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.settings-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 22px;
+}
+
+.settings-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.settings-switch input:checked + .settings-slider {
+  background-color: #0284c7;
+}
+
+.settings-switch input:checked + .settings-slider:before {
+  transform: translateX(20px);
+}
+
+/* Bottom Bar */
+.settings-footer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  margin-top: 10px;
+}
+
+.settings-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.settings-status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.settings-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
