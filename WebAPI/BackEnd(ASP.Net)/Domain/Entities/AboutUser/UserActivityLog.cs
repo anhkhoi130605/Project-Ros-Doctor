@@ -1,6 +1,6 @@
-﻿using System;
+using System;
+using System.Net;
 using Domain.Entities.Config;
-using static Domain.Enums.SystemLog;
 
 namespace Domain.Entities.AboutUser
 {
@@ -17,6 +17,6 @@ namespace Domain.Entities.AboutUser
 		public string? HttpMethod { get; set; }
 		public string? IpAddress { get; set; }
 		public string? UserAgent { get; set; }
-		public SystemLogStatusEnum StatusSystemResponse { get; set; }
+		public HttpStatusCode StatusSystemResponse { get; set; } = HttpStatusCode.OK;
 	}
 }
