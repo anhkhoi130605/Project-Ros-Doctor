@@ -112,7 +112,8 @@ public static class DependencyInjection
 				ValidateIssuerSigningKey = true,
 				ValidIssuer = jwtConfig.Issuer,
 				ValidAudience = jwtConfig.Audience,
-				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty))
+				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty)),
+				ClockSkew = TimeSpan.Zero
 			};
 		})
 	   .AddGoogle(options =>
