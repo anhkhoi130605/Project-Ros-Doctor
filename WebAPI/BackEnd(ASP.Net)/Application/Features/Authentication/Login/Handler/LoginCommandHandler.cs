@@ -33,11 +33,10 @@ namespace Application.Features.Authentication.Login.Handler
 		public async Task<LoginResponseDTO> Handle(LoginCommand request, CancellationToken cancellationToken)
 		{
 			// Bước A: Kiểm tra xem User có tồn tại trong cơ sở dữ liệu dựa trên Email truyền vào không
-			// (Hàm FindByEmailAsync này bạn cần khai báo trong UserRepository nhé)
-			var user = await _unitOfWork.User.FindByEmailAsync(request.Request.Email);
+			var user = await _unitOfWork.User.FindByEmailAsync(request.Request.Email, cancellationToken);
 
-			// Bước B: Kiểm tra mật khẩu (Đây là ví dụ kiểm tra thô, nếu bạn có mã hóa/hash thì gọi hàm verify ở đây)
-			if (user == null || !passwordHasher.VerifyPassword(request.Request.Password, user.PasswordHash))
+			// Bước B: Kiểm tra mật khẩu (hỗ trợ tài khoản đăng ký OAuth không có mật khẩu)
+			if (user == null || string.IsNullOrEmpty(user.PasswordHash) || !passwordHasher.VerifyPassword(request.Request.Password, user.PasswordHash))
 			{
 				throw new ArgumentException("Tài khoản hoặc mật khẩu không chính xác.");
 			}

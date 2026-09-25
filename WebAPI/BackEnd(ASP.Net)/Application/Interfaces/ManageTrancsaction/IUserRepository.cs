@@ -1,13 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Domain.Entities.AboutUser;
 
 namespace Application.Interfaces.ManageTrancsaction
 {
 	public interface IUserRepository : IGenericRepository<User>
 	{
-		Task<User?> FindByEmailAsync(string email);
-		Task<bool> ExistsByEmailAsync(string email);
+		Task<User?> FindByEmailAsync(string email, CancellationToken cancellationToken = default);
+		Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
 	}
 }

@@ -33,10 +33,12 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseGlobalExceptionMiddleware();
-app.UseMiddleware<RequestResponseLoggingMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors("Frontend");
+
+app.UseRequestResponseLogging();
+app.UseGlobalExceptionMiddleware();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
