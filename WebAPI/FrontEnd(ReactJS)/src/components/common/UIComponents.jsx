@@ -148,6 +148,13 @@ export function Icon({ name = 'activity', size = 19, className = '', ...props })
             <line x1="12" y1="3" x2="12" y2="15" />
           </>
         );
+      case 'send':
+        return (
+          <>
+            <line x1="22" y1="2" x2="11" y2="13" />
+            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+          </>
+        );
       case 'users':
       case 'user':
         return (

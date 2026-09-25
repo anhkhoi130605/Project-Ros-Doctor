@@ -7,7 +7,7 @@ const SESSION_TABS = [
   { id: 'issues', label: 'Sự cố & Chẩn đoán', path: '/issues', screen: 'E10' },
   { id: 'tf', label: 'Cây TF', path: '/tf', badge: '3D' },
   { id: 'sync', label: 'Đồng bộ thời gian', path: '/sync' },
-  { id: 'agent', label: 'Agent & đề xuất', path: '/agent', screen: 'E14' },
+  { id: 'agent', label: 'Agent & đề xuất', path: '/agent' },
 ];
 
 export default function SessionNavigationTabs({ sessionId, activeTab, notify }) {

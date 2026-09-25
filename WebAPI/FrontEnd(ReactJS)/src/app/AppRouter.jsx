@@ -23,6 +23,7 @@ import SessionOverviewPage from '../feature/bags/pages/SessionOverviewPage';
 import SessionTopicsPage from '../feature/bags/pages/SessionTopicsPage';
 import SessionTfPage from '../feature/bags/pages/SessionTfPage';
 import SessionSyncPage from '../feature/bags/pages/SessionSyncPage';
+import SessionAgentPage from '../feature/bags/pages/SessionAgentPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
 import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
@@ -71,6 +72,7 @@ export default function AppRouter() {
         <Route path="/sessions/:id/topics" element={<SessionTopicsPage />} />
         <Route path="/sessions/:id/tf" element={<SessionTfPage />} />
         <Route path="/sessions/:id/sync" element={<SessionSyncPage />} />
+        <Route path="/sessions/:id/agent" element={<SessionAgentPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/reports" element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportsListPage />} />
