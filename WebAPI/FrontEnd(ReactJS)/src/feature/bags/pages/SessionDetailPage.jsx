@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Badge, Card, Button, Notice, FormField, Icon } from '../../../components/common/UIComponents';
 
 export default function SessionDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { state, dispatch, notify } = useApp();
 
   const session = (state.sessions || []).find((s) => s.id === id) || state.sessions[0];
@@ -12,7 +13,7 @@ export default function SessionDetailPage() {
   const bag = (state.bags || []).find((b) => b.id === session?.bagId);
 
   const [reviewNote, setReviewNote] = useState('');
-  const [selectedFindingId, setSelectedFindingId] = useState(findings[0]?.id || null);
+  const [selectedFindingId, setSelectedFindingId] = useState(searchParams.get('finding') || findings[0]?.id || null);
   const [checks, setChecks] = useState([false, false, false]);
 
   const activeFinding = findings.find((f) => f.id === selectedFindingId) || findings[0];
