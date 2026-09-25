@@ -105,7 +105,7 @@ export default function SessionOverviewPage() {
               {findings.map((finding) => (
                 <Link
                   key={finding.id}
-                  to={`/sessions/${session.id}?finding=${finding.id}`}
+                  to={`/sessions/${session.id}/issues?finding=${finding.id}`}
                   aria-label={`Mở sự cố ${finding.title}`}
                 >
                   <i className={finding.severity === 'high' ? 'red-dot' : 'orange-dot'} />
@@ -131,7 +131,7 @@ export default function SessionOverviewPage() {
               <strong>Giới hạn kết luận</strong>
               <span>Phân tích dựa trên log ghi sẵn. Không suy diễn trực tiếp trạng thái robot hiện tại.</span>
             </div>
-            <Button to={`/sessions/${session.id}?finding=${firstFindingId}`} icon="arrow">
+            <Button to={`/sessions/${session.id}/issues?finding=${firstFindingId}`} icon="arrow">
               Mở chi tiết sự cố
             </Button>
           </Card>

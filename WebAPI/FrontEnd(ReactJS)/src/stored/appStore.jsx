@@ -321,7 +321,7 @@ function appReducer(state, action) {
       };
 
     case 'SAVE_NOTE':
-      if (state.role !== ROLES.ENGINEER) return state;
+      if (state.role !== ROLES.ENGINEERING) return state;
       return {
         ...state,
         findings: state.findings.map((f) =>
