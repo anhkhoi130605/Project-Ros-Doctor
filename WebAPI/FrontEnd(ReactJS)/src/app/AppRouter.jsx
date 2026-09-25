@@ -21,6 +21,7 @@ import AnalysisProcessingPage from '../feature/bags/pages/AnalysisProcessingPage
 import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
 import SessionOverviewPage from '../feature/bags/pages/SessionOverviewPage';
 import SessionTopicsPage from '../feature/bags/pages/SessionTopicsPage';
+import SessionTfPage from '../feature/bags/pages/SessionTfPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
 import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
@@ -67,6 +68,7 @@ export default function AppRouter() {
         <Route path="/sessions/:id" element={<SessionDetailPage />} />
         <Route path="/sessions/:id/overview" element={<SessionOverviewPage />} />
         <Route path="/sessions/:id/topics" element={<SessionTopicsPage />} />
+        <Route path="/sessions/:id/tf" element={<SessionTfPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/reports" element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportsListPage />} />
