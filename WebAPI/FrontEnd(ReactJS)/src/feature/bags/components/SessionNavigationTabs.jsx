@@ -5,7 +5,7 @@ const SESSION_TABS = [
   { id: 'overview', label: 'Tổng quan phiên', path: '/overview' },
   { id: 'topics', label: 'Topics & Timeline', path: '/topics' },
   { id: 'issues', label: 'Sự cố & Chẩn đoán', path: '/issues', screen: 'E10' },
-  { id: 'tf', label: 'Cây TF', path: '/tf', screen: 'E12', badge: '3D' },
+  { id: 'tf', label: 'Cây TF', path: '/tf', badge: '3D' },
   { id: 'sync', label: 'Đồng bộ thời gian', path: '/sync', screen: 'E13' },
   { id: 'agent', label: 'Agent & đề xuất', path: '/agent', screen: 'E14' },
 ];
