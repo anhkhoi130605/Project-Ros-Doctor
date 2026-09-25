@@ -91,6 +91,11 @@ export default function BagDetailPage() {
     notify('Đã xóa rosbag mẫu.', 'info');
   };
 
+  const handleStartAnalysis = () => {
+    dispatch({ type: 'SELECT_BAG', id: bag.id });
+    navigate('/upload/validate');
+  };
+
   return (
     <div className="bag-detail-page">
       <PageHeader title={bag.name} subtitle="Thông tin rosbag / Metadata & phiên làm việc">
@@ -138,7 +143,7 @@ export default function BagDetailPage() {
             {isEngineer && (
               <Button
                 variant="secondary"
-                onClick={() => notify('Luồng kiểm tra dữ liệu sẽ được nối khi triển khai màn hình E05.', 'info')}
+                onClick={handleStartAnalysis}
               >
                 Kiểm tra & phân tích
               </Button>
