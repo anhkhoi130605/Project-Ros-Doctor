@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Net;
 using Domain.Entities.Config;
-using static Domain.Enums.SystemLog;
 
 namespace Domain.Entities.System
 {

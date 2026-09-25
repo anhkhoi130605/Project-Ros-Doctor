@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 
 namespace API.Middlewares.Extentions
 {
@@ -7,6 +7,11 @@ namespace API.Middlewares.Extentions
 		public static IApplicationBuilder UseGlobalExceptionMiddleware(this IApplicationBuilder app)
 		{
 			return app.UseMiddleware<GlobalExceptionMiddleware>();
+		}
+
+		public static IApplicationBuilder UseRequestResponseLogging(this IApplicationBuilder app)
+		{
+			return app.UseMiddleware<RequestResponseLoggingMiddleware>();
 		}
 	}
 }

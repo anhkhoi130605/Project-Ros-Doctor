@@ -2,13 +2,13 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-/// <summary>
+
+namespace Application.Common.Helpers
+{
+    /// <summary>
     /// Quản lý khóa đồng thời (Keyed Concurrency Lock) bằng SemaphoreSlim.
     /// Giúp chống Race Condition trên các luồng nghiệp vụ quan trọng (đăng ký trùng email, thao tác ví, sửa profile đồng thời).
     /// </summary>
-namespace Application.Common.Helpers
-{
-    
     public static class ConcurrencyLockManager
     {
         private sealed class RefCountedSemaphore
