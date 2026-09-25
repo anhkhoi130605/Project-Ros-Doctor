@@ -40,7 +40,7 @@ export default function AnalysisProcessingPage() {
         window.clearInterval(interval);
         completionTimer = window.setTimeout(() => {
           notify('Đã hoàn tất tiến trình phân tích mô phỏng.', 'success');
-          navigate(`/sessions/${resultSessionId}`, { replace: true });
+          navigate(`/sessions/${resultSessionId}/overview`, { replace: true });
         }, 900);
       }
     }, 280);
@@ -106,7 +106,7 @@ export default function AnalysisProcessingPage() {
         </div>
 
         <div className="button-row">
-          <Button to={`/sessions/${resultSessionId}`} icon="arrow">
+          <Button to={`/sessions/${resultSessionId}/overview`} icon="arrow">
             Xem kết quả mẫu đã có
           </Button>
           <Button to="/analysis/configure" variant="ghost">

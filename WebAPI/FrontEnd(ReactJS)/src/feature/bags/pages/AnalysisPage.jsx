@@ -182,7 +182,7 @@ export default function AnalysisPage() {
                     <Badge status={s.status}>{s.statusLabel}</Badge>
                   </td>
                   <td>
-                    <Button to={`/sessions/${s.id}`} variant="ghost" icon="arrow">
+                    <Button to={`/sessions/${s.id}/overview`} variant="ghost" icon="arrow">
                       Chi tiết
                     </Button>
                   </td>

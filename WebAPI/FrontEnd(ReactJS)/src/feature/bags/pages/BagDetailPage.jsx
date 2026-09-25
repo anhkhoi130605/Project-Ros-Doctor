@@ -138,7 +138,7 @@ export default function BagDetailPage() {
 
           <div className="button-row">
             {bag.sessionId && (
-              <Button to={`/sessions/${bag.sessionId}`} icon="arrow">Mở phiên phân tích</Button>
+              <Button to={`/sessions/${bag.sessionId}/overview`} icon="arrow">Mở phiên phân tích</Button>
             )}
             {isEngineer && (
               <Button

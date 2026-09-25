@@ -106,6 +106,8 @@ export default function AppLayout() {
           {filteredNav.map(([to, label, icon, roles, badgeCount]) => {
             const isAdminRoute = to === '/admin';
             const isSettingsRoute = to === '/settings';
+            const isSessionAnalysisRoute = to === '/analysis'
+              && /^\/sessions\/[^/]+\/(overview|topics)$/.test(location.pathname);
 
             const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/admin/cost', '/settings/ai-config', '/settings/analysis-config', '/settings/cost'];
             const isCurrentConfigPath = configPaths.includes(location.pathname);
@@ -230,7 +232,7 @@ export default function AppLayout() {
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                className={({ isActive }) => `nav-item ${isActive || isSessionAnalysisRoute ? 'active' : ''}`}
                 onClick={() => setMobileNavOpen(false)}
               >
                 <Icon name={icon} size={18} />

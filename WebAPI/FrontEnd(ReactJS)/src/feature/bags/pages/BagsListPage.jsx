@@ -88,7 +88,11 @@ export default function BagsListPage() {
                     <Badge status={bag.status || 'complete'} />
                   </td>
                   <td>
-                    <Button to={`/sessions/${bag.sessionId || bag.id}`} variant="ghost" icon="arrow">
+                    <Button
+                      to={bag.sessionId ? `/sessions/${bag.sessionId}/overview` : `/sessions/${bag.id}`}
+                      variant="ghost"
+                      icon="arrow"
+                    >
                       Xem chẩn đoán
                     </Button>
                   </td>
