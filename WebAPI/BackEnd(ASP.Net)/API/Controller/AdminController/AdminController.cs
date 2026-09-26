@@ -4,6 +4,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using API.Controller.Common;
 using Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDataUser;
+using Application.Features.Admin.ManageUser.UpdateUserRole;
+using Domain.Enums;
+using static Domain.Enums.UserEnum;
 
 namespace API.Controller.RoleForUser.InClubController.AdminController
 {
@@ -40,6 +43,40 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 				return NotFound(new { message = "User not found." });
 			}
 			return Ok(result);
+		}
+
+		[HttpPut("members/{id}/role")]
+		public async Task<IActionResult> UpdateMemberRole(string id, [FromBody] UpdateUserRoleRequestDto request)
+		{
+			if (request == null || string.IsNullOrWhiteSpace(request.Role))
+			{
+				return BadRequest(new { message = "Vai trò mới không được để trống." });
+			}
+
+			if (!Enum.TryParse<RoleEnum>(request.Role, true, out var parsedRole))
+			{
+				return BadRequest(new { message = $"Vai trò [{request.Role}] không hợp lệ." });
+			}
+
+			var command = new UpdateUserRoleCommand
+			{
+				UserId = id,
+				Role = parsedRole
+			};
+
+			var result = await _mediator.Send(command);
+			if (result)
+			{
+				await ExecuteSuccessAsync(
+					$"Đã cập nhật vai trò của thành viên sang [{request.Role}]",
+					UserActionType.AssignRole,
+					targetId: id,
+					targetType: TargetType.User
+				);
+				return Ok(new { message = "Cập nhật vai trò thành công." });
+			}
+
+			return BadRequest(new { message = "Không thể cập nhật vai trò." });
 		}
 	}
 }
