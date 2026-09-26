@@ -59,6 +59,8 @@ public static class DependencyInjection
 		services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
 		services.AddScoped<IStorageService, CloudinaryStorageService>();
+		services.AddSingleton<IUserActivityLogQueue, UserActivityLogQueue>();
+		services.AddHostedService<UserActivityLogBackgroundService>();
 		services.AddScoped<IUserActivityLogService, UserActivityLogService>();
 		services.AddScoped<ISystemErrorLogService, SystemErrorLogService>();
 		services.AddScoped<INotificationService, NotificationService>();
@@ -110,7 +112,8 @@ public static class DependencyInjection
 				ValidateIssuerSigningKey = true,
 				ValidIssuer = jwtConfig.Issuer,
 				ValidAudience = jwtConfig.Audience,
-				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty))
+				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty)),
+				ClockSkew = TimeSpan.Zero
 			};
 		})
 	   .AddGoogle(options =>

@@ -53,7 +53,7 @@ function getInitialState() {
   return {
     schema: 2,
     signedIn: false,
-    role: ROLES.ENGINEERING,
+    role: ROLES.ENGINEER,
     profile: {
       name: 'An Nguyễn',
       email: 'engineer@ros2doctor.local',
@@ -162,7 +162,7 @@ function getInitialState() {
         id: 'u1',
         name: 'Admin RAV-13',
         email: 'admin@ros2doctor.local',
-        role: 'Admin',
+        role: 'admin',
         project: 'Robotics Lab',
         active: true,
       },
@@ -170,15 +170,15 @@ function getInitialState() {
         id: 'u2',
         name: 'An Nguyễn',
         email: 'engineer@ros2doctor.local',
-        role: 'Engineering',
+        role: 'engineer',
         project: 'Robotics Lab',
         active: true,
       },
       {
         id: 'u3',
-        name: 'Người dùng',
-        email: 'user@ros2doctor.local',
-        role: 'User',
+        name: 'Khách quan sát',
+        email: 'viewer@ros2doctor.local',
+        role: 'viewer',
         project: 'Robotics Lab',
         active: true,
       },
@@ -205,26 +205,26 @@ function loadSavedState(savedJson) {
     const parsed = JSON.parse(savedJson);
     const stateObj = parsed
       ? {
-          ...initial,
-          ...parsed,
-          settings: { ...initial.settings, ...parsed.settings },
-          profile: { ...initial.profile, ...parsed.profile },
-          signedIn: !!parsed.signedIn || !!token,
-        }
+        ...initial,
+        ...parsed,
+        settings: { ...initial.settings, ...parsed.settings },
+        profile: { ...initial.profile, ...parsed.profile },
+        signedIn: !!parsed.signedIn || !!token,
+      }
       : {
-          ...initial,
-          signedIn: !!token,
-        };
+        ...initial,
+        signedIn: !!token,
+      };
 
     if (savedRole) {
       const norm = savedRole.toLowerCase();
-      stateObj.role = norm.includes('admin') ? 'Admin' : norm.includes('user') ? 'User' : 'Engineering';
+      stateObj.role = norm.includes('admin') ? 'admin' : norm.includes('user') ? 'user' : 'engineering';
     }
     return stateObj;
   } catch {
     if (savedRole) {
       const norm = savedRole.toLowerCase();
-      initial.role = norm.includes('admin') ? 'Admin' : norm.includes('user') ? 'User' : 'Engineering';
+      initial.role = norm.includes('admin') ? 'admin' : norm.includes('user') ? 'user' : 'engineering';
     }
     initial.signedIn = !!token;
     return initial;
@@ -297,8 +297,15 @@ function appReducer(state, action) {
         bags: [action.bag, ...state.bags],
       };
 
+    case 'SELECT_BAG':
+      if (!state.bags.some((bag) => bag.id === action.id)) return state;
+      return {
+        ...state,
+        selectedBagId: action.id,
+      };
+
     case 'CONFIG':
-      if (state.role !== ROLES.ENGINEER) return state;
+      if (state.role !== ROLES.ENGINEERING) return state;
       return {
         ...state,
         analysisConfig: action.config,
@@ -314,17 +321,17 @@ function appReducer(state, action) {
       };
 
     case 'SAVE_NOTE':
-      if (state.role !== ROLES.ENGINEER) return state;
+      if (state.role !== ROLES.ENGINEERING) return state;
       return {
         ...state,
         findings: state.findings.map((f) =>
           f.id === action.id
             ? {
-                ...f,
-                analystNote: action.note.trim(),
-                revision: (f.revision || 1) + 1,
-                review: { status: 'pending', note: '', by: null, at: null },
-              }
+              ...f,
+              analystNote: action.note.trim(),
+              revision: (f.revision || 1) + 1,
+              review: { status: 'pending', note: '', by: null, at: null },
+            }
             : f
         ),
       };
@@ -337,9 +344,9 @@ function appReducer(state, action) {
         findings: state.findings.map((f) =>
           f.id === action.id
             ? {
-                ...f,
-                review: { status: action.decision, note: action.note.trim(), by: state.profile.name, at },
-              }
+              ...f,
+              review: { status: action.decision, note: action.note.trim(), by: state.profile.name, at },
+            }
             : f
         ),
         audit: [

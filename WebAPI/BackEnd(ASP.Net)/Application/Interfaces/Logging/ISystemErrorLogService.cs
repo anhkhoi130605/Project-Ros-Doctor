@@ -1,5 +1,6 @@
 using System;
-using System.Threading.Tasks;
+using System.Net;
+
 
 namespace Application.Interfaces.Logging
 {
@@ -12,7 +13,7 @@ namespace Application.Interfaces.Logging
             Exception ex,
             string? requestPath = null,
             string? httpMethod = null,
-            int statusCode = 500,
+			HttpStatusCode? statusCode = null,
             string? userId = null,
             string? ipAddress = null,
             string? userAgent = null,

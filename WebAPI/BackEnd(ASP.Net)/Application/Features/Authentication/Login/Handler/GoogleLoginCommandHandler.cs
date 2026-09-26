@@ -36,40 +36,44 @@ namespace Application.Features.Authentication.Login.Handler
             // Extract email
             var email = principal.FindFirst(ClaimTypes.Email)?.Value ?? principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value;
             if (string.IsNullOrWhiteSpace(email))
-                throw new Exception("Không lấy được email từ Google.");
+                throw new ArgumentException("Không lấy được email từ Google.");
 
-            // Try find existing user
-            var user = await _unitOfWork.User.FindByEmailAsync(email);
-
-            if (user == null)
+            DomainUser? user;
+            using (await Application.Common.Helpers.ConcurrencyLockManager.LockAsync($"login:google:{email.Trim().ToLowerInvariant()}", TimeSpan.FromSeconds(10), cancellationToken))
             {
-                // Create default role if missing
-                var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == RoleEnum.User);
-                if (roleEntity == null)
+                // Try find existing user
+                user = await _unitOfWork.User.FindByEmailAsync(email, cancellationToken);
+
+                if (user == null)
                 {
-                    roleEntity = new DomainRole { RoleName = RoleEnum.User };
-                    await _unitOfWork.Roles.CreateAsync(roleEntity);
-                    await _unitOfWork.SaveChangesAsync();
+                    // Create default role if missing
+                    var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == RoleEnum.User, null, cancellationToken);
+                    if (roleEntity == null)
+                    {
+                        roleEntity = new DomainRole { RoleName = RoleEnum.User };
+                        await _unitOfWork.Roles.CreateAsync(roleEntity, cancellationToken);
+                        await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    }
+
+                    // Generate a temporary random password so the user can log in later with email/password if needed.
+                    var temporaryPassword = Guid.NewGuid().ToString("N").Substring(0, 12);
+
+                    user = new DomainUser
+                    {
+                        Email = email,
+                        FullName = principal.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty,
+                        PasswordHash = _passwordHasher.HashPassword(temporaryPassword),
+                        RoleId = roleEntity.Id,
+                        Role = roleEntity,
+                    };
+
+                    await _unitOfWork.User.CreateAsync(user, cancellationToken);
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
-
-                // Generate a temporary random password so the user can log in later with email/password if needed.
-                var temporaryPassword = Guid.NewGuid().ToString("N").Substring(0, 12);
-
-                user = new DomainUser
-                {
-                    Email = email,
-                    FullName = principal.FindFirst(ClaimTypes.Name)?.Value ?? string.Empty,
-                    PasswordHash = _passwordHasher.HashPassword(temporaryPassword),
-                    RoleId = roleEntity.Id,
-                    Role = roleEntity,
-                };
-
-                await _unitOfWork.User.CreateAsync(user);
-                await _unitOfWork.SaveChangesAsync();
             }
 
             var roleName = user.Role?.RoleName?.ToString() ?? RoleEnum.User.ToString();
-            var accessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, new List<string> { roleName});
+            var accessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, new List<string> { roleName });
 
             await _userActivityLogService.LogActivityAsync(
                 user.Id,
@@ -89,7 +93,7 @@ namespace Application.Features.Authentication.Login.Handler
                 {
                     Id = user.Id,
                     Email = user.Email,
-                    FullName = user.FullName,
+                    FullName = user.FullName ?? string.Empty,
                     Role = user.Role?.RoleName.ToString() ?? string.Empty,
                 }
             };
