@@ -272,4 +272,5 @@ localhost.pfx
 vite.config.js
 localhost.key
 Note.txt
+mcp_config.json
 

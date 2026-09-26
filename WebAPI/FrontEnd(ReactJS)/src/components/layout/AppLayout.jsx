@@ -30,20 +30,21 @@ export default function AppLayout() {
     navigate('/login');
   };
 
+  const currentRole = (state.role || 'Engineering').toLowerCase();
+  const isUserRole = currentRole === 'user';
+
   const navItems = [
     ['/dashboard', 'Tổng quan', 'grid', ['Admin', 'Engineering', 'User']],
-    ['/bags', 'Rosbag', 'database', ['Admin', 'Engineering', 'User']],
+    ['/bags', isUserRole ? 'Rosbag được chia sẻ' : 'Rosbag', 'database', ['Admin', 'Engineering', 'User']],
     ['/analysis', 'Phân tích', 'activity', ['Engineering']],
     ['/chat', 'Chat Agent', 'message-square', ['Engineering']],
     ['/reviews', 'Duyệt kết luận', 'file-text', ['Engineering'], 5],
-    ['/reports', 'Báo cáo', 'file-text', ['Admin', 'Engineering', 'User']],
+    ['/reports', isUserRole ? 'Báo cáo đã duyệt' : 'Báo cáo', 'file-text', ['Admin', 'Engineering', 'User']],
     ['/benchmark', 'Benchmark', 'trending-up', ['Engineering']],
     ['/usage', 'Chi phí & hiệu suất', 'clock', ['Engineering']],
     ['/admin', 'Quản trị hệ thống', 'shield', ['Admin']],
     ['/settings', 'Cài đặt', 'settings', ['Admin']],
   ];
-
-  const currentRole = (state.role || 'Engineering').toLowerCase();
   const filteredNav = navItems.filter(([, , , roles]) =>
     roles.some((r) => r.toLowerCase() === currentRole)
   );
