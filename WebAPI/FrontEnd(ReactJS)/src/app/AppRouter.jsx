@@ -28,6 +28,7 @@ import SessionAgentPage from '../feature/bags/pages/SessionAgentPage';
 import UploadPage from '../feature/bags/pages/UploadPage';
 import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
+import ReportDetailPage from '../feature/reports/pages/ReportDetailPage';
 import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
 import ChatPage from '../feature/chat/pages/ChatPage';
 import BenchmarkPage from '../feature/benchmark/pages/BenchmarkPage';
@@ -77,7 +78,7 @@ export default function AppRouter() {
         <Route path="/sessions/:id/agent" element={<SessionAgentPage />} />
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/reports" element={<ReportsListPage />} />
-        <Route path="/reports/:id" element={<ReportsListPage />} />
+        <Route path="/reports/:id" element={<ReportDetailPage />} />
         <Route path="/reviews" element={<ReviewsListPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/benchmark" element={<BenchmarkPage />} />
