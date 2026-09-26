@@ -7,6 +7,7 @@ import {
   fetchAdminMembersApi,
   fetchSystemLogsApi,
   triggerTestErrorApi,
+  updateUserRoleApi,
 } from '../../DashBoard/api/dashboardApi';
 import '../../DashBoard/page/dashboard.css';
 
@@ -32,7 +33,7 @@ function formatRelativeTime(dateString) {
   const diffInSeconds = Math.floor((now - date) / 1000);
 
   if (diffInSeconds < 60) return 'Vừa xong';
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  const diffInMinutes = Math.floor((now - date) / 1000 / 60);
   if (diffInMinutes < 60) return `${diffInMinutes} phút trước`;
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) return `${diffInHours} giờ trước`;
@@ -54,6 +55,7 @@ function getInitials(name) {
 const roleColors = {
   admin: { bg: '#e0f2fe', color: '#0369a1', border: '#bae6fd' },
   manager: { bg: '#fef3c7', color: '#92400e', border: '#fde68a' },
+  engineering: { bg: '#e0e7ff', color: '#3730a3', border: '#c7d2fe' },
   user: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
 };
 
@@ -74,11 +76,20 @@ export default function AdminOverviewPage() {
   const [bannedUserIds, setBannedUserIds] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
 
-  const handleUpdateRole = (memberId, newRole) => {
+  const handleUpdateRole = async (memberId, newRole) => {
+    const previousMembers = [...members];
+    // Optimistic UI update
     setMembers((prev) =>
       prev.map((m) => ((m.id || m.email) === memberId ? { ...m, role: newRole } : m))
     );
-    notify(`Đã cập nhật vai trò thành [${newRole}]`, 'success');
+    try {
+      await updateUserRoleApi(memberId, newRole);
+      notify(`Đã cập nhật vai trò thành [${newRole}]`, 'success');
+    } catch (err) {
+      // Revert state if API call failed
+      setMembers(previousMembers);
+      notify(err.message || 'Không thể cập nhật vai trò.', 'error');
+    }
   };
 
   const handleToggleBan = (memberId) => {
@@ -99,15 +110,25 @@ export default function AdminOverviewPage() {
     }
   };
 
-  const handleSaveEditMember = () => {
+  const handleSaveEditMember = async () => {
     if (!editingMember) return;
-    setMembers((prev) =>
-      prev.map((m) =>
-        (m.id || m.email) === (editingMember.id || editingMember.email) ? editingMember : m
-      )
-    );
-    setEditingMember(null);
-    notify('Đã cập nhật thông tin thành viên thành công!', 'success');
+    const memberId = editingMember.id || editingMember.email;
+    const originalMember = members.find((m) => (m.id || m.email) === memberId);
+
+    try {
+      if (originalMember && originalMember.role !== editingMember.role) {
+        await updateUserRoleApi(memberId, editingMember.role);
+      }
+      setMembers((prev) =>
+        prev.map((m) =>
+          (m.id || m.email) === memberId ? editingMember : m
+        )
+      );
+      setEditingMember(null);
+      notify('Đã cập nhật thông tin thành viên thành công!', 'success');
+    } catch (err) {
+      notify(err.message || 'Lỗi khi cập nhật vai trò thành viên.', 'error');
+    }
   };
 
   // System logs state
