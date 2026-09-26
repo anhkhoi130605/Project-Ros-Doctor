@@ -1,4 +1,9 @@
+using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace API.Middlewares;
 
@@ -6,6 +11,11 @@ public class RequestResponseLoggingMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestResponseLoggingMiddleware> _logger;
+
+    // Mask các trường nhạy cảm để chống rò rỉ dữ liệu trong log (OWASP A09)
+    private static readonly Regex SensitiveDataRegex = new(
+        @"(""(?:password|pwd|secret|accessToken|token|clientSecret|refreshToken|passwordHash)""\s*:\s*"")[^""]*("")",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<RequestResponseLoggingMiddleware> logger)
     {
@@ -55,23 +65,29 @@ public class RequestResponseLoggingMiddleware
             responseBody = await new StreamReader(responseBodyStream).ReadToEndAsync();
             responseBodyStream.Seek(0, SeekOrigin.Begin);
 
-            if (context.Response.Body.CanSeek)
-            {
-                context.Response.Body = originalBodyStream;
-                await responseBodyStream.CopyToAsync(originalBodyStream);
-            }
+            context.Response.Body = originalBodyStream;
+            await responseBodyStream.CopyToAsync(originalBodyStream);
         }
         finally
         {
             context.Response.Body = originalBodyStream;
         }
 
+        var sanitizedRequestBody = Sanitize(requestBody);
+        var sanitizedResponseBody = Sanitize(responseBody);
+
         _logger.LogInformation(
             "HTTP {Method} {Path} responded {StatusCode}. RequestBody={RequestBody}. ResponseBody={ResponseBody}",
             context.Request.Method,
             context.Request.Path,
             context.Response.StatusCode,
-            requestBody,
-            responseBody);
+            sanitizedRequestBody,
+            sanitizedResponseBody);
+    }
+
+    private static string Sanitize(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content)) return string.Empty;
+        return SensitiveDataRegex.Replace(content, "$1***MASKED***$2");
     }
 }

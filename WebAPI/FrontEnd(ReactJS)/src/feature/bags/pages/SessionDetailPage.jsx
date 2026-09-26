@@ -5,6 +5,7 @@ import { Badge, Card, Button, Notice, FormField, Icon } from '../../../component
 
 export default function SessionDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const { state, dispatch, notify } = useApp();
 
   // Find or fallback session
@@ -46,7 +47,7 @@ export default function SessionDetailPage() {
 
   // Tab 3 Issues State
   const [reviewNote, setReviewNote] = useState('');
-  const [selectedFindingId, setSelectedFindingId] = useState(findings[0]?.id || null);
+  const [selectedFindingId, setSelectedFindingId] = useState(searchParams.get('finding') || findings[0]?.id || null);
   const [checks, setChecks] = useState([false, false, false]);
   const activeFinding = findings.find((f) => f.id === selectedFindingId) || findings[0];
 

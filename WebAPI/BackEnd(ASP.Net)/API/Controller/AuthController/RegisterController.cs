@@ -69,7 +69,7 @@ public class RegisterController : ControllerBase
 		}
 	}
     [HttpPost("register")]
-	public async Task<IActionResult> Register([FromBody] RegisterUserRequestDTO request)
+	public async Task<IActionResult> Register([FromBody] RegisterUserRequestDTO request, CancellationToken cancellationToken)
 	{
 		if (!ModelState.IsValid) return BadRequest(ModelState);
 
@@ -77,7 +77,7 @@ public class RegisterController : ControllerBase
 		var command = new RegisterCommand(request);
 		try
 		{
-			var registerResult = await _mediator.Send(command);
+			var registerResult = await _mediator.Send(command, cancellationToken);
 			// 2. Trả thẳng cục dữ liệu JSON về cho Axios của React nhận lấy
 			return Ok(registerResult);
 		}

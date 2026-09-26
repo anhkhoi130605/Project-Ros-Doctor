@@ -16,7 +16,6 @@ namespace API.Controller.Common
     public class BaseController : ControllerBase
     {
         private IUserActivityLogService? _userActivityLogService;
-        private ISystemErrorLogService? _systemErrorLogService;
         private INotificationService? _notificationService;
 
         protected string? CurrentUserId => User.GetUserId();
@@ -25,8 +24,6 @@ namespace API.Controller.Common
         protected IUserActivityLogService UserActivityLogService =>
             _userActivityLogService ??= HttpContext.RequestServices.GetRequiredService<IUserActivityLogService>();
 
-        protected ISystemErrorLogService SystemErrorLogService =>
-            _systemErrorLogService ??= HttpContext.RequestServices.GetRequiredService<ISystemErrorLogService>();
 
         protected INotificationService NotificationService =>
             _notificationService ??= HttpContext.RequestServices.GetRequiredService<INotificationService>();
@@ -43,12 +40,17 @@ namespace API.Controller.Common
             TargetType targetType = TargetType.None,
             string? notifyRecipient = null)
         {
-            await LogUserActivity(actionType, targetId, targetType, message);
-
+            var activityTask = LogUserActivity(actionType, targetId, targetType, message);
             var recipient = notifyRecipient ?? CurrentUserId;
+
             if (!string.IsNullOrEmpty(recipient))
             {
-                await SendSystemNotification(recipient, message);
+                var notificationTask = SendSystemNotification(recipient, message);
+                await Task.WhenAll(activityTask, notificationTask);
+            }
+            else
+            {
+                await activityTask;
             }
         }
 
@@ -80,9 +82,11 @@ namespace API.Controller.Common
         /// <summary>
         /// Ghi lại lỗi hệ thống với thông tin người dùng hiện tại nếu có.
         /// </summary>
-        protected async Task LogSystemError(Exception ex, string? customMessage = null)
+        protected Task LogSystemError(Exception ex, string? customMessage = null)
         {
-            await SystemErrorLogService.LogErrorAsync(ex, customMessage, CurrentUserId);
+            var logger = HttpContext.RequestServices.GetRequiredService<ILogger<BaseController>>();
+            logger.LogError(ex, "System error for user {UserId}: {CustomMessage}", CurrentUserId, customMessage ?? ex.Message);
+            return Task.CompletedTask;
         }
 
         /// <summary>

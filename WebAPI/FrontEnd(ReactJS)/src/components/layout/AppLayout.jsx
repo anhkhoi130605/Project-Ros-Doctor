@@ -53,6 +53,7 @@ export default function AppLayout() {
     if (pathname.startsWith('/dashboard')) return 'Tổng quan';
     if (pathname.startsWith('/bags')) return 'Rosbag';
     if (pathname.startsWith('/analysis')) return 'Phân tích & Chẩn đoán';
+    if (pathname.startsWith('/sessions')) return 'Phiên phân tích';
     if (pathname.startsWith('/reports')) return 'Báo cáo';
     if (pathname.startsWith('/reviews')) return 'Duyệt kết luận';
     if (pathname.startsWith('/chat')) return 'Chat Agent';
@@ -107,6 +108,8 @@ export default function AppLayout() {
           {filteredNav.map(([to, label, icon, roles, badgeCount]) => {
             const isAdminRoute = to === '/admin';
             const isSettingsRoute = to === '/settings';
+            const isSessionAnalysisRoute = to === '/analysis'
+              && /^\/sessions\/[^/]+\/(overview|topics|issues|tf|sync|agent)$/.test(location.pathname);
 
             const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/admin/cost', '/settings/ai-config', '/settings/analysis-config', '/settings/cost'];
             const isCurrentConfigPath = configPaths.includes(location.pathname);
@@ -231,7 +234,7 @@ export default function AppLayout() {
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                className={({ isActive }) => `nav-item ${isActive || isSessionAnalysisRoute ? 'active' : ''}`}
                 onClick={() => setMobileNavOpen(false)}
               >
                 <Icon name={icon} size={18} />
