@@ -337,7 +337,7 @@ function appReducer(state, action) {
       };
 
     case 'REVIEW': {
-      if (state.role !== ROLES.ENGINEER) return state;
+      if (String(state.role).toLowerCase() === 'user') return state;
       const at = action.at || new Date().toISOString();
       return {
         ...state,

@@ -1,7 +1,9 @@
 export const ROLES = {
   ADMIN: 'Admin',
   ENGINEERING: 'Engineering',
+  ENGINEER: 'Engineering',
   USER: 'User',
+  VIEWER: 'User',
 };
 
 export const ROLE_NAMES = {
