@@ -26,3 +26,8 @@ export async function triggerTestErrorApi({ errorType, message }) {
     message: message || undefined,
   });
 }
+
+export async function updateUserRoleApi(memberId, role) {
+  return apiClient.put(`/api/admin/members/${memberId}/role`, { role });
+}
+
