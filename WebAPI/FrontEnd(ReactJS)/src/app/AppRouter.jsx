@@ -30,6 +30,7 @@ import AnalysisPage from '../feature/bags/pages/AnalysisPage';
 import ReportsListPage from '../feature/reports/pages/ReportsListPage';
 import ReportDetailPage from '../feature/reports/pages/ReportDetailPage';
 import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
+import ReviewDetailPage from '../feature/reports/pages/ReviewDetailPage';
 import ChatPage from '../feature/chat/pages/ChatPage';
 import BenchmarkPage from '../feature/benchmark/pages/BenchmarkPage';
 import CostPerformancePage from '../feature/admin/pages/CostPerformancePage';
@@ -80,6 +81,8 @@ export default function AppRouter() {
         <Route path="/reports" element={<ReportsListPage />} />
         <Route path="/reports/:id" element={<ReportDetailPage />} />
         <Route path="/reviews" element={<ReviewsListPage />} />
+        <Route path="/reviews/:findingId" element={<ReviewDetailPage />} />
+        <Route path="/reviews/detail" element={<ReviewDetailPage />} />
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/benchmark" element={<BenchmarkPage />} />
         <Route path="/usage" element={<CostPerformancePage />} />

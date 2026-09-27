@@ -51,7 +51,7 @@ export default function ReviewsListPage() {
               key: 'id',
               label: 'MÃ SỰ CỐ',
               render: (f) => (
-                <Link className="table-title-link" to={`/sessions/${f.sessionId}`}>
+                <Link className="table-title-link" to={`/reviews/${f.id}`}>
                   <strong>{f.id}</strong>
                   <small>{f.title}</small>
                 </Link>
@@ -73,7 +73,7 @@ export default function ReviewsListPage() {
               key: 'action',
               label: 'THAO TÁC',
               render: (f) => (
-                <Link to={`/sessions/${f.sessionId}`} className="action-link-btn">
+                <Link to={`/reviews/${f.id}`} className="action-link-btn">
                   Kiểm tra & Thẩm định →
                 </Link>
               ),

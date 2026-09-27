@@ -113,6 +113,15 @@ export function Icon({ name = 'activity', size = 19, className = '', ...props })
             <polyline points="12 5 19 12 12 19" />
           </>
         );
+      case 'arrow-left':
+        return (
+          <>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </>
+        );
+      case 'play':
+        return <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none" />;
       case 'plus':
         return (
           <>
