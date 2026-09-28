@@ -273,3 +273,4 @@ vite.config.js
 localhost.key
 Note.txt
 .agents/mcp_config.json
+jsconfig.json
