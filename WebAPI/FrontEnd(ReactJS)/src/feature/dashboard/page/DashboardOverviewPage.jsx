@@ -1,9 +1,9 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useApp } from '../../../stored/appStore.jsx';
-import { PageHeader, Card, Button, Badge, Icon } from '../../../components/common/UIComponents.jsx';
+import { useApp } from '../../../stored/appStore';
+import { PageHeader, Card, Button, Badge, Icon } from '../../../components/common/UIComponents';
 import robotHeroImg from '../../../assets/robot-hero.jpg';
-import EngineeringDashboardPage from './Engineering/EngineeringDashboardPage.jsx';
+import EngineeringDashboardPage from './Engineering/EngineeringDashboardPage';
 
 function ViewerDashboardView({ state, onSwitchToEngineer }) {
   const publishedSessions = (state.sessions || []).filter(
@@ -15,12 +15,12 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
     <div className="viewer-dashboard-overview" style={{ display: 'grid', gap: '24px' }}>
       {/* Page Header V01 */}
       <PageHeader
-        eyebrow="USER Â· CHá»ˆ XEM"
-        title="KhÃ´ng gian quan sÃ¡t"
-        subtitle="Dá»¯ liá»‡u vÃ  káº¿t luáº­n Ä‘Ã£ Ä‘Æ°á»£c ká»¹ sÆ° xÃ¡c nháº­n trong Robotics Lab."
+        eyebrow="USER · CHỈ XEM"
+        title="Không gian quan sát"
+        subtitle="Dữ liệu và kết luận đã được kỹ sư xác nhận trong Robotics Lab."
       >
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <Badge tone="blue">â€¢ Quyá»n NgÆ°á»i xem (Chá»‰ Ä‘á»c)</Badge>
+          <Badge tone="blue">• Quyền Người xem (Chỉ đọc)</Badge>
           {onSwitchToEngineer && (
             <button
               type="button"
@@ -28,7 +28,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
               className="button ghost"
               style={{ fontSize: '12px', padding: '6px 12px', minHeight: '34px', borderRadius: '8px' }}
             >
-              ðŸ”„ Xem gÃ³c nhÃ¬n Ká»¹ sÆ° (E01)
+              🔄 Xem góc nhìn Kỹ sư (E01)
             </button>
           )}
         </div>
@@ -92,11 +92,11 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
               letterSpacing: '-0.5px',
             }}
           >
-            Hiá»ƒu dá»¯ liá»‡u.<br />
-            Theo dÃµi káº¿t quáº£.
+            Hiểu dữ liệu.<br />
+            Theo dõi kết quả.
           </h2>
           <p style={{ fontSize: '13.5px', color: '#475569', margin: '0 0 24px 0', lineHeight: 1.6 }}>
-            KhÃ¡m phÃ¡ topic, timeline, cÃ¢y TF vÃ  bÃ¡o cÃ¡o Ä‘Æ°á»£c chia sáº». Káº¿t quáº£ Ä‘ang chá» duyá»‡t sáº½ xuáº¥t hiá»‡n sau khi ká»¹ sÆ° hoÃ n táº¥t xÃ¡c nháº­n.
+            Khám phá topic, timeline, cây TF và báo cáo được chia sẻ. Kết quả đang chờ duyệt sẽ xuất hiện sau khi kỹ sư hoàn tất xác nhận.
           </p>
           <Button
             to="/reports"
@@ -112,7 +112,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
               boxShadow: '0 4px 14px rgba(15, 23, 42, 0.15)',
             }}
           >
-            Xem bÃ¡o cÃ¡o Ä‘Ã£ duyá»‡t
+            Xem báo cáo đã duyệt
           </Button>
         </div>
       </div>
@@ -125,7 +125,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
           gap: '20px',
         }}
       >
-        {/* Stat 1: Rosbag Ä‘Æ°á»£c chia sáº» */}
+        {/* Stat 1: Rosbag được chia sẻ */}
         <div
           style={{
             background: '#ffffff',
@@ -137,7 +137,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Rosbag Ä‘Æ°á»£c chia sáº»</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Rosbag được chia sẻ</span>
             <div style={{ width: 36, height: 36, borderRadius: '8px', background: '#ecfeff', color: '#0891b2', display: 'grid', placeItems: 'center' }}>
               <Icon name="database" size={18} />
             </div>
@@ -146,11 +146,11 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
             {state.bags?.length ? Math.min(state.bags.length, 2) : 1}
           </strong>
           <small style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', display: 'block' }}>
-            Trong dá»± Ã¡n Ä‘Æ°á»£c cáº¥p quyá»n
+            Trong dự án được cấp quyền
           </small>
         </div>
 
-        {/* Stat 2: PhiÃªn Ä‘Ã£ cÃ´ng bá»‘ */}
+        {/* Stat 2: Phiên đã công bố */}
         <div
           style={{
             background: '#ffffff',
@@ -162,7 +162,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>PhiÃªn Ä‘Ã£ cÃ´ng bá»‘</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Phiên đã công bố</span>
             <div style={{ width: 36, height: 36, borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'grid', placeItems: 'center' }}>
               <Icon name="activity" size={18} />
             </div>
@@ -171,11 +171,11 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
             {publishedSessions.length || 1}
           </strong>
           <small style={{ fontSize: '12px', color: '#64748b', marginTop: '8px', display: 'block' }}>
-            CÃ³ bÃ¡o cÃ¡o Ä‘Æ°á»£c duyá»‡t Ä‘áº§y Ä‘á»§
+            Có báo cáo được duyệt đầy đủ
           </small>
         </div>
 
-        {/* Stat 3: BÃ¡o cÃ¡o Ä‘Ã£ duyá»‡t */}
+        {/* Stat 3: Báo cáo đã duyệt */}
         <div
           style={{
             background: '#ffffff',
@@ -187,7 +187,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>BÃ¡o cÃ¡o Ä‘Ã£ duyá»‡t</span>
+            <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>Báo cáo đã duyệt</span>
             <div style={{ width: 36, height: 36, borderRadius: '8px', background: '#f0fdf4', color: '#16a34a', display: 'grid', placeItems: 'center' }}>
               <Icon name="file-text" size={18} />
             </div>
@@ -196,12 +196,12 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
             {approvedReports.length || 1}
           </strong>
           <small style={{ fontSize: '12px', color: '#16a34a', fontWeight: 600, marginTop: '8px', display: 'block' }}>
-            CÃ³ thá»ƒ xem ná»™i dung chi tiáº¿t â†’
+            Có thể xem nội dung chi tiết →
           </small>
         </div>
       </div>
 
-      {/* Main Table: Káº¿t quáº£ Ä‘Æ°á»£c chia sáº» V01 */}
+      {/* Main Table: Kết quả được chia sẻ V01 */}
       <div
         style={{
           background: '#ffffff',
@@ -213,10 +213,10 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#0f172a' }}>
-            Káº¿t quáº£ Ä‘Æ°á»£c chia sáº»
+            Kết quả được chia sẻ
           </h2>
           <span style={{ fontSize: '12px', color: '#64748b' }}>
-            Chá»‰ hiá»ƒn thá»‹ cÃ¡c phiÃªn Ä‘Ã£ cÃ³ bÃ¡o cÃ¡o phÃª duyá»‡t
+            Chỉ hiển thị các phiên đã có báo cáo phê duyệt
           </span>
         </div>
 
@@ -225,16 +225,16 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
             <thead>
               <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
                 <th style={{ padding: '12px 16px', fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                  PHIÃŠN
+                  PHIÊN
                 </th>
                 <th style={{ padding: '12px 16px', fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
                   TOPIC
                 </th>
                 <th style={{ padding: '12px 16px', fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                  THá»œI ÄIá»‚M
+                  THỜI ĐIỂM
                 </th>
                 <th style={{ padding: '12px 16px', fontSize: '11px', color: '#64748b', fontWeight: 700, textTransform: 'uppercase' }}>
-                  TRáº NG THÃI
+                  TRẠNG THÁI
                 </th>
               </tr>
             </thead>
@@ -247,7 +247,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
                         {s.name || 'Warehouse'}
                       </strong>
                       <small style={{ fontSize: '12px', color: '#0284c7', fontWeight: 600 }}>
-                        #{s.id} / Xem chi tiáº¿t â†’
+                        #{s.id} / Xem chi tiết →
                       </small>
                     </Link>
                   </td>
@@ -258,7 +258,7 @@ function ViewerDashboardView({ state, onSwitchToEngineer }) {
                     08:42 22/09/2026
                   </td>
                   <td style={{ padding: '16px' }}>
-                    <Badge tone="green">â€¢ ÄÃ£ cÃ´ng bá»‘</Badge>
+                    <Badge tone="green">• Đã công bố</Badge>
                   </td>
                 </tr>
               ))}
@@ -289,4 +289,3 @@ export default function DashboardOverviewPage() {
 
   return <EngineeringDashboardPage onSwitchToViewer={() => setViewMode('viewer')} />;
 }
-
