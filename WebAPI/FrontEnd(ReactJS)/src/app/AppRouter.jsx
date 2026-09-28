@@ -12,7 +12,7 @@ import RegisterPage from '../feature/auth/pages/RegisterPage';
 import LoginSuccessPage from '../feature/auth/pages/LoginSuccessPage';
 
 // Feature Pages
-import DashboardOverviewPage from '../feature/DashBoard/pages/DashboardOverviewPage';
+import DashboardOverviewPage from '../feature/dashboard/pages/DashboardOverviewPage';
 import BagsListPage from '../feature/bags/pages/BagsListPage';
 import BagDetailPage from '../feature/bags/pages/BagDetailPage';
 import BagValidationPage from '../feature/bags/pages/BagValidationPage';

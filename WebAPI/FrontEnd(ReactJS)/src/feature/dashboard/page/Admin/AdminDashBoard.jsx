@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardPage from '../DashBoard';
+import DashboardPage from '../DashboardPage';
 import AdminStatWidget from './components/AdminStatWidget';
 import AdminActivityFeedPanel from './components/AdminActivityFeedPanel';
 import AdminSystemStatusPanel from './components/AdminSystemStatusPanel';

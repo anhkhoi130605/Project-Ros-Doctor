@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import DashboardPage from '../../../DashBoard';
+import DashboardPage from '../../../DashboardPage';
 import useSystemLogs from '../../hook/useSystemLogs';
 import '../../../dashboard.css';
 

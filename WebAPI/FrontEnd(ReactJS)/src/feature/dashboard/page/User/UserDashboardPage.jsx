@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardPage from '../DashBoard';
+import DashboardPage from '../DashboardPage';
 import UserStatWidget from './components/UserStatWidget';
 import UserInfoCard from './components/UserInfoCard';
 
