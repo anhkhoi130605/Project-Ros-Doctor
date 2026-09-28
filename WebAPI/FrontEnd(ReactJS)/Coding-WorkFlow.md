@@ -184,8 +184,3 @@ Component / Page
   ↓
 Test
 ```
-
-
-
-
-
