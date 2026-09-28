@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, Icon } from '../../../../components/common/UIComponents';
+import { Card, Icon } from '../../../../../components/common/UIComponents';
 
 export default function SessionStatCard({ title, value, note, icon = 'activity', tone = 'cyan' }) {
   return (

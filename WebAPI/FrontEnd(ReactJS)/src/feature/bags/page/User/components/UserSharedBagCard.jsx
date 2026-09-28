@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Badge, Button, Icon } from '../../../../components/common/UIComponents';
+import { Card, Badge, Button, Icon } from '../../../../../components/common/UIComponents';
 
 export default function UserSharedBagCard({ bag }) {
   const duration = bag.duration ?? bag.durationSec ?? 120;

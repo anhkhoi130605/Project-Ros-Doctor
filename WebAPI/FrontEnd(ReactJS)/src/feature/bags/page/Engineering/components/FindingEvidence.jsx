@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '../../../../components/common/UIComponents';
+import { Icon } from '../../../../../components/common/UIComponents';
 import TimestampSkewChart from './TimestampSkewChart';
 import TopicFrequencyChart from './TopicFrequencyChart';
 

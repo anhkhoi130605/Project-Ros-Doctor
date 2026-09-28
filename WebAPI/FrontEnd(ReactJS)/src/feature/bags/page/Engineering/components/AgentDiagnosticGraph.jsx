@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge, Card } from '../../../../components/common/UIComponents';
+import { Badge, Card } from '../../../../../components/common/UIComponents';
 
 const AGENT_STEPS = [
   {

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Icon } from '../../../../components/common/UIComponents';
+import { Icon } from '../../../../../components/common/UIComponents';
 
 export default function BagActionDialog({ open, title, onClose, children, actions }) {
   const dialogRef = useRef(null);

@@ -12,27 +12,31 @@ import RegisterPage from '../feature/auth/pages/RegisterPage';
 import LoginSuccessPage from '../feature/auth/pages/LoginSuccessPage';
 
 // Feature Pages
-import DashboardOverviewPage from '../feature/dashboard/pages/DashboardOverviewPage';
-import BagsListPage from '../feature/bags/pages/BagsListPage';
-import BagDetailPage from '../feature/bags/pages/BagDetailPage';
-import BagValidationPage from '../feature/bags/pages/BagValidationPage';
-import AnalysisConfigurePage from '../feature/bags/pages/AnalysisConfigurePage';
-import AnalysisProcessingPage from '../feature/bags/pages/AnalysisProcessingPage';
-import SessionDetailPage from '../feature/bags/pages/SessionDetailPage';
-import SessionOverviewPage from '../feature/bags/pages/SessionOverviewPage';
-import SessionTopicsPage from '../feature/bags/pages/SessionTopicsPage';
-import SessionIssuesPage from '../feature/bags/pages/SessionIssuesPage';
-import SessionTfPage from '../feature/bags/pages/SessionTfPage';
-import SessionSyncPage from '../feature/bags/pages/SessionSyncPage';
-import SessionAgentPage from '../feature/bags/pages/SessionAgentPage';
-import UploadPage from '../feature/bags/pages/UploadPage';
-import AnalysisPage from '../feature/bags/pages/AnalysisPage';
-import ReportsListPage from '../feature/reports/pages/ReportsListPage';
-import ReportDetailPage from '../feature/reports/pages/ReportDetailPage';
-import ReviewsListPage from '../feature/reports/pages/ReviewsListPage';
-import ReviewDetailPage from '../feature/reports/pages/ReviewDetailPage';
+import { DashboardOverviewPage } from '../feature/dashboard';
+import {
+  BagsListPage,
+  BagDetailPage,
+  BagValidationPage,
+  AnalysisConfigurePage,
+  AnalysisProcessingPage,
+  SessionDetailPage,
+  SessionOverviewPage,
+  SessionTopicsPage,
+  SessionIssuesPage,
+  SessionTfPage,
+  SessionSyncPage,
+  SessionAgentPage,
+  UploadPage,
+  AnalysisPage,
+} from '../feature/bags';
+import {
+  ReportsListPage,
+  ReportDetailPage,
+  ReviewsListPage,
+  ReviewDetailPage,
+} from '../feature/reports';
 import ChatPage from '../feature/chat/pages/ChatPage';
-import BenchmarkPage from '../feature/benchmark/pages/BenchmarkPage';
+import BenchmarkPage from '../feature/benchmark';
 import CostPerformancePage from '../feature/admin/pages/CostPerformancePage';
 import AdminOverviewPage from '../feature/admin/pages/AdminOverviewPage';
 import SettingsPage from '../feature/admin/pages/SettingsPage';

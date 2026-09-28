@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useApp } from '../../../stored/appStore';
-import { PageHeader, Card } from '../../../components/common/UIComponents';
+import { useApp } from '../../../stored/appStore.jsx';
+import { PageHeader, Card } from '../../../components/common/UIComponents.jsx';
 import {
   fetchAdminActivityLogsApi,
   fetchAdminMembersApi,

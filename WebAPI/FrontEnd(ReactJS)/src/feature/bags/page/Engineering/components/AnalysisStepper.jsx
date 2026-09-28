@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '../../../../components/common/UIComponents';
+import { Icon } from '../../../../../components/common/UIComponents';
 
 const ANALYSIS_STEPS = [
   'Chọn rosbag',
