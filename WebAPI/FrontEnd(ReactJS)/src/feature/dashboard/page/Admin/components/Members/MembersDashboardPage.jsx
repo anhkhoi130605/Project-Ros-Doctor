@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import DashboardPage from '../../DashBoard';
+import DashboardPage from '../../DashboardPage';
 import useAdminMembers from '../hook/useAdminMembers';
 
 const navItems = [

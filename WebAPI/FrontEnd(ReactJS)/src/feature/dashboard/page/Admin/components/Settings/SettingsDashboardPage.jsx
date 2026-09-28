@@ -1,5 +1,5 @@
 import React from 'react';
-import DashboardPage from '../../DashBoard';
+import DashboardPage from '../../DashboardPage';
 
 const navItems = [
   { label: 'Overview', path: '/admin-dashboard/overview', active: false },

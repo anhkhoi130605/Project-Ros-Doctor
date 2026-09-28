@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import DashboardPage from '../../../DashBoard';
+import DashboardPage from '../../../DashboardPage';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 

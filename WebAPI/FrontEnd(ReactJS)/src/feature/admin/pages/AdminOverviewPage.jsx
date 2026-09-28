@@ -8,8 +8,8 @@ import {
   fetchSystemLogsApi,
   triggerTestErrorApi,
   updateUserRoleApi,
-} from '../../DashBoard/api/dashboardApi';
-import '../../DashBoard/page/dashboard.css';
+} from '../../dashboard/api/dashboardApi';
+import '../../dashboard/page/dashboard.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 
