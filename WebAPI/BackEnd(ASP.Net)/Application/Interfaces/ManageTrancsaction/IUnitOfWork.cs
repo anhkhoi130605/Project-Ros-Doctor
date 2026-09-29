@@ -16,6 +16,7 @@ namespace Application.Interfaces.ManageTrancsaction
 		IGenericRepository<Notification> Notifications { get; }
 		IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 		IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
+		IGenericRepository<AccountPolicy> AccountPolicies { get; }
 	}
 }
 

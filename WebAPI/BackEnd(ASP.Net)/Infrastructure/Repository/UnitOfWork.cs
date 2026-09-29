@@ -50,6 +50,7 @@ namespace Infrastructure.Repository
 		public IGenericRepository<Notification> Notifications { get; }
 		public IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 		public IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
+		public IGenericRepository<AccountPolicy> AccountPolicies { get; }
 
 		public UnitOfWork(AppDbContext ctx, IUserRepository userRepository)
 		{
@@ -61,6 +62,7 @@ namespace Infrastructure.Repository
 			Notifications = new GenericRepository<Notification>(_ctx);
 			UserActivityLogs = new GenericRepository<UserActivityLog>(_ctx);
 			SystemErrorLogs = new GenericRepository<SystemErrorLog>(_ctx);
+			AccountPolicies = new GenericRepository<AccountPolicy>(_ctx);
 		}
 
 		public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -34,4 +34,5 @@ public partial class User : BaseEntity
 	public Gender? Gender { get; set; }
 
 	public DateTime? DateOfBirth { get; set; }
+	public virtual ICollection<AccountPolicy> AccountPolicies { get; set; } = new HashSet<AccountPolicy>();
 }

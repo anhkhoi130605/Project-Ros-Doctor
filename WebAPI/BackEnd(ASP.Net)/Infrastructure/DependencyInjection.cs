@@ -2,13 +2,16 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Domain.Enums;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.Logging;
 using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageForRole;
 using Application.Interfaces.Notifications;
 using Application.Interfaces.Storage;
 using Application.Interfaces; // IEmailService
@@ -51,9 +54,11 @@ public static class DependencyInjection
 		services.Configure<StorageSettings>(configuration.GetSection("Storage"));
 		services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
 		services.Configure<RedisSettings>(configuration.GetSection("Redis"));
+		services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
 
 		// 2. Register core services
 		// Register repository implementations used by UnitOfWork
+		services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 		services.AddScoped<IUserRepository, UserRepository>();
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
@@ -66,6 +71,7 @@ public static class DependencyInjection
 		services.AddScoped<INotificationService, NotificationService>();
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 		services.AddScoped<IOtpService, OtpService>();
+		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
 
 		// 3. Configure Redis Cache (with Memory Cache fallback for resilience)
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
@@ -125,6 +131,20 @@ public static class DependencyInjection
 		   options.CorrelationCookie.SameSite = SameSiteMode.None;
 		   options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 	   });
+
+		// 5. Policy-based Authorization using AccountPolicy & RolePolicyDefaults
+		services.AddScoped<IAuthorizationHandler, AccountPolicyHandler>();
+		services.AddAuthorization(options =>
+		{
+			foreach (var policy in UserPolicy.All)
+			{
+				options.AddPolicy(policy, policyBuilder =>
+				{
+					policyBuilder.RequireAuthenticatedUser();
+					policyBuilder.AddRequirements(new AccountPolicyRequirement(policy));
+				});
+			}
+		});
 
 		return services;
 	}

@@ -59,4 +59,30 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 			builder.HasIndex(x => new { x.UserId, x.CreatedAt });
 		}
 	}
+
+	public class AccountPolicyConfiguration : IEntityTypeConfiguration<AccountPolicy>
+	{
+		public void Configure(EntityTypeBuilder<AccountPolicy> builder)
+		{
+			builder.ToTable("AccountPolicies");
+
+			builder.Property(x => x.UserId)
+				.IsRequired()
+				.HasMaxLength(36);
+
+			builder.Property(x => x.PolicyName)
+				.HasMaxLength(100)
+				.IsRequired();
+
+			builder.Property(x => x.PolicyRule)
+				.IsRequired();
+
+			builder.HasOne(x => x.User)
+				.WithMany(u => u.AccountPolicies)
+				.HasForeignKey(x => x.UserId)
+				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasIndex(x => new { x.UserId, x.PolicyName });
+		}
+	}
 }
