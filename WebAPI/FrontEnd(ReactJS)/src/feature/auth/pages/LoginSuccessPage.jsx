@@ -32,8 +32,9 @@ export default function LoginSuccessPage() {
   });
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const error = searchParams.get('error');
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+    const token = searchParams.get('token') || urlParams.get('token');
+    const error = searchParams.get('error') || urlParams.get('error');
 
     if (error) {
       setStatus({

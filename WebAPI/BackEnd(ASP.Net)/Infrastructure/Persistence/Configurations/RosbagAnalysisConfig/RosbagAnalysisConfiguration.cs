@@ -117,7 +117,7 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 	{
 		public void Configure(EntityTypeBuilder<AiUsageLog> builder)
 		{
-			builder.ToTable("ai_usage_logs");
+			builder.ToTable("llm_usage_ledger");
 
 			builder.Property(x => x.SessionId).IsRequired().HasMaxLength(36);
 			builder.Property(x => x.ModelName).IsRequired().HasMaxLength(50);

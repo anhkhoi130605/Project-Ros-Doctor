@@ -1,13 +1,32 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../../../stored/appStore';
+import { getBagsApi } from '../../../../../service';
 
 export default function useUserBags() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // User only sees complete or shared bags
+  useEffect(() => {
+    setLoading(true);
+    getBagsApi()
+      .then((bags) => {
+        if (Array.isArray(bags) && bags.length > 0) {
+          dispatch({ type: 'SET_BAGS', bags });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [dispatch]);
+
+  // User sees published / complete / ready bags from DB
   const sharedBags = useMemo(() => {
-    return (state.bags || []).filter((b) => b.status === 'complete' || b.id === 'bag-023' || b.id === 'bag-024');
+    return (state.bags || [])
+      .map((b) => ({
+        ...b,
+        sizeMb: Math.round((b.size || 0) / (1024 * 1024)) || 120,
+      }))
+      .filter((b) => b.status === 'complete' || b.status === 'ready' || b.id === 'bag-023' || b.id === 'bag-024');
   }, [state.bags]);
 
   const filteredBags = useMemo(() => {
@@ -22,5 +41,6 @@ export default function useUserBags() {
     filteredBags,
     searchTerm,
     setSearchTerm,
+    loading,
   };
 }

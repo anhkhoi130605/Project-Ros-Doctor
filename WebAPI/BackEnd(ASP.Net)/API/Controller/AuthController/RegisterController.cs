@@ -46,7 +46,7 @@ public class RegisterController : ControllerBase
 		var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
 		if (!authenticateResult.Succeeded)
-			return Redirect($"{frontendBaseUrl}/login?error={Uri.EscapeDataString("Xác thực từ Google thất bại hoặc đã bị hủy.")}");
+			return Redirect($"{frontendBaseUrl}/#/login?error={Uri.EscapeDataString("Xác thực từ Google thất bại hoặc đã bị hủy.")}");
 
 		try
 		{
@@ -58,14 +58,14 @@ public class RegisterController : ControllerBase
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
 			// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
-			var reactFrontendUrl = $"{frontendBaseUrl}/login-success?token={loginResult.AccessToken}";
+			var reactFrontendUrl = $"{frontendBaseUrl}/#/login-success?token={loginResult.AccessToken}";
 
 			return Redirect(reactFrontendUrl);
 		}
 		catch (Exception ex)
 		{
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-			return Redirect($"{frontendBaseUrl}/login?error={Uri.EscapeDataString(ex.Message)}");
+			return Redirect($"{frontendBaseUrl}/#/login?error={Uri.EscapeDataString(ex.Message)}");
 		}
 	}
     [HttpPost("register")]
