@@ -1,10 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../../../../../stored/appStore';
+import { getBagsApi, deleteBagApi } from '../../../../../service';
 
 export default function useEngineeringBags() {
   const { state, dispatch, notify } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(false);
+
+  const fetchBags = useCallback(async () => {
+    try {
+      setLoading(true);
+      const apiBags = await getBagsApi();
+      if (Array.isArray(apiBags) && apiBags.length > 0) {
+        dispatch({ type: 'SET_BAGS', bags: apiBags });
+      }
+    } catch {
+      // Keep existing/local bags if offline
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchBags();
+  }, [fetchBags]);
 
   const bags = state.bags || [];
 
@@ -20,7 +40,7 @@ export default function useEngineeringBags() {
     const total = bags.length;
     const complete = bags.filter((b) => b.status === 'complete').length;
     const processing = bags.filter((b) => b.status === 'processing').length;
-    const pending = bags.filter((b) => b.status === 'pending').length;
+    const pending = bags.filter((b) => b.status === 'pending' || b.status === 'ready').length;
     return { total, complete, processing, pending };
   }, [bags]);
 
@@ -30,7 +50,12 @@ export default function useEngineeringBags() {
     notify('Đã lưu tên rosbag thành công.', 'success');
   };
 
-  const deleteBag = (id) => {
+  const deleteBag = async (id) => {
+    try {
+      await deleteBagApi(id);
+    } catch {
+      // Local delete fallback
+    }
     dispatch({ type: 'DELETE_BAG', id });
     notify('Đã xóa rosbag.', 'info');
   };
@@ -44,6 +69,8 @@ export default function useEngineeringBags() {
     statusFilter,
     setStatusFilter,
     stats,
+    loading,
+    refresh: fetchBags,
     renameBag,
     deleteBag,
   };

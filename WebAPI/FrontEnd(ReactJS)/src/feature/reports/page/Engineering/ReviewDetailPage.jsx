@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp, formatDateTime } from '../../../../stored/appStore';
 import { PageHeader, Badge, Icon } from '../../../../components/common/UIComponents';
 import FindingEvidence from '../../../bags/page/Engineering/components/FindingEvidence';
+import { submitDecisionApi } from '../../../../service';
 
 export default function EngineeringReviewDetailPage() {
   const { findingId } = useParams();
@@ -58,11 +59,15 @@ export default function EngineeringReviewDetailPage() {
   }, [finding.id, finding.review?.note]);
 
   // Handle Approving (Transition from E17 to E18)
-  const handleApprove = () => {
+  const handleApprove = async () => {
     const finalNote =
       note.trim() ||
       'Đã đối chiếu /scan trong khoảng 00:35–00:40; xác nhận tần số ghi nhận giảm.';
-    const at = '06:47 24/09/2026';
+    const at = new Date().toISOString();
+
+    try {
+      await submitDecisionApi(finding.id, { decision: 'approved', note: finalNote });
+    } catch {}
 
     dispatch({
       type: 'REVIEW',
@@ -75,8 +80,12 @@ export default function EngineeringReviewDetailPage() {
   };
 
   // Handle Request Changes
-  const handleRequestChanges = () => {
+  const handleRequestChanges = async () => {
     const finalNote = note.trim() || 'Yêu cầu kiểm tra bổ sung cấu hình QoS và log /rosout.';
+    try {
+      await submitDecisionApi(finding.id, { decision: 'changes', note: finalNote });
+    } catch {}
+
     dispatch({
       type: 'REVIEW',
       id: finding.id,
@@ -87,8 +96,12 @@ export default function EngineeringReviewDetailPage() {
   };
 
   // Handle Reject
-  const handleReject = () => {
+  const handleReject = async () => {
     const finalNote = note.trim() || 'Bằng chứng chưa đủ cơ sở để xác nhận bất thường.';
+    try {
+      await submitDecisionApi(finding.id, { decision: 'rejected', note: finalNote });
+    } catch {}
+
     dispatch({
       type: 'REVIEW',
       id: finding.id,

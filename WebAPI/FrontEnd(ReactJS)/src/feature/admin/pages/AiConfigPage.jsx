@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card, Button, Badge } from '../../../components/common/UIComponents';
+import { getAiConfigApi, updateAiConfigApi } from '../../../service';
 
 export default function AiConfigPage() {
   const { state, dispatch, notify } = useApp();
@@ -10,20 +11,55 @@ export default function AiConfigPage() {
     maxTokens: state.aiSettings?.maxTokens || 4000,
     rpm: state.aiSettings?.rpm || 10,
     monthlyBudget: state.aiSettings?.monthlyBudget || 25,
-    modelName: state.aiSettings?.modelName || 'Chưa kết nối',
-    vectorDbUrl: state.aiSettings?.vectorDbUrl || 'http://localhost:8333',
+    modelName: state.aiSettings?.modelName || 'qwen-2.5-coder-32b',
+    vectorDbUrl: state.aiSettings?.vectorDbUrl || 'http://localhost:6333',
     prompt:
       state.aiSettings?.prompt ||
       'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
   }));
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    getAiConfigApi()
+      .then((cfg) => {
+        if (cfg) {
+          setAiConfig({
+            dailyCalls: cfg.dailyRequests ?? 100,
+            maxTokens: cfg.tokensPerRun ?? 4000,
+            rpm: cfg.requestsPerMinute ?? 10,
+            monthlyBudget: cfg.monthlyBudget ?? 25,
+            modelName: cfg.model ?? 'qwen-2.5-coder-32b',
+            vectorDbUrl: cfg.vectorUrl ?? 'http://localhost:6333',
+            prompt: cfg.prompt ?? '',
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleSave = async (e) => {
     if (e) e.preventDefault();
+    try {
+      await updateAiConfigApi({
+        dailyRequests: aiConfig.dailyCalls,
+        tokensPerRun: aiConfig.maxTokens,
+        requestsPerMinute: aiConfig.rpm,
+        monthlyBudget: aiConfig.monthlyBudget,
+        vectorUrl: aiConfig.vectorDbUrl,
+        model: aiConfig.modelName,
+        prompt: aiConfig.prompt,
+      });
+    } catch {}
+
     dispatch({
-      type: 'SETTINGS',
-      settings: {
-        ...(state.settings || {}),
-        aiSettings: aiConfig,
+      type: 'SET_AI_SETTINGS',
+      aiSettings: {
+        dailyRequests: aiConfig.dailyCalls,
+        tokensPerRun: aiConfig.maxTokens,
+        rpm: aiConfig.rpm,
+        monthlyBudget: aiConfig.monthlyBudget,
+        modelName: aiConfig.modelName,
+        vectorUrl: aiConfig.vectorDbUrl,
+        prompt: aiConfig.prompt,
       },
     });
     notify('Đã lưu cấu hình AI & hệ thống thành công!', 'success');

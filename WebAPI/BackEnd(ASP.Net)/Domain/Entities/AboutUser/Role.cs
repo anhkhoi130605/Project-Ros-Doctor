@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Domain.Entities.Config;
@@ -11,6 +11,8 @@ namespace Domain.Entities.AboutUser
 		//public string Id { get; set; } = null!;
 
 		public RoleEnum? RoleName { get; set; } = null!;
+
+		public string? Description { get; set; }
 
 		//public DateTime? CreatedAt { get; set; }
 
