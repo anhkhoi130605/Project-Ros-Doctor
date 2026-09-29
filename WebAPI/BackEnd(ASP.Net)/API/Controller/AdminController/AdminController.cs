@@ -12,7 +12,6 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 {
 	[Route("api/[controller]")]
 	[ApiController]
-	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 	public class AdminController : BaseController
 	{
 		private readonly IMediator _mediator;
@@ -22,6 +21,7 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 			_mediator = mediator;
 		}
 
+		[AllowAnonymous]
 		[HttpGet("members")]
 		public async Task<IActionResult> GetMembers()
 		{
@@ -46,6 +46,7 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 		}
 
 		[HttpPut("members/{id}/role")]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 		public async Task<IActionResult> UpdateMemberRole(string id, [FromBody] UpdateUserRoleRequestDto request)
 		{
 			if (request == null || string.IsNullOrWhiteSpace(request.Role))

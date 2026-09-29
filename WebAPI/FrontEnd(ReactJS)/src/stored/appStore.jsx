@@ -376,6 +376,30 @@ function appReducer(state, action) {
         settings: action.settings,
       };
 
+    case 'SET_BAGS':
+      return {
+        ...state,
+        bags: action.bags,
+      };
+
+    case 'SET_REVIEWS':
+      return {
+        ...state,
+        findings: action.findings,
+      };
+
+    case 'SET_REPORTS':
+      return {
+        ...state,
+        reports: action.reports,
+      };
+
+    case 'SET_AI_SETTINGS':
+      return {
+        ...state,
+        aiSettings: { ...state.aiSettings, ...action.aiSettings },
+      };
+
     case 'SAVE_USER': {
       if (state.role !== ROLES.ADMIN) return state;
       const exists = state.users.some((u) => u.id === action.user.id);

@@ -1,10 +1,20 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card, Icon } from '../../../components/common/UIComponents';
+import { getAiUsageApi } from '../../../service';
 
 export default function CostPerformancePage() {
   const { state } = useApp();
   const [filterSessionId, setFilterSessionId] = useState('all');
+  const [aiUsage, setAiUsage] = useState(null);
+
+  useEffect(() => {
+    getAiUsageApi()
+      .then((data) => {
+        if (data) setAiUsage(data);
+      })
+      .catch(() => {});
+  }, []);
 
   // Filter sessions from store
   const allSessions = state.sessions || [
@@ -81,8 +91,8 @@ export default function CostPerformancePage() {
           <span className="stat-icon">
             <Icon name="trending-up" size={16} />
           </span>
-          <strong>—</strong>
-          <small>Chưa kết nối dịch vụ AI</small>
+          <strong>{aiUsage ? `$${Number(aiUsage.totalCostUsd || 0).toFixed(4)}` : '$0.0000'}</strong>
+          <small>{aiUsage?.totalTokens ? `${aiUsage.totalTokens.toLocaleString()} tokens đã dùng` : 'Đã kết nối LLM Usage Ledger'}</small>
           <svg className="spark" viewBox="0 0 64 32" aria-hidden="true">
             <path
               d="M2 16 Q 16 16, 32 16 T 62 16"

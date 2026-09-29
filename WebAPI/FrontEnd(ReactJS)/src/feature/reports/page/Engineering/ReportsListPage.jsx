@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp, formatDateTime } from '../../../../stored/appStore';
 import { PageHeader, Badge, Card, DataTable } from '../../../../components/common/UIComponents';
+import { getReportsApi } from '../../../../service';
 
 export default function EngineeringReportsListPage() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
+
+  useEffect(() => {
+    getReportsApi()
+      .then((reports) => {
+        if (Array.isArray(reports) && reports.length > 0) {
+          dispatch({ type: 'SET_REPORTS', reports });
+        }
+      })
+      .catch(() => {});
+  }, [dispatch]);
 
   return (
     <div className="reports-page-container">

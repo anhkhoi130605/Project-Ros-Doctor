@@ -17,6 +17,22 @@ namespace Application.Interfaces.ManageTrancsaction
 		IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 		IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
 		IGenericRepository<AccountPolicy> AccountPolicies { get; }
+		IGenericRepository<Workspace> Workspaces { get; }
+		IGenericRepository<WorkspaceMember> WorkspaceMembers { get; }
+
+		// Nhóm Cấu hình hệ thống & AI
+		IGenericRepository<Domain.Entities.Configuration.AiSetting> AiSettings { get; }
+		IGenericRepository<Domain.Entities.Configuration.AnalysisConfig> AnalysisConfigs { get; }
+		IGenericRepository<Domain.Entities.Configuration.SystemThresholdConfig> SystemThresholdConfigs { get; }
+		IGenericRepository<Domain.Entities.Configuration.TopicThresholdRule> TopicThresholdRules { get; }
+
+		// Nhóm Rosbag, Phân tích & Báo cáo
+		IGenericRepository<Domain.Entities.RosbagAnalysis.Rosbag> Rosbags { get; }
+		IGenericRepository<Domain.Entities.RosbagAnalysis.AnalysisSession> AnalysisSessions { get; }
+		IGenericRepository<Domain.Entities.RosbagAnalysis.DiagnosticIssue> DiagnosticIssues { get; }
+		IGenericRepository<Domain.Entities.RosbagAnalysis.ReviewAuditLog> ReviewAuditLogs { get; }
+		IGenericRepository<Domain.Entities.RosbagAnalysis.Report> Reports { get; }
+		IGenericRepository<Domain.Entities.RosbagAnalysis.AiUsageLog> AiUsageLogs { get; }
 	}
 }
 

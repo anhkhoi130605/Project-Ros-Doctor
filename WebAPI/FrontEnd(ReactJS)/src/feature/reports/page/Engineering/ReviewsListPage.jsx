@@ -1,11 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../../../stored/appStore';
 import { PageHeader, Badge, Card, DataTable } from '../../../../components/common/UIComponents';
+import { getReviewsApi } from '../../../../service';
 
 export default function EngineeringReviewsListPage() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [statusFilter, setStatusFilter] = useState('pending');
+
+  useEffect(() => {
+    getReviewsApi()
+      .then((reviews) => {
+        if (Array.isArray(reviews) && reviews.length > 0) {
+          const mapped = reviews.map((r) => ({
+            ...r,
+            review: { status: r.status, note: r.note, by: r.reviewedBy, at: r.reviewedAt },
+          }));
+          dispatch({ type: 'SET_REVIEWS', findings: mapped });
+        }
+      })
+      .catch(() => {});
+  }, [dispatch]);
 
   const filteredFindings = (state.findings || []).filter((f) => {
     return statusFilter === 'all' || f.review?.status === statusFilter;

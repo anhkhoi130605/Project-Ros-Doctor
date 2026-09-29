@@ -34,6 +34,22 @@ public partial class AppDbContext : DbContext
 	public virtual DbSet<UserActivityLog> UserActivityLogs { get; set; }
 	public virtual DbSet<SystemErrorLog> SystemErrorLogs { get; set; }
 	public virtual DbSet<AccountPolicy> AccountPolicies { get; set; }
+	public virtual DbSet<Workspace> Workspaces { get; set; }
+	public virtual DbSet<WorkspaceMember> WorkspaceMembers { get; set; }
+
+	// Nhóm Cấu hình hệ thống & AI
+	public virtual DbSet<Domain.Entities.Configuration.AiSetting> AiSettings { get; set; }
+	public virtual DbSet<Domain.Entities.Configuration.AnalysisConfig> AnalysisConfigs { get; set; }
+	public virtual DbSet<Domain.Entities.Configuration.SystemThresholdConfig> SystemThresholdConfigs { get; set; }
+	public virtual DbSet<Domain.Entities.Configuration.TopicThresholdRule> TopicThresholdRules { get; set; }
+
+	// Nhóm Rosbag, Phân tích & Báo cáo
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.Rosbag> Rosbags { get; set; }
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.AnalysisSession> AnalysisSessions { get; set; }
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.DiagnosticIssue> DiagnosticIssues { get; set; }
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.ReviewAuditLog> ReviewAuditLogs { get; set; }
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.Report> Reports { get; set; }
+	public virtual DbSet<Domain.Entities.RosbagAnalysis.AiUsageLog> AiUsageLogs { get; set; }
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -86,9 +102,25 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.RoleConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.WorkspaceConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.WorkspaceMemberConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserActivityLogConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.AccountPolicyConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.SystemConfiguration.SystemErrorLogConfiguration());
+
+        // Cấu hình nhóm Settings & AI
+        modelBuilder.ApplyConfiguration(new Configurations.ConfigurationConfig.AiSettingConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.ConfigurationConfig.AnalysisConfigConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.ConfigurationConfig.SystemThresholdConfigConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.ConfigurationConfig.TopicThresholdRuleConfiguration());
+
+        // Cấu hình nhóm Rosbag, Phân tích & Báo cáo
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.RosbagConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.AnalysisSessionConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.DiagnosticIssueConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.ReviewAuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.ReportConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.RosbagAnalysisConfig.AiUsageLogConfiguration());
        
 		OnModelCreatingPartial(modelBuilder);
     }

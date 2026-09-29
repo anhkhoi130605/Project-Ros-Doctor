@@ -73,7 +73,10 @@ public static class DependencyInjection
 		services.AddScoped<IOtpService, OtpService>();
 		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
 
-		// 3. Configure Redis Cache (with Memory Cache fallback for resilience)
+		// MongoDB Registration
+		services.AddSingleton<Application.Interfaces.Common.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();
+
+		// 3. Configure Redis Cache & Services
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
 		if (redisSettings != null && !string.IsNullOrEmpty(redisSettings.Configuration))
 		{
@@ -82,6 +85,17 @@ public static class DependencyInjection
 				options.Configuration = redisSettings.Configuration;
 				options.InstanceName = redisSettings.InstanceName;
 			});
+
+			try
+			{
+				var redisMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisSettings.Configuration);
+				services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMultiplexer);
+				services.AddScoped<Application.Interfaces.Common.IRedisService, global::Infrastructure.Services.Redis.RedisService>();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[Warning] Failed to connect to Redis Multiplexer: {ex.Message}");
+			}
 		}
 		else
 		{

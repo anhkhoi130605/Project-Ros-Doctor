@@ -31,3 +31,7 @@ export async function updateUserRoleApi(memberId, role) {
   return apiClient.put(`/api/admin/members/${memberId}/role`, { role });
 }
 
+export async function fetchDashboardStatsApi() {
+  return apiClient.get('/api/dashboard/stats');
+}
+

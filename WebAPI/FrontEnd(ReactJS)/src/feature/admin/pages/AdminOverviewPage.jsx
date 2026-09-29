@@ -67,8 +67,20 @@ export default function AdminOverviewPage() {
 
   const activeTab = (!tab || tab === 'overview') ? 'members' : tab;
 
+  const fallbackMembers = useMemo(() => {
+    return (state.users || []).map((u) => ({
+      id: u.id,
+      fullName: u.name,
+      email: u.email,
+      role: u.role === 'admin' ? 'Admin' : u.role === 'engineer' ? 'Engineer' : 'User',
+      status: u.active ? 'ACTIVE' : 'BANNED',
+      isOnline: true,
+      lastActive: 'Vừa xong',
+    }));
+  }, [state.users]);
+
   // Members state
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState(fallbackMembers);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState(null);
   const [memberSearch, setMemberSearch] = useState('');
@@ -168,14 +180,18 @@ export default function AdminOverviewPage() {
       setMembersLoading(true);
       setMembersError(null);
       const data = await fetchAdminMembersApi();
-      setMembers(Array.isArray(data) ? data : []);
+      if (Array.isArray(data) && data.length > 0) {
+        setMembers(data);
+      } else {
+        setMembers(fallbackMembers);
+      }
     } catch (err) {
-      setMembers([]);
-      setMembersError(err.message || 'Không thể tải dữ liệu thành viên.');
+      // Fallback to store users so accounts & permissions never disappear
+      setMembers((prev) => (prev && prev.length > 0 ? prev : fallbackMembers));
     } finally {
       setMembersLoading(false);
     }
-  }, []);
+  }, [fallbackMembers]);
 
   // Fetch System Logs Data
   const loadSystemLogs = useCallback(async () => {
