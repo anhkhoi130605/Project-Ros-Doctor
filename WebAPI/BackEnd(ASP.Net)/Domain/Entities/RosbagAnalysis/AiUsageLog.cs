@@ -4,7 +4,7 @@ using Domain.Entities.Config;
 
 namespace Domain.Entities.RosbagAnalysis
 {
-	[Table("ai_usage_logs")]
+	[Table("llm_usage_ledger")]
 	public class AiUsageLog : BaseEntity
 	{
 		[Required]

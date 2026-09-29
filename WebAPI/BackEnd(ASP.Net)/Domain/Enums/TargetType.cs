@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Domain.Enums
 {
@@ -6,9 +6,13 @@ namespace Domain.Enums
 	{
 		None,
 		User,
-		Club,
-		Event,
-		Profile,
+		Rosbag,
+		AnalysisSession,
+		Finding,
+		Report,
+		AiConfig,
+		SystemSettings,
+		ChatMessage,
 		Other
 	}
 }

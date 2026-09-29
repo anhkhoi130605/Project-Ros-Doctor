@@ -24,6 +24,39 @@ const testErrorOptions = [
   { label: 'System.NotImplementedException (Lỗi tính năng chưa hoàn thiện)', value: 'NotImplementedException' },
 ];
 
+const ACTION_MAP = {
+  UploadRosbag: { label: 'Tải lên Rosbag', icon: '📁', bg: '#f3e8ff', color: '#7e22ce' },
+  DeleteRosbag: { label: 'Xóa Rosbag', icon: '🗑️', bg: '#fee2e2', color: '#b91c1c' },
+  ViewRosbag: { label: 'Xem chi tiết Rosbag', icon: '👁️', bg: '#f1f5f9', color: '#334155' },
+  PublishRosbag: { label: 'Chia sẻ Rosbag', icon: '🌐', bg: '#e0f2fe', color: '#0369a1' },
+  StartAnalysis: { label: 'Khởi chạy phân tích ROS2', icon: '⚡', bg: '#e0f2fe', color: '#0284c7' },
+  CancelAnalysis: { label: 'Hủy phiên phân tích', icon: '⏹️', bg: '#fee2e2', color: '#b91c1c' },
+  ViewSession: { label: 'Xem phiên chẩn đoán & TF', icon: '🔍', bg: '#f1f5f9', color: '#334155' },
+  SubmitReview: { label: 'Hoàn tất đánh giá HITL', icon: '📝', bg: '#dcfce7', color: '#15803d' },
+  ApproveFinding: { label: 'Kỹ sư duyệt kết luận AI', icon: '✅', bg: '#dcfce7', color: '#16a34a' },
+  RejectFinding: { label: 'Kỹ sư từ chối kết luận AI', icon: '❌', bg: '#fee2e2', color: '#dc2626' },
+  CreateReport: { label: 'Tạo báo cáo chẩn đoán', icon: '📑', bg: '#e0e7ff', color: '#4338ca' },
+  PublishReport: { label: 'Xuất bản báo cáo chính thức', icon: '📊', bg: '#dbeafe', color: '#1d4ed8' },
+  ChatAgent: { label: 'Hỏi đáp Chat Agent ROS2', icon: '💬', bg: '#ffedd5', color: '#c2410c' },
+  UpdateAiConfig: { label: 'Cập nhật cấu hình mô hình AI', icon: '⚙️', bg: '#fef3c7', color: '#b45309' },
+  UpdateSystemSettings: { label: 'Cập nhật tham số hệ thống', icon: '🔧', bg: '#f1f5f9', color: '#475569' },
+  AssignRole: { label: 'Phân quyền vai trò thành viên', icon: '👑', bg: '#fef3c7', color: '#d97706' },
+  Login: { label: 'Đăng nhập hệ thống', icon: '🔑', bg: '#ecfdf5', color: '#059669' },
+  Logout: { label: 'Đăng xuất khỏi phiên', icon: '🚪', bg: '#f1f5f9', color: '#64748b' },
+  Register: { label: 'Đăng ký tài khoản mới', icon: '👤', bg: '#e0f2fe', color: '#0284c7' },
+};
+
+function formatActionInfo(action) {
+  return (
+    ACTION_MAP[action] || {
+      label: action || 'Thao tác hệ thống',
+      icon: '⚡',
+      bg: '#f1f5f9',
+      color: '#0f172a',
+    }
+  );
+}
+
 function formatRelativeTime(dateString) {
   if (!dateString) return 'Chưa có hoạt động';
   const date = new Date(dateString);
@@ -804,31 +837,62 @@ export default function AdminOverviewPage() {
       {activeTab === 'activity' && (
         <Card title="Hoạt động gần đây trong hệ thống">
           <div style={{ display: 'grid', gap: 14 }}>
-            {userLogs.slice(0, 15).map((item) => (
-              <div
-                key={item.id ?? item.Id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 14,
-                  padding: '12px 14px',
-                  background: '#f8fafc',
-                  borderRadius: 8,
-                  border: '1px solid #f1f5f9',
-                }}
-              >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#1c5c43' }} />
-                <div style={{ flex: 1 }}>
-                  <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{item.action || 'Thao tác hệ thống'}</strong>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>
-                    {item.userName || item.email || 'Người dùng'} · {item.requestPath || 'System'} {item.httpMethod ? `[${item.httpMethod}]` : ''}
+            {userLogs.slice(0, 15).map((item) => {
+              const info = formatActionInfo(item.action);
+              return (
+                <div
+                  key={item.id ?? item.Id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 14,
+                    padding: '12px 14px',
+                    background: '#ffffff',
+                    borderRadius: 8,
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 8,
+                      background: info.bg,
+                      fontSize: 15,
+                    }}
+                  >
+                    {info.icon}
                   </span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <strong style={{ fontSize: 13, color: '#0f172a' }}>{info.label}</strong>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          background: info.bg,
+                          color: info.color,
+                        }}
+                      >
+                        {item.action}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: 12, color: '#64748b', marginTop: 2, display: 'block' }}>
+                      {item.userName || item.email || 'Người dùng'} · {item.requestPath || 'System'}{' '}
+                      {item.httpMethod ? `[${item.httpMethod}]` : ''}
+                    </span>
+                  </div>
+                  <time style={{ fontSize: 12, color: '#94a3b8' }}>
+                    {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                  </time>
                 </div>
-                <time style={{ fontSize: 12, color: '#94a3b8' }}>
-                  {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                </time>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}
@@ -1193,36 +1257,69 @@ export default function AdminOverviewPage() {
             <div style={{ color: '#b91c1c', padding: 12, background: '#fef2f2', borderRadius: 6 }}>{userLogsError}</div>
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
-              {userLogs.map((item) => (
-                <div
-                  key={item.id ?? item.Id}
-                  onClick={() => setSelectedUserLog(item)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '12px 16px',
-                    background: '#ffffff',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    transition: 'border-color 0.15s ease',
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: 13, color: '#0f172a', display: 'block' }}>{item.action || 'User activity'}</strong>
-                    <span style={{ fontSize: 12, color: '#64748b' }}>
-                      {item.userName || item.email || item.userId} · {item.requestPath} {item.httpMethod ? `[${item.httpMethod}]` : ''}
-                    </span>
+              {userLogs.map((item) => {
+                const info = formatActionInfo(item.action);
+                return (
+                  <div
+                    key={item.id ?? item.Id}
+                    onClick={() => setSelectedUserLog(item)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '12px 16px',
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      transition: 'border-color 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          width: 32,
+                          height: 32,
+                          borderRadius: 8,
+                          background: info.bg,
+                          fontSize: 15,
+                        }}
+                      >
+                        {info.icon}
+                      </span>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <strong style={{ fontSize: 13, color: '#0f172a' }}>{info.label}</strong>
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              background: info.bg,
+                              color: info.color,
+                            }}
+                          >
+                            {item.action}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: 12, color: '#64748b', marginTop: 2, display: 'block' }}>
+                          {item.userName || item.email || item.userId} · {item.requestPath} {item.httpMethod ? `[${item.httpMethod}]` : ''}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <time style={{ fontSize: 12, color: '#94a3b8' }}>
+                        {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                      </time>
+                      <span style={{ color: '#0284c7', fontSize: 12 }}>Chi tiết →</span>
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <time style={{ fontSize: 12, color: '#94a3b8' }}>
-                      {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
-                    </time>
-                    <span style={{ color: '#0284c7', fontSize: 12 }}>Chi tiết →</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 

@@ -15,3 +15,12 @@ export async function getAiUsageApi() {
 export async function getWorkspaceMembersApi() {
   return apiClient.get('/api/admin/members');
 }
+
+export async function fetchUserActivityLogsApi(take = 50) {
+  return apiClient.get(`/api/user-activity?take=${take}`);
+}
+
+export async function logUserActivityApi(payload) {
+  return apiClient.post('/api/user-activity/log', payload);
+}
+

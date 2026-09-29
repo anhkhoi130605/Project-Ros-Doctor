@@ -9,10 +9,36 @@ namespace Domain.Enums
         ChangePassword,
         UpdateProfile,
 
-        // Admin
+        // Admin & Management
         BanUser,
         UnbanUser,
         AssignRole,
+        UpdateAiConfig,
+        UpdateSystemSettings,
+
+        // Rosbags
+        UploadRosbag,
+        DeleteRosbag,
+        ViewRosbag,
+        PublishRosbag,
+
+        // Analysis & Sessions
+        StartAnalysis,
+        CancelAnalysis,
+        ViewSession,
+
+        // HITL Reviews & Decisions
+        SubmitReview,
+        ApproveFinding,
+        RejectFinding,
+
+        // Reports
+        CreateReport,
+        PublishReport,
+        ExportReport,
+
+        // Agent Chat
+        ChatAgent,
 
         Other
     } 
