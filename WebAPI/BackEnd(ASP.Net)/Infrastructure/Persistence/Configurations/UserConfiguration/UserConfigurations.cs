@@ -71,13 +71,14 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 				.HasMaxLength(36);
 
 			builder.Property(x => x.PolicyName)
+				.HasConversion<string>()
 				.HasMaxLength(100)
 				.IsRequired();
 
 			builder.Property(x => x.PolicyRule)
 				.IsRequired();
 
-			builder.HasOne(x => x.User)
+			builder.HasOne(x => x.User)  //connect user with account policy
 				.WithMany(u => u.AccountPolicies)
 				.HasForeignKey(x => x.UserId)
 				.OnDelete(DeleteBehavior.Cascade);
