@@ -11,7 +11,7 @@ using Domain.Enums;
 using Infrastructure.Persistence;
 using static Domain.Enums.UserEnum;
 
-namespace Infrastructure.Services
+namespace Infrastructure.Policy.Services
 {
 	public class AccountPolicyService : IAccountPolicyService
 	{

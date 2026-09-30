@@ -2,8 +2,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 
 export async function request(endpoint, options = {}) {
   const token = localStorage.getItem('accessToken');
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = {
-    ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+    ...(options.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useApp, formatDuration } from '../../../../stored/appStore';
 import { Badge, Card, Button, Notice, FormField, Icon } from '../../../../components/common/UIComponents';
 
