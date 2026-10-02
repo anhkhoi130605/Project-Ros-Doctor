@@ -38,17 +38,52 @@ export default function SessionTopicsPage() {
   const [selectedTopic, setSelectedTopic] = useState('/scan');
   const [time, setTime] = useState(35);
 
-  const session = (state.sessions || []).find((item) => item.id === id);
-  const bag = (state.bags || []).find((item) => item.id === session?.bagId);
+  let session = (state.sessions || []).find((item) => item.id === id);
+  let bag = (state.bags || []).find((item) => item.id === session?.bagId || item.sessionId === id || item.id === id);
+
+  if (!session && bag) {
+    session = {
+      id: id,
+      bagId: bag.id,
+      name: (bag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+      duration: bag.duration ?? bag.durationSec ?? 120,
+      topics: bag.topics ?? bag.topicCount ?? 12,
+      messages: bag.totalMessages ?? 350000,
+      status: bag.status || 'complete',
+      createdAt: bag.date || new Date().toISOString(),
+      processingSeconds: 15,
+      isDemo: false,
+    };
+  }
+
   const findings = useMemo(
     () => (state.findings || []).filter((finding) => finding.sessionId === session?.id),
     [state.findings, session?.id],
   );
+
+  const topicList = useMemo(() => {
+    if (bag?.realTopics && Array.isArray(bag.realTopics) && bag.realTopics.length > 0) {
+      return bag.realTopics.map((t) => ({
+        id: t.topicName,
+        name: t.topicName,
+        type: t.topicType,
+        hz: t.avgFrequencyHz,
+        count: t.messageCount,
+        bytes: t.sizeBytes,
+        minDt: t.minDeltaTimeMs,
+        maxDt: t.maxDeltaTimeMs,
+        avgDt: t.avgDeltaTimeMs,
+      }));
+    }
+    return BAG_TOPIC_PREVIEW;
+  }, [bag?.realTopics]);
+
   const filteredTopics = useMemo(() => {
     const keyword = search.trim().toLowerCase();
-    return BAG_TOPIC_PREVIEW.filter((topic) => `${topic.name} ${topic.type}`.toLowerCase().includes(keyword));
-  }, [search]);
-  const activeTopic = BAG_TOPIC_PREVIEW.find((topic) => topic.id === selectedTopic) || BAG_TOPIC_PREVIEW[0];
+    return topicList.filter((topic) => `${topic.name} ${topic.type}`.toLowerCase().includes(keyword));
+  }, [search, topicList]);
+
+  const activeTopic = topicList.find((topic) => topic.id === selectedTopic) || topicList[0] || BAG_TOPIC_PREVIEW[0];
 
   if (!session) {
     return (

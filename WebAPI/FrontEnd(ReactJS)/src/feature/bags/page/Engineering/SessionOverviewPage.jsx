@@ -36,9 +36,26 @@ function SeverityBadge({ level }) {
 export default function SessionOverviewPage() {
   const { id } = useParams();
   const { state, notify } = useApp();
-  const session = (state.sessions || []).find((item) => item.id === id);
-  const findings = (state.findings || []).filter((finding) => finding.sessionId === id);
-  const bag = (state.bags || []).find((item) => item.id === session?.bagId);
+  let session = (state.sessions || []).find((item) => item.id === id);
+  let bag = (state.bags || []).find((item) => item.id === session?.bagId || item.sessionId === id || item.id === id);
+
+  if (!session && bag) {
+    session = {
+      id: id,
+      bagId: bag.id,
+      name: (bag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+      duration: bag.duration ?? bag.durationSec ?? 120,
+      topics: bag.topics ?? bag.topicCount ?? 12,
+      messages: bag.totalMessages ?? 350000,
+      status: bag.status || 'complete',
+      createdAt: bag.date || new Date().toISOString(),
+      processingSeconds: 15,
+      isDemo: false,
+      healthScore: bag.healthScore ?? 100,
+    };
+  }
+
+  const findings = (state.findings || []).filter((finding) => finding.sessionId === session?.id);
   const highSeverityCount = findings.filter((finding) => finding.severity === 'high').length;
   const firstFindingId = findings[0]?.id;
 
