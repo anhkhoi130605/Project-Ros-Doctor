@@ -1,14 +1,18 @@
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
+from starlette.concurrency import run_in_threadpool
 
 from src.agents.graph import agent
 from src.models.schemas import (
+    BenchmarkDatasetResponse,
+    BenchmarkDatasetSummary,
     CarlaRecordRequest,
     CarlaRecordResponse,
     ChatRequest,
     ChatResponse,
 )
+from src.services.benchmark_dataset_service import get_benchmark_dataset_service
 from src.services.carla_rosbag_service import CarlaRosbagRecorder
 
 router = APIRouter()
@@ -31,6 +35,25 @@ async def chat(request: ChatRequest) -> ChatResponse:
 async def agent_status():
     """Kiểm tra trạng thái agent."""
     return {"status": "ready", "agent": "LangGraph Agent v1.0"}
+
+
+@router.get("/benchmarks", response_model=list[BenchmarkDatasetSummary])
+async def list_benchmark_datasets(
+    limit: int = Query(default=50, ge=1, le=100),
+) -> list[BenchmarkDatasetSummary]:
+    """List benchmark summaries without loading test-case payloads."""
+    service = get_benchmark_dataset_service()
+    return await run_in_threadpool(service.list_datasets, limit)
+
+
+@router.get("/benchmarks/{code}", response_model=BenchmarkDatasetResponse)
+async def get_benchmark_dataset(code: str) -> BenchmarkDatasetResponse:
+    """Load one benchmark dataset and its test cases by dataset code."""
+    service = get_benchmark_dataset_service()
+    dataset = await run_in_threadpool(service.get_dataset, code)
+    if dataset is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy benchmark dataset")
+    return dataset
 
 
 @router.post("/carla/record", response_model=CarlaRecordResponse)

@@ -1,25 +1,13 @@
 {
-  "version": "1.0",
+  "description": "Write each Codex user prompt to the repository AI log.",
   "hooks": {
     "UserPromptSubmit": [
       {
         "hooks": [
           {
-            "name": "log-prompt",
             "type": "command",
-            "command": "bash scripts/_pyrun.sh scripts/log_hook.py --tool=codex",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "name": "log-stop",
-            "type": "command",
-            "command": "bash scripts/_pyrun.sh scripts/log_hook.py --tool=codex",
+            "command": "bash \"$(git rev-parse --show-toplevel)/scripts/_pyrun.sh\" \"$(git rev-parse --show-toplevel)/scripts/log_hook.py\" --tool=codex",
+            "commandWindows": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"& (Join-Path (git rev-parse --show-toplevel) 'scripts/_pyrun.cmd') (Join-Path (git rev-parse --show-toplevel) 'scripts/log_hook.py') --tool=codex\"",
             "timeout": 10
           }
         ]

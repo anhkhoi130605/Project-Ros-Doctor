@@ -1,4 +1,6 @@
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -22,3 +24,27 @@ class CarlaRecordResponse(BaseModel):
     status: str
     message: str
     bag_path: str | None = None
+
+
+class BenchmarkTestCaseResponse(BaseModel):
+    code: str
+    rosbag_name: str
+    topic: str
+    start_sec: float
+    end_sec: float
+    label: str
+    ground_truth: str | None = None
+
+
+class BenchmarkDatasetSummary(BaseModel):
+    code: str
+    name: str
+    total_cases: int
+
+
+class BenchmarkDatasetResponse(BenchmarkDatasetSummary):
+    provenance: str | None = None
+    group_distribution: dict[str, int] = Field(default_factory=dict)
+    fault_type_distribution: dict[str, int] = Field(default_factory=dict)
+    test_cases: list[BenchmarkTestCaseResponse] = Field(default_factory=list)
+    created_at: Any | None = None
