@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using Domain.Entities.Config;
-using Domain.Entities.Information;
 using Domain.Enums;
 using static Domain.Enums.UserEnum;
 namespace Domain.Entities.AboutUser;
 
 public partial class User : BaseEntity
 {
+	public string? UserName { get; set; }
+
 	public string Email { get; set; } = null!;
 
 	public string FullName { get; set; } = null!;
@@ -34,4 +35,5 @@ public partial class User : BaseEntity
 	public Gender? Gender { get; set; }
 
 	public DateTime? DateOfBirth { get; set; }
+	public virtual ICollection<AccountPolicy> AccountPolicies { get; set; } = new HashSet<AccountPolicy>();
 }

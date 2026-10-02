@@ -16,4 +16,8 @@
     <Folder Include="Entities\System\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Bson" Version="3.12.0" />
+  </ItemGroup>
+
 </Project>

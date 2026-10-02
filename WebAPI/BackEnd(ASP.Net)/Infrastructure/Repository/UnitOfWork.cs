@@ -50,6 +50,23 @@ namespace Infrastructure.Repository
 		public IGenericRepository<Notification> Notifications { get; }
 		public IGenericRepository<UserActivityLog> UserActivityLogs { get; }
 		public IGenericRepository<SystemErrorLog> SystemErrorLogs { get; }
+		public IGenericRepository<AccountPolicy> AccountPolicies { get; }
+		public IGenericRepository<Workspace> Workspaces { get; }
+		public IGenericRepository<WorkspaceMember> WorkspaceMembers { get; }
+
+		// Nhóm Cấu hình hệ thống & AI
+		public IGenericRepository<Domain.Entities.Configuration.AiSetting> AiSettings { get; }
+		public IGenericRepository<Domain.Entities.Configuration.AnalysisConfig> AnalysisConfigs { get; }
+		public IGenericRepository<Domain.Entities.Configuration.SystemThresholdConfig> SystemThresholdConfigs { get; }
+		public IGenericRepository<Domain.Entities.Configuration.TopicThresholdRule> TopicThresholdRules { get; }
+
+		// Nhóm Rosbag, Phân tích & Báo cáo
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.Rosbag> Rosbags { get; }
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.AnalysisSession> AnalysisSessions { get; }
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.DiagnosticIssue> DiagnosticIssues { get; }
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.ReviewAuditLog> ReviewAuditLogs { get; }
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.Report> Reports { get; }
+		public IGenericRepository<Domain.Entities.RosbagAnalysis.AiUsageLog> AiUsageLogs { get; }
 
 		public UnitOfWork(AppDbContext ctx, IUserRepository userRepository)
 		{
@@ -61,6 +78,21 @@ namespace Infrastructure.Repository
 			Notifications = new GenericRepository<Notification>(_ctx);
 			UserActivityLogs = new GenericRepository<UserActivityLog>(_ctx);
 			SystemErrorLogs = new GenericRepository<SystemErrorLog>(_ctx);
+			AccountPolicies = new GenericRepository<AccountPolicy>(_ctx);
+			Workspaces = new GenericRepository<Workspace>(_ctx);
+			WorkspaceMembers = new GenericRepository<WorkspaceMember>(_ctx);
+
+			AiSettings = new GenericRepository<Domain.Entities.Configuration.AiSetting>(_ctx);
+			AnalysisConfigs = new GenericRepository<Domain.Entities.Configuration.AnalysisConfig>(_ctx);
+			SystemThresholdConfigs = new GenericRepository<Domain.Entities.Configuration.SystemThresholdConfig>(_ctx);
+			TopicThresholdRules = new GenericRepository<Domain.Entities.Configuration.TopicThresholdRule>(_ctx);
+
+			Rosbags = new GenericRepository<Domain.Entities.RosbagAnalysis.Rosbag>(_ctx);
+			AnalysisSessions = new GenericRepository<Domain.Entities.RosbagAnalysis.AnalysisSession>(_ctx);
+			DiagnosticIssues = new GenericRepository<Domain.Entities.RosbagAnalysis.DiagnosticIssue>(_ctx);
+			ReviewAuditLogs = new GenericRepository<Domain.Entities.RosbagAnalysis.ReviewAuditLog>(_ctx);
+			Reports = new GenericRepository<Domain.Entities.RosbagAnalysis.Report>(_ctx);
+			AiUsageLogs = new GenericRepository<Domain.Entities.RosbagAnalysis.AiUsageLog>(_ctx);
 		}
 
 		public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

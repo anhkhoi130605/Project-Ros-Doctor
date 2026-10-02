@@ -108,8 +108,12 @@ export default function AppLayout() {
           {filteredNav.map(([to, label, icon, roles, badgeCount]) => {
             const isAdminRoute = to === '/admin';
             const isSettingsRoute = to === '/settings';
-            const isSessionAnalysisRoute = to === '/analysis'
-              && /^\/sessions\/[^/]+\/(overview|topics|issues|tf|sync|agent)$/.test(location.pathname);
+            const isBagsActiveRoute = to === '/bags' && (
+              location.pathname.startsWith('/bags') ||
+              location.pathname.startsWith('/sessions') ||
+              location.pathname.startsWith('/upload')
+            );
+            const isAnalysisActiveRoute = to === '/analysis' && location.pathname.startsWith('/analysis');
 
             const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/admin/cost', '/settings/ai-config', '/settings/analysis-config', '/settings/cost'];
             const isCurrentConfigPath = configPaths.includes(location.pathname);
@@ -234,7 +238,7 @@ export default function AppLayout() {
               <NavLink
                 key={to}
                 to={to}
-                className={({ isActive }) => `nav-item ${isActive || isSessionAnalysisRoute ? 'active' : ''}`}
+                className={({ isActive }) => `nav-item ${isActive || isBagsActiveRoute || isAnalysisActiveRoute ? 'active' : ''}`}
                 onClick={() => setMobileNavOpen(false)}
               >
                 <Icon name={icon} size={18} />
@@ -483,11 +487,32 @@ export default function AppLayout() {
 
           <div className="topbar-actions">
             <span className="demo-tag">
-              <Badge tone="blue">DEMO</Badge>
+              <Badge tone="green">LIVE DB</Badge>
             </span>
-            <span className="header-role">
-              {ROLE_NAMES[state.role] || state.role || 'Robotics Engineer'}
-            </span>
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#334155',
+              }}
+              title="Vai trò được xác thực từ phiên đăng nhập an toàn"
+            >
+              <span style={{ fontSize: '11px', color: '#64748b' }}>Vai trò:</span>
+              <strong style={{ color: currentRole === 'admin' ? '#b45309' : currentRole === 'user' ? '#0369a1' : '#4338ca' }}>
+                {currentRole === 'admin'
+                  ? '👑 Quản trị viên'
+                  : currentRole === 'user'
+                  ? '👁️ Người xem'
+                  : '🛠️ Kỹ sư Robotics'}
+              </strong>
+            </div>
             <Button variant="ghost" icon="logout" onClick={handleLogout}>
               Đăng xuất
             </Button>

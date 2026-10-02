@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, useMemo, useState, useRef, useCallback, useEffect } from 'react';
-import { DEFAULT_SETTINGS, SAMPLE_FINDINGS, ROLES } from '../domain/appTypes';
+import { DEFAULT_SETTINGS, ROLES } from '../domain/appTypes';
 
 const STORAGE_KEY = 'ros2-doctor-frontend:v1';
 const AppContext = createContext(null);
@@ -136,13 +136,7 @@ function getInitialState() {
         isDemo: true,
       },
     ],
-    findings: SAMPLE_FINDINGS.map((f) => ({
-      ...f,
-      sessionId: '024',
-      revision: 1,
-      analystNote: f.hypothesis,
-      review: { status: 'pending', note: '', by: null, at: null },
-    })),
+    findings: [],
     reports: [
       {
         id: 'RPT-023',
@@ -203,10 +197,12 @@ function loadSavedState(savedJson) {
   const token = localStorage.getItem('accessToken');
   try {
     const parsed = JSON.parse(savedJson);
+    const parsedFindings = (parsed.findings || []).filter((f) => !String(f.id).startsWith('A-00'));
     const stateObj = parsed
       ? {
         ...initial,
         ...parsed,
+        findings: parsedFindings,
         settings: { ...initial.settings, ...parsed.settings },
         profile: { ...initial.profile, ...parsed.profile },
         signedIn: !!parsed.signedIn || !!token,
@@ -218,13 +214,13 @@ function loadSavedState(savedJson) {
 
     if (savedRole) {
       const norm = savedRole.toLowerCase();
-      stateObj.role = norm.includes('admin') ? 'admin' : norm.includes('user') ? 'user' : 'engineering';
+      stateObj.role = norm.includes('admin') ? ROLES.ADMIN : norm.includes('user') ? ROLES.USER : ROLES.ENGINEERING;
     }
     return stateObj;
   } catch {
     if (savedRole) {
       const norm = savedRole.toLowerCase();
-      initial.role = norm.includes('admin') ? 'admin' : norm.includes('user') ? 'user' : 'engineering';
+      initial.role = norm.includes('admin') ? ROLES.ADMIN : norm.includes('user') ? ROLES.USER : ROLES.ENGINEERING;
     }
     initial.signedIn = !!token;
     return initial;
@@ -289,13 +285,36 @@ function appReducer(state, action) {
       };
     }
 
-    case 'IMPORT_BAG':
-      if (state.role !== ROLES.ENGINEER) return state;
+    case 'IMPORT_BAG': {
+      const isEng = String(state.role || '').toLowerCase().includes('eng') || String(state.role || '').toLowerCase() === 'admin';
+      if (!isEng) return state;
+
+      const bagSessionId = action.bag.sessionId || `SESS-${Date.now().toString().slice(-4)}`;
+      const importedBag = { ...action.bag, sessionId: bagSessionId };
+
+      const initialSession = {
+        id: bagSessionId,
+        bagId: importedBag.id,
+        name: (importedBag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+        duration: importedBag.duration ?? importedBag.durationSec ?? 120,
+        topics: importedBag.topics ?? importedBag.topicCount ?? 12,
+        messages: importedBag.totalMessages ?? 350000,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        processingSeconds: 15,
+        isDemo: false,
+        realTopics: action.bag.realTopics || null,
+        realTimeline: action.bag.realTimeline || null,
+        healthScore: action.bag.healthScore ?? 100,
+      };
+
       return {
         ...state,
-        selectedBagId: action.bag.id,
-        bags: [action.bag, ...state.bags],
+        selectedBagId: importedBag.id,
+        bags: [importedBag, ...state.bags.filter((b) => b.id !== importedBag.id)],
+        sessions: [initialSession, ...state.sessions.filter((s) => s.id !== bagSessionId)],
       };
+    }
 
     case 'SELECT_BAG':
       if (!state.bags.some((bag) => bag.id === action.id)) return state;
@@ -305,20 +324,26 @@ function appReducer(state, action) {
       };
 
     case 'CONFIG':
-      if (state.role !== ROLES.ENGINEERING) return state;
       return {
         ...state,
         analysisConfig: action.config,
       };
 
-    case 'COMPLETE_ANALYSIS':
-      if (state.role !== ROLES.ENGINEER || state.sessions.some((s) => s.id === action.session.id)) return state;
+    case 'COMPLETE_ANALYSIS': {
+      const existingSessionIdx = state.sessions.findIndex((s) => s.id === action.session.id);
+      const updatedSessions = existingSessionIdx >= 0
+        ? state.sessions.map((s) => (s.id === action.session.id ? { ...s, ...action.session, status: 'complete' } : s))
+        : [action.session, ...state.sessions];
+
+      const newFindings = Array.isArray(action.findings) ? action.findings : [];
+
       return {
         ...state,
-        sessions: [action.session, ...state.sessions],
-        findings: [...action.findings, ...state.findings],
+        sessions: updatedSessions,
+        findings: [...newFindings, ...state.findings.filter((f) => f.sessionId !== action.session.id)],
         bags: state.bags.map((b) => (b.id === action.session.bagId ? { ...b, status: 'complete', sessionId: action.session.id } : b)),
       };
+    }
 
     case 'SAVE_NOTE':
       if (state.role !== ROLES.ENGINEERING) return state;
@@ -374,6 +399,30 @@ function appReducer(state, action) {
       return {
         ...state,
         settings: action.settings,
+      };
+
+    case 'SET_BAGS':
+      return {
+        ...state,
+        bags: action.bags,
+      };
+
+    case 'SET_REVIEWS':
+      return {
+        ...state,
+        findings: action.findings,
+      };
+
+    case 'SET_REPORTS':
+      return {
+        ...state,
+        reports: action.reports,
+      };
+
+    case 'SET_AI_SETTINGS':
+      return {
+        ...state,
+        aiSettings: { ...state.aiSettings, ...action.aiSettings },
       };
 
     case 'SAVE_USER': {

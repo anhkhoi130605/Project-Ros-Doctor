@@ -2,19 +2,23 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Domain.Enums;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.Logging;
 using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageForRole;
 using Application.Interfaces.Notifications;
 using Application.Interfaces.Storage;
 using Application.Interfaces; // IEmailService
 using Infrastructure.Services; // SmtpEmailService
 using Infrastructure.Services.Logging;
 using Infrastructure.Services.Notification;
+using Infrastructure.Policy.Services;
 using Infrastructure.ConfigModel;
 using Infrastructure.Authentication;
 using Infrastructure.Persistence.Configurations.AuthenticationConfig;
@@ -51,9 +55,11 @@ public static class DependencyInjection
 		services.Configure<StorageSettings>(configuration.GetSection("Storage"));
 		services.Configure<EmailSettings>(configuration.GetSection("EmailSettings"));
 		services.Configure<RedisSettings>(configuration.GetSection("Redis"));
+		services.Configure<MongoDbSettings>(configuration.GetSection("MongoDbSettings"));
 
 		// 2. Register core services
 		// Register repository implementations used by UnitOfWork
+		services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 		services.AddScoped<IUserRepository, UserRepository>();
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
@@ -66,8 +72,13 @@ public static class DependencyInjection
 		services.AddScoped<INotificationService, NotificationService>();
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 		services.AddScoped<IOtpService, OtpService>();
+		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
+		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
 
-		// 3. Configure Redis Cache (with Memory Cache fallback for resilience)
+		// MongoDB Registration
+		services.AddSingleton<Application.Interfaces.Common.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();
+
+		// 3. Configure Redis Cache & Services
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
 		if (redisSettings != null && !string.IsNullOrEmpty(redisSettings.Configuration))
 		{
@@ -76,6 +87,17 @@ public static class DependencyInjection
 				options.Configuration = redisSettings.Configuration;
 				options.InstanceName = redisSettings.InstanceName;
 			});
+
+			try
+			{
+				var redisMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisSettings.Configuration);
+				services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMultiplexer);
+				services.AddScoped<Application.Interfaces.Common.IRedisService, global::Infrastructure.Services.Redis.RedisService>();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"[Warning] Failed to connect to Redis Multiplexer: {ex.Message}");
+			}
 		}
 		else
 		{
@@ -125,6 +147,20 @@ public static class DependencyInjection
 		   options.CorrelationCookie.SameSite = SameSiteMode.None;
 		   options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
 	   });
+
+		// 5. Policy-based Authorization using AccountPolicy & RolePolicyDefaults
+		services.AddScoped<IAuthorizationHandler, AccountPolicyHandler>();
+		services.AddAuthorization(options =>
+		{
+			foreach (var policy in UserPolicy.All)
+			{
+				options.AddPolicy(policy, policyBuilder =>
+				{
+					policyBuilder.RequireAuthenticatedUser();
+					policyBuilder.AddRequirements(new AccountPolicyRequirement(policy));
+				});
+			}
+		});
 
 		return services;
 	}
