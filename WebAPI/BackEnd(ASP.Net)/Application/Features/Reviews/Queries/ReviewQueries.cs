@@ -44,13 +44,17 @@ namespace Application.Features.Reviews.Queries
 			}
 			catch
 			{
-				// Mongo fallback
+				// Graceful fallback if MongoDB is restarting
 			}
 
 			return issues.Select(i =>
 			{
 				auditMap.TryGetValue(i.Id, out var audit);
 				evidenceMap.TryGetValue(i.Id, out var ev);
+
+				var observationText = ev != null && ev.RawRosoutLogs.Count > 0
+					? string.Join("\n", ev.RawRosoutLogs)
+					: $"Bất thường phát hiện trên topic {i.Topic}.";
 
 				return new ReviewItemDto
 				{
@@ -60,9 +64,12 @@ namespace Application.Features.Reviews.Queries
 					Topic = i.Topic,
 					Severity = i.Severity.ToString().ToLower(),
 					Interval = i.TimeRange,
-					Observation = ev != null ? $"Quan sát: {ev.Kind} trên {i.Topic}." : $"Bất thường trên topic {i.Topic}.",
-					Hypothesis = "Nguồn phát có thể bị gián đoạn. Cần kỹ sư đối chiếu và xác nhận.",
-					Steps = ev?.Steps ?? new List<string> { "Đối chiếu log /rosout" },
+					Observation = observationText,
+					Hypothesis = "Tần số hoặc gói tin có dấu hiệu gián đoạn/bất thường. Cần kỹ sư đối chiếu và xác nhận.",
+					Steps = ev?.Steps?.Count > 0 ? ev.Steps : new List<string> { $"Kiểm tra log cảm biến trên topic {i.Topic}", "Xác nhận và thẩm định kết luận" },
+					Kind = ev?.Kind ?? "frequency",
+					RawRosoutLogs = ev?.RawRosoutLogs ?? new List<string>(),
+					WaveformPoints = ev?.WaveformPoints ?? new List<double>(),
 					Status = audit != null ? audit.Decision.ToString().ToLower() : "pending",
 					Note = audit?.ReviewNote,
 					ReviewedBy = audit?.ReviewerId,
@@ -103,8 +110,12 @@ namespace Application.Features.Reviews.Queries
 			}
 			catch
 			{
-				// Mongo fallback
+				// Graceful fallback
 			}
+
+			var observationText = ev != null && ev.RawRosoutLogs.Count > 0
+				? string.Join("\n", ev.RawRosoutLogs)
+				: $"Bất thường phát hiện trên topic {issue.Topic}.";
 
 			return new ReviewItemDto
 			{
@@ -114,9 +125,12 @@ namespace Application.Features.Reviews.Queries
 				Topic = issue.Topic,
 				Severity = issue.Severity.ToString().ToLower(),
 				Interval = issue.TimeRange,
-				Observation = ev != null ? $"Quan sát: {ev.Kind} trên {issue.Topic}." : $"Bất thường trên topic {issue.Topic}.",
-				Hypothesis = "Nguồn phát có thể bị gián đoạn. Cần kỹ sư đối chiếu và xác nhận.",
-				Steps = ev?.Steps ?? new List<string> { "Đối chiếu log /rosout" },
+				Observation = observationText,
+				Hypothesis = "Tần số hoặc gói tin có dấu hiệu gián đoạn/bất thường. Cần kỹ sư đối chiếu và xác nhận.",
+				Steps = ev?.Steps?.Count > 0 ? ev.Steps : new List<string> { $"Kiểm tra log cảm biến trên topic {issue.Topic}", "Xác nhận và thẩm định kết luận" },
+				Kind = ev?.Kind ?? "frequency",
+				RawRosoutLogs = ev?.RawRosoutLogs ?? new List<string>(),
+				WaveformPoints = ev?.WaveformPoints ?? new List<double>(),
 				Status = audit != null ? audit.Decision.ToString().ToLower() : "pending",
 				Note = audit?.ReviewNote,
 				ReviewedBy = audit?.ReviewerId,
@@ -125,3 +139,4 @@ namespace Application.Features.Reviews.Queries
 		}
 	}
 }
+

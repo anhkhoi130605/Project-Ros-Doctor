@@ -14,6 +14,9 @@ namespace Application.Features.Reviews.DTOs
 		public string? Observation { get; set; }
 		public string? Hypothesis { get; set; }
 		public List<string> Steps { get; set; } = new();
+		public string? Kind { get; set; }
+		public List<string> RawRosoutLogs { get; set; } = new();
+		public List<double> WaveformPoints { get; set; } = new();
 		public string Status { get; set; } = "pending";
 		public string? Note { get; set; }
 		public string? ReviewedBy { get; set; }

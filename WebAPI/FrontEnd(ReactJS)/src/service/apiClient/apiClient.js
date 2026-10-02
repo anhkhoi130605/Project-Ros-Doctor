@@ -32,8 +32,22 @@ export async function request(endpoint, options = {}) {
 
 export const apiClient = {
   get: (endpoint, options = {}) => request(endpoint, { ...options, method: 'GET' }),
-  post: (endpoint, body, options = {}) => request(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) }),
-  put: (endpoint, body, options = {}) => request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) }),
+  post: (endpoint, body, options = {}) => {
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    return request(endpoint, {
+      ...options,
+      method: 'POST',
+      body: isForm ? body : (body !== undefined ? JSON.stringify(body) : undefined),
+    });
+  },
+  put: (endpoint, body, options = {}) => {
+    const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+    return request(endpoint, {
+      ...options,
+      method: 'PUT',
+      body: isForm ? body : (body !== undefined ? JSON.stringify(body) : undefined),
+    });
+  },
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' }),
   baseUrl: API_URL,
 };

@@ -47,14 +47,30 @@ export default function SessionIssuesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [note, setNote] = useState('');
 
-  const session = (state.sessions || []).find((item) => item.id === id);
-  const bag = (state.bags || []).find((item) => item.id === session?.bagId);
+  let session = (state.sessions || []).find((item) => item.id === id);
+  let bag = (state.bags || []).find((item) => item.id === session?.bagId || item.sessionId === id || item.id === id);
+
+  if (!session && bag) {
+    session = {
+      id: id,
+      bagId: bag.id,
+      name: (bag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+      duration: bag.duration ?? bag.durationSec ?? 120,
+      topics: bag.topics ?? bag.topicCount ?? 12,
+      messages: bag.totalMessages ?? 350000,
+      status: bag.status || 'complete',
+      createdAt: bag.date || new Date().toISOString(),
+      processingSeconds: 15,
+      isDemo: false,
+    };
+  }
+
   const findings = useMemo(
     () => (state.findings || []).filter((finding) => finding.sessionId === session?.id),
     [state.findings, session?.id],
   );
   const selectedFinding = findings.find((finding) => finding.id === searchParams.get('finding')) || findings[0];
-  const isEngineer = String(state.role || '').toLowerCase().includes('engineer');
+  const isEngineer = String(state.role || '').toLowerCase().includes('eng') || String(state.role || '').toLowerCase() === 'admin';
 
   useEffect(() => {
     if (!searchParams.get('finding') && selectedFinding) {

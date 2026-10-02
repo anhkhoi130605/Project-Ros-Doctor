@@ -73,6 +73,7 @@ public static class DependencyInjection
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 		services.AddScoped<IOtpService, OtpService>();
 		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
+		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
 
 		// MongoDB Registration
 		services.AddSingleton<Application.Interfaces.Common.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();

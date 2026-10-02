@@ -17,17 +17,18 @@ import {
 
 export default function AnalysisProcessingPage() {
   const navigate = useNavigate();
-  const { state, notify } = useApp();
+  const { state, dispatch, notify } = useApp();
   const [progress, setProgress] = useState(0);
   const [phase, setPhase] = useState(getAnalysisPhase(0));
   const bag = (state.bags || []).find((item) => item.id === state.selectedBagId);
   const resultSessionId = useMemo(() => {
     const bagSession = (state.sessions || []).find((session) => session.bagId === bag?.id);
-    return bagSession?.id || bag?.sessionId || state.sessions?.[0]?.id || '024';
+    return bagSession?.id || bag?.sessionId || `SESS-${Date.now().toString().slice(-4)}`;
   }, [bag?.id, bag?.sessionId, state.sessions]);
 
   useEffect(() => {
-    if (!bag || state.role !== ROLES.ENGINEERING) return undefined;
+    const isEng = String(state.role || '').toLowerCase().includes('eng') || String(state.role || '').toLowerCase() === 'admin';
+    if (!bag || !isEng) return undefined;
 
     let currentProgress = 0;
     let completionTimer;
@@ -38,10 +39,49 @@ export default function AnalysisProcessingPage() {
 
       if (currentProgress === 100) {
         window.clearInterval(interval);
+
+        const newSession = {
+          id: resultSessionId,
+          bagId: bag.id,
+          name: (bag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+          duration: bag.duration ?? bag.durationSec ?? 120,
+          topics: bag.topics ?? bag.topicCount ?? 12,
+          messages: bag.totalMessages ?? 350000,
+          status: 'complete',
+          createdAt: new Date().toISOString(),
+          processingSeconds: 20,
+          isDemo: false,
+          healthScore: bag.healthScore ?? 100,
+          realTopics: bag.realTopics || null,
+          realTimeline: bag.realTimeline || null,
+        };
+
+        dispatch({
+          type: 'COMPLETE_ANALYSIS',
+          session: newSession,
+          findings: bag.realAnomalies && bag.realAnomalies.length > 0
+            ? bag.realAnomalies.map((a, idx) => ({
+                id: `A-${resultSessionId}-${idx + 1}`,
+                sessionId: resultSessionId,
+                title: a.issueTitle || a.title || 'Bất thường ghi nhận',
+                kind: (a.anomalyType || 'frequency').toLowerCase(),
+                topic: a.topic || 'Hệ thống',
+                severity: (a.severity || 'medium').toLowerCase(),
+                interval: a.timeRange || '00:00 - 00:05',
+                observation: a.description || 'Ghi nhận bất thường trong luồng log.',
+                hypothesis: a.suggestedFix || 'Cần kiểm tra node phát và cấu hình QoS.',
+                steps: [a.suggestedFix || 'Kiểm tra log node.', 'Đối chiếu tần số mẫu.'],
+                revision: 1,
+                analystNote: '',
+                review: { status: 'pending', note: '', by: null, at: null },
+              }))
+            : [],
+        });
+
         completionTimer = window.setTimeout(() => {
-          notify('Đã hoàn tất tiến trình phân tích mô phỏng.', 'success');
+          notify('Đã hoàn tất tiến trình phân tích.', 'success');
           navigate(`/sessions/${resultSessionId}/overview`, { replace: true });
-        }, 900);
+        }, 800);
       }
     }, 280);
 
@@ -49,7 +89,7 @@ export default function AnalysisProcessingPage() {
       window.clearInterval(interval);
       window.clearTimeout(completionTimer);
     };
-  }, [bag, navigate, notify, resultSessionId, state.role]);
+  }, [bag, dispatch, navigate, notify, resultSessionId, state.role]);
 
   if (!bag) {
     return (
