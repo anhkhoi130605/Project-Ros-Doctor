@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Application.Features.Sessions.DTOs;
 using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
-using MongoDB.Driver;
+using Application.Interfaces.ManageTransaction;
+using Application.Interfaces.Repositories;
 using Domain.Entities.NoSql;
 
 namespace Application.Features.Sessions.Queries
@@ -16,13 +16,13 @@ namespace Application.Features.Sessions.Queries
 	public class GetSessionByIdQueryHandler : IRequestHandler<GetSessionByIdQuery, SessionDetailDto?>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly ISessionEvidenceRepository _evidenceRepo;
 		private readonly IRedisService _redisService;
 
-		public GetSessionByIdQueryHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext, IRedisService redisService)
+		public GetSessionByIdQueryHandler(IUnitOfWork unitOfWork, ISessionEvidenceRepository evidenceRepo, IRedisService redisService)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_evidenceRepo = evidenceRepo;
 			_redisService = redisService;
 		}
 
@@ -44,9 +44,7 @@ namespace Application.Features.Sessions.Queries
 			object? tfTreeData = null;
 			try
 			{
-				var tfDoc = await _mongoDbContext.SessionTfTrees
-					.Find(t => t.SessionId == session.Id)
-					.FirstOrDefaultAsync(cancellationToken);
+				var tfDoc = await _evidenceRepo.GetTfTreeBySessionIdAsync(session.Id, cancellationToken);
 				if (tfDoc != null)
 				{
 					tfTreeData = tfDoc.Frames;
@@ -61,9 +59,7 @@ namespace Application.Features.Sessions.Queries
 			var evidenceMap = new Dictionary<string, FindingEvidenceDocument>();
 			try
 			{
-				var evidences = await _mongoDbContext.FindingsEvidence
-					.Find(e => e.SessionId == session.Id)
-					.ToListAsync(cancellationToken);
+				var evidences = await _evidenceRepo.GetBySessionIdAsync(session.Id, cancellationToken);
 				foreach (var ev in evidences)
 				{
 					evidenceMap[ev.FindingId] = ev;

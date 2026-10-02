@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Application.Interfaces.ManageForRole;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using Domain.Enums;
 using Infrastructure.Persistence;
 using static Domain.Enums.UserEnum;

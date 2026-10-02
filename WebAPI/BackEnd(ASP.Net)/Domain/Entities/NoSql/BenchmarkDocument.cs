@@ -5,6 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Domain.Entities.NoSql
 {
+	[BsonIgnoreExtraElements]
 	public class BenchmarkDatasetDocument
 	{
 		[BsonId]
@@ -24,6 +25,7 @@ namespace Domain.Entities.NoSql
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 	}
 
+	[BsonIgnoreExtraElements]
 	public class BenchmarkTestCaseItem
 	{
 		[BsonElement("code")]
@@ -48,6 +50,7 @@ namespace Domain.Entities.NoSql
 		public string? GroundTruth { get; set; }
 	}
 
+	[BsonIgnoreExtraElements]
 	public class BenchmarkEvaluationDocument
 	{
 		[BsonId]

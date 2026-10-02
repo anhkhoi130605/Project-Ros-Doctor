@@ -182,7 +182,7 @@ function getInitialState() {
       tokensPerRun: 4000,
       requestsPerMinute: 10,
       monthlyBudget: 25,
-      vectorUrl: 'http://localhost:6333',
+      vectorUrl: import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333',
       model: 'Chưa kết nối',
       prompt: 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
     },

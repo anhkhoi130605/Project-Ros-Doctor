@@ -4,7 +4,7 @@ using System.IO;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using Domain.Entities.System;
 
 namespace Infrastructure.Persistence;

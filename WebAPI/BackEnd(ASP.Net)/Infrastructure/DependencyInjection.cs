@@ -10,7 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using Domain.Enums;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.Logging;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Application.Interfaces.ManageForRole;
 using Application.Interfaces.Notifications;
 using Application.Interfaces.Storage;
@@ -24,7 +24,7 @@ using Infrastructure.Authentication;
 using Infrastructure.Persistence.Configurations.AuthenticationConfig;
 using System;
 using AutoMapper;
-using Infrastructure.Persistence.Storage;
+using Infrastructure.Services.Storage;
 using Infrastructure.Repository;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -75,8 +75,10 @@ public static class DependencyInjection
 		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
 		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
 
-		// MongoDB Registration
-		services.AddSingleton<Application.Interfaces.Common.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();
+		// MongoDB Registration & NoSQL Repositories
+		services.AddSingleton<global::Infrastructure.Persistence.Mongo.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();
+		services.AddScoped<Application.Interfaces.Repositories.IReportSnapshotRepository, global::Infrastructure.Persistence.Mongo.Repositories.ReportSnapshotRepository>();
+		services.AddScoped<Application.Interfaces.Repositories.ISessionEvidenceRepository, global::Infrastructure.Persistence.Mongo.Repositories.SessionEvidenceRepository>();
 
 		// 3. Configure Redis Cache & Services
 		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
@@ -106,7 +108,7 @@ public static class DependencyInjection
 
 		// 5. Register AutoMapper: scan the Application assembly for Profile classes so
 		// AutoMapper.IMapper will be available for application handlers.
-		services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Application.Features.Admin.ManageUser.ReadDataUser.CommandAdminReadDataUser.AdminReadDataProfile).Assembly));
+		services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Application.Features.Admin.ManageUser.ReadDataUser.DTOs.AdminReadDataProfile).Assembly));
 
 		// 4. Authentication configuration (Google + JWT for APIs)
 		var googleSettings = configuration.GetSection("Authentication:Google");

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using MediatR;
 using Application.Features.Dashboard.DTOs;
 using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Domain.Enums;
 
 namespace Application.Features.Dashboard.Queries

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Domain.Entities.Config;
+using Domain.Common;
 using Infrastructure.Persistence;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;

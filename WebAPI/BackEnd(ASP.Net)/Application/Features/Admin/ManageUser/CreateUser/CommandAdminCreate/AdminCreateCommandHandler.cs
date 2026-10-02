@@ -1,8 +1,8 @@
-﻿using MediatR;
-using Application.Interfaces.ManageTrancsaction;
+using MediatR;
+using Application.Interfaces.ManageTransaction;
 using Application.Interfaces.Authentication;
-using DomainUser = Domain.Entities.AboutUser.User;
-using DomainRole = Domain.Entities.AboutUser.Role;
+using DomainUser = Domain.Entities.Identity.User;
+using DomainRole = Domain.Entities.Identity.Role;
 using static Domain.Enums.UserEnum;
 
 namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
