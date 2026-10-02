@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Application.Features.Rosbags.DTOs;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 
 namespace Application.Features.Rosbags.Queries
 {
@@ -22,15 +22,18 @@ namespace Application.Features.Rosbags.Queries
 		public async Task<List<RosbagDto>> Handle(GetBagsQuery request, CancellationToken cancellationToken)
 		{
 			var bags = await _unitOfWork.Rosbags.GetAllAsync(null, null, cancellationToken);
-			var sessions = await _unitOfWork.AnalysisSessions.GetAllAsync(null, null, cancellationToken);
+			var bagsList = bags.OrderByDescending(b => b.CreatedAt).ToList();
+			if (bagsList.Count == 0) return new List<RosbagDto>();
+
+			var bagIds = bagsList.Select(b => b.Id).ToHashSet();
+			var sessions = await _unitOfWork.AnalysisSessions.GetAllAsync(s => bagIds.Contains(s.RosbagId), null, cancellationToken);
 
 			var sessionMap = sessions
 				.OrderByDescending(s => s.StartedAt)
 				.GroupBy(s => s.RosbagId)
 				.ToDictionary(g => g.Key, g => g.First().Id);
 
-			return bags
-				.OrderByDescending(b => b.CreatedAt)
+			return bagsList
 				.Select(b => new RosbagDto
 				{
 					Id = b.Id,

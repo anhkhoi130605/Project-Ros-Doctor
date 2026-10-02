@@ -1,5 +1,5 @@
 using Application.Features.UserActivity.Queries;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using MediatR;
 
 namespace Application.Features.UserActivity.Handlers

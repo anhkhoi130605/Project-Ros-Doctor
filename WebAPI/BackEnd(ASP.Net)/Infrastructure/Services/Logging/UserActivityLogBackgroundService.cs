@@ -1,7 +1,7 @@
 using System.Net;
 using Application.Interfaces.Logging;
-using Application.Interfaces.ManageTrancsaction;
-using Domain.Entities.AboutUser;
+using Application.Interfaces.ManageTransaction;
+using Domain.Entities.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

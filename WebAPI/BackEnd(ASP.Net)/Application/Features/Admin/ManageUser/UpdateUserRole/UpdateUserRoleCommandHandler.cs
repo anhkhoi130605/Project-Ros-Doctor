@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Application.Interfaces.ManageTrancsaction;
-using DomainRole = Domain.Entities.AboutUser.Role;
+using Application.Interfaces.ManageTransaction;
+using DomainRole = Domain.Entities.Identity.Role;
 using static Domain.Enums.UserEnum;
 
 namespace Application.Features.Admin.ManageUser.UpdateUserRole

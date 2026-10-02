@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 // removed AutoMapper dependency - mapping done manually
 using MediatR;
 using Microsoft.IdentityModel.Tokens;
-using Application.Features.Admin.ManageUser.ReadDataUser.CommandAdminReadDataUser;
+using Application.Features.Admin.ManageUser.ReadDataUser.DTOs;
 using Application.Interfaces.ManageForRole.Admin;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 
 namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDataUser
 {

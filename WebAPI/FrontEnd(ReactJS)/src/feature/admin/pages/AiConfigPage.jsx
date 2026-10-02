@@ -12,7 +12,7 @@ export default function AiConfigPage() {
     rpm: state.aiSettings?.rpm || 10,
     monthlyBudget: state.aiSettings?.monthlyBudget || 25,
     modelName: state.aiSettings?.modelName || 'qwen-2.5-coder-32b',
-    vectorDbUrl: state.aiSettings?.vectorDbUrl || 'http://localhost:6333',
+    vectorDbUrl: state.aiSettings?.vectorDbUrl || (import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333'),
     prompt:
       state.aiSettings?.prompt ||
       'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',

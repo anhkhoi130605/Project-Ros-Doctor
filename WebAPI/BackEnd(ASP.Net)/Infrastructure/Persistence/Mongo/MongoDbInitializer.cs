@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Application.Interfaces.Common;
 using Domain.Entities.NoSql;
 using MongoDB.Driver;
 

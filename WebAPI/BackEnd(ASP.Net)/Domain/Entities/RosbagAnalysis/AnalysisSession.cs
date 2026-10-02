@@ -20,7 +20,7 @@ namespace Domain.Entities.RosbagAnalysis
 		public string? EngineerId { get; set; }
 
 		[ForeignKey(nameof(EngineerId))]
-		public virtual Domain.Entities.AboutUser.User? Engineer { get; set; }
+		public virtual Domain.Entities.Identity.User? Engineer { get; set; }
 
 		[Column("result_code")]
 		public SessionResultCode? ResultCode { get; set; }

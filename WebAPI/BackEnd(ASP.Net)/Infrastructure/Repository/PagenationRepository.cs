@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Domain.Entities.Config;
+using Domain.Common;
 using Infrastructure.Persistence;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 
 namespace Infrastructure.Repository
 {

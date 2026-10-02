@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using static Domain.Enums.UserEnum;
 
 namespace Domain.Enums
