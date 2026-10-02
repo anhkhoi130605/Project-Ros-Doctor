@@ -27,6 +27,13 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite:///./data/app.db"
+    mongo_connection_string: str = ""
+    mongo_database_name: str = "CtrlShiftN"
+    mongo_server_selection_timeout_ms: int = Field(default=10000, ge=1000, le=120000)
+    mongo_connect_timeout_ms: int = Field(default=10000, ge=1000, le=120000)
+    mongo_socket_timeout_ms: int = Field(default=15000, ge=1000, le=120000)
+    mongo_min_pool_size: int = Field(default=0, ge=0, le=100)
+    mongo_max_pool_size: int = Field(default=50, ge=1, le=500)
 
     # Vector Store
     chroma_persist_dir: str = "./data/chroma"
