@@ -27,7 +27,7 @@ namespace Infrastructure.Repository
 			Func<IQueryable<T>, IQueryable<T>>? includes = null,
 			CancellationToken cancellationToken = default)
 		{
-			IQueryable<T> query = _dbSet;
+			IQueryable<T> query = _dbSet.AsNoTracking();
 			if (filter != null) query = query.Where(filter);
 			if (includes != null) query = includes(query);
 			return await query.ToListAsync(cancellationToken);
@@ -38,7 +38,7 @@ namespace Infrastructure.Repository
 			Func<IQueryable<T>, IQueryable<T>>? includes = null,
 			CancellationToken cancellationToken = default)
 		{
-			IQueryable<T> query = _dbSet.Where(filter);
+			IQueryable<T> query = _dbSet.AsNoTracking().Where(filter);
 			if (includes != null) query = includes(query);
 			return await query.FirstOrDefaultAsync(cancellationToken);
 		}
@@ -70,7 +70,7 @@ namespace Infrastructure.Repository
 			Expression<Func<T, bool>>? predicate = null,
 			CancellationToken cancellationToken = default)
 		{
-			IQueryable<T> query = _dbSet;
+			IQueryable<T> query = _dbSet.AsNoTracking();
 			if (predicate != null) query = query.Where(predicate);
 			return await query.CountAsync(cancellationToken);
 		}
