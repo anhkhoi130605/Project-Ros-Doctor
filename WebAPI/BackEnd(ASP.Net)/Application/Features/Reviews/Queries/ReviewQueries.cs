@@ -2,12 +2,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using Application.Features.Reviews.DTOs;
-using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
+using Application.Interfaces.Repositories;
 using Domain.Entities.NoSql;
-using MongoDB.Driver;
+using MediatR;
 
 namespace Application.Features.Reviews.Queries
 {
@@ -16,12 +15,12 @@ namespace Application.Features.Reviews.Queries
 	public class GetReviewsQueryHandler : IRequestHandler<GetReviewsQuery, List<ReviewItemDto>>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly ISessionEvidenceRepository _evidenceRepo;
 
-		public GetReviewsQueryHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext)
+		public GetReviewsQueryHandler(IUnitOfWork unitOfWork, ISessionEvidenceRepository evidenceRepo)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_evidenceRepo = evidenceRepo;
 		}
 
 		public async Task<List<ReviewItemDto>> Handle(GetReviewsQuery request, CancellationToken cancellationToken)
@@ -33,19 +32,8 @@ namespace Application.Features.Reviews.Queries
 				.GroupBy(a => a.FindingId)
 				.ToDictionary(g => g.Key, g => g.OrderByDescending(a => a.ReviewedAt).First());
 
-			var evidenceMap = new Dictionary<string, FindingEvidenceDocument>();
-			try
-			{
-				var evidences = await _mongoDbContext.FindingsEvidence.Find(_ => true).ToListAsync(cancellationToken);
-				foreach (var ev in evidences)
-				{
-					evidenceMap[ev.FindingId] = ev;
-				}
-			}
-			catch
-			{
-				// Graceful fallback if MongoDB is restarting
-			}
+			var evidences = await _evidenceRepo.GetAllEvidencesAsync(cancellationToken);
+			var evidenceMap = evidences.ToDictionary(e => e.FindingId, e => e);
 
 			return issues.Select(i =>
 			{
@@ -84,12 +72,12 @@ namespace Application.Features.Reviews.Queries
 	public class GetReviewByIdQueryHandler : IRequestHandler<GetReviewByIdQuery, ReviewItemDto?>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly ISessionEvidenceRepository _evidenceRepo;
 
-		public GetReviewByIdQueryHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext)
+		public GetReviewByIdQueryHandler(IUnitOfWork unitOfWork, ISessionEvidenceRepository evidenceRepo)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_evidenceRepo = evidenceRepo;
 		}
 
 		public async Task<ReviewItemDto?> Handle(GetReviewByIdQuery request, CancellationToken cancellationToken)
@@ -103,15 +91,7 @@ namespace Application.Features.Reviews.Queries
 				.OrderByDescending(a => a.ReviewedAt)
 				.FirstOrDefault();
 
-			FindingEvidenceDocument? ev = null;
-			try
-			{
-				ev = await _mongoDbContext.FindingsEvidence.Find(e => e.FindingId == issue.Id).FirstOrDefaultAsync(cancellationToken);
-			}
-			catch
-			{
-				// Graceful fallback
-			}
+			var ev = await _evidenceRepo.GetByFindingIdAsync(issue.Id, cancellationToken);
 
 			var observationText = ev != null && ev.RawRosoutLogs.Count > 0
 				? string.Join("\n", ev.RawRosoutLogs)
@@ -139,4 +119,3 @@ namespace Application.Features.Reviews.Queries
 		}
 	}
 }
-

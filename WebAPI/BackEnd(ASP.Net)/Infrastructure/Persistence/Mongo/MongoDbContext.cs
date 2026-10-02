@@ -1,4 +1,3 @@
-using Application.Interfaces.Common;
 using Domain.Entities.NoSql;
 using Infrastructure.ConfigModel;
 using Microsoft.Extensions.Options;

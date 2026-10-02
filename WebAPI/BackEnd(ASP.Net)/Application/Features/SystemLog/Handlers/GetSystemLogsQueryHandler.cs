@@ -1,6 +1,6 @@
 using Application.Features.SystemLog.DTOs;
 using Application.Features.SystemLog.Queries;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using MediatR;
 using System;
 using System.Linq;

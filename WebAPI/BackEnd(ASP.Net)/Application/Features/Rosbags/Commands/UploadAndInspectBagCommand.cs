@@ -5,7 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Features.Rosbags.DTOs;
 using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
+using Application.Interfaces.Repositories;
 using Application.Interfaces.Rosbag;
 using Domain.Entities.NoSql;
 using Domain.Entities.RosbagAnalysis;
@@ -20,13 +21,13 @@ namespace Application.Features.Rosbags.Commands
 	{
 		private readonly IRosbagInspectorService _inspectorService;
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly ISessionEvidenceRepository _evidenceRepo;
 
-		public UploadAndInspectBagCommandHandler(IRosbagInspectorService inspectorService, IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext)
+		public UploadAndInspectBagCommandHandler(IRosbagInspectorService inspectorService, IUnitOfWork unitOfWork, ISessionEvidenceRepository evidenceRepo)
 		{
 			_inspectorService = inspectorService;
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_evidenceRepo = evidenceRepo;
 		}
 
 		public async Task<RosbagInspectionReportDto> Handle(UploadAndInspectBagCommand request, CancellationToken cancellationToken)
@@ -111,7 +112,7 @@ namespace Application.Features.Rosbags.Commands
 					{
 						if (mongoEvidences.Count > 0)
 						{
-							await _mongoDbContext.FindingsEvidence.InsertManyAsync(mongoEvidences, cancellationToken: cancellationToken);
+							await _evidenceRepo.InsertEvidencesAsync(mongoEvidences, cancellationToken);
 						}
 					}
 					catch (Exception mEx)
@@ -144,7 +145,7 @@ namespace Application.Features.Rosbags.Commands
 							CreatedAt = DateTime.UtcNow
 						}).ToList();
 
-						await _mongoDbContext.TopicMetricsTimeseries.InsertManyAsync(tsDocs, cancellationToken: cancellationToken);
+						await _evidenceRepo.InsertTopicMetricsTimeseriesAsync(tsDocs, cancellationToken);
 					}
 				}
 				catch (Exception tsEx)

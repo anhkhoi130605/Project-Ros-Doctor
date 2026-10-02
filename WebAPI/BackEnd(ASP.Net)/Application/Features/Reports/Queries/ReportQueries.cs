@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediatR;
 using Application.Features.Reports.DTOs;
-using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
+using Application.Interfaces.Repositories;
 using Domain.Entities.NoSql;
 using Domain.Entities.RosbagAnalysis;
 using Domain.Enums;
-using MongoDB.Driver;
+using MediatR;
 
 namespace Application.Features.Reports.Queries
 {
@@ -50,12 +49,12 @@ namespace Application.Features.Reports.Queries
 	public class GetReportByIdQueryHandler : IRequestHandler<GetReportByIdQuery, ReportDto?>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly IReportSnapshotRepository _reportSnapshotRepo;
 
-		public GetReportByIdQueryHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext)
+		public GetReportByIdQueryHandler(IUnitOfWork unitOfWork, IReportSnapshotRepository reportSnapshotRepo)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_reportSnapshotRepo = reportSnapshotRepo;
 		}
 
 		public async Task<ReportDto?> Handle(GetReportByIdQuery request, CancellationToken cancellationToken)
@@ -66,15 +65,7 @@ namespace Application.Features.Reports.Queries
 			var issues = await _unitOfWork.DiagnosticIssues.GetAllAsync(null, null, cancellationToken);
 			var totalFindings = issues.Count(i => i.SessionId == report.SessionId);
 
-			ReportSnapshotDocument? snapshot = null;
-			try
-			{
-				snapshot = await _mongoDbContext.ReportSnapshots.Find(s => s.ReportId == report.Id).FirstOrDefaultAsync(cancellationToken);
-			}
-			catch
-			{
-				// Mongo fallback
-			}
+			var snapshot = await _reportSnapshotRepo.GetByReportIdAsync(report.Id, cancellationToken);
 
 			return new ReportDto
 			{
@@ -99,12 +90,12 @@ namespace Application.Features.Reports.Commands
 	public class CreateReportCommandHandler : IRequestHandler<CreateReportCommand, ReportDto>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly IReportSnapshotRepository _reportSnapshotRepo;
 
-		public CreateReportCommandHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext)
+		public CreateReportCommandHandler(IUnitOfWork unitOfWork, IReportSnapshotRepository reportSnapshotRepo)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_reportSnapshotRepo = reportSnapshotRepo;
 		}
 
 		public async Task<ReportDto> Handle(CreateReportCommand command, CancellationToken cancellationToken)
@@ -126,23 +117,15 @@ namespace Application.Features.Reports.Commands
 			await _unitOfWork.Reports.CreateAsync(report, cancellationToken);
 			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-			// Write snapshot to MongoDB
-			try
+			var snapshot = new ReportSnapshotDocument
 			{
-				var snapshot = new ReportSnapshotDocument
-				{
-					ReportId = reportId,
-					SessionId = command.Request.SessionId,
-					Title = report.Title,
-					ReviewerId = command.ReviewerId,
-					SnapshotAt = DateTime.UtcNow
-				};
-				await _mongoDbContext.ReportSnapshots.InsertOneAsync(snapshot, cancellationToken: cancellationToken);
-			}
-			catch
-			{
-				// Mongo fallback
-			}
+				ReportId = reportId,
+				SessionId = command.Request.SessionId,
+				Title = report.Title,
+				ReviewerId = command.ReviewerId,
+				SnapshotAt = DateTime.UtcNow
+			};
+			await _reportSnapshotRepo.CreateSnapshotAsync(snapshot, cancellationToken);
 
 			return new ReportDto
 			{

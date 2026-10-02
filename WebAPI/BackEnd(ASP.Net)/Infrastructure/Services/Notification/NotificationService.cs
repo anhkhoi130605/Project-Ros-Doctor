@@ -1,7 +1,7 @@
 using Application.Features.SystemModule.Notification;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Application.Interfaces.Notifications;
-using NotificationEntity = Domain.Entities.Config.Notification;
+using NotificationEntity = Domain.Entities.Notifications.Notification;
 
 namespace Infrastructure.Services.Notification
 {

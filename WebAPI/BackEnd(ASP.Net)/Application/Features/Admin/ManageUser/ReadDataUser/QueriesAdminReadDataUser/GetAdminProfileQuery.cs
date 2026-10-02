@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using MediatR;
-using Application.Features.Admin.ManageUser.ReadDataUser.CommandAdminReadDataUser;
+using Application.Features.Admin.ManageUser.ReadDataUser.DTOs;
 
 namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDataUser
 {

@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using MediatR;
-using DomainUser = Domain.Entities.AboutUser.User;
-using DomainRole = Domain.Entities.AboutUser.Role;
+using DomainUser = Domain.Entities.Identity.User;
+using DomainRole = Domain.Entities.Identity.Role;
 using Application.DTOs.Authentication;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.Logging;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using static Domain.Enums.UserEnum;
 using Application.DTOs.Authentication.Register;
 using Domain.Enums;

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
 using Application.Features.Admin.AiConfig.DTOs;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Domain.Entities.Configuration;
 
 namespace Application.Features.Admin.AiConfig.Queries
