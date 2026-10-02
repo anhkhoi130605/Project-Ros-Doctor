@@ -128,9 +128,6 @@ export async function request(endpoint, options = {}) {
       }
     })();
 
-    // Gắn no-op catch handler vào stored promise để tránh UnhandledPromiseRejection leak
-    fetchPromise.catch(() => {});
-
     inFlightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;
   }
