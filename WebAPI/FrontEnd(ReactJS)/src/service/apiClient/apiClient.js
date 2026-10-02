@@ -128,6 +128,9 @@ export async function request(endpoint, options = {}) {
       }
     })();
 
+    // Suppress unhandled rejection warnings in global scope if a caller unmounts or delays awaiting
+    fetchPromise.catch(() => {});
+
     inFlightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;
   }
