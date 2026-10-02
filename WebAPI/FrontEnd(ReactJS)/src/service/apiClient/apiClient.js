@@ -4,6 +4,58 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 const apiCache = new Map();
 const inFlightRequests = new Map();
 
+/**
+ * Mapping các tài nguyên liên quan khi có thao tác mutation (POST, PUT, DELETE).
+ * Giúp invalidate chính xác các endpoint bị ảnh hưởng thay vì xoá sạch toàn bộ cache.
+ */
+const RESOURCE_DEPENDENCIES = {
+  '/api/bags': ['/api/bags', '/api/sessions', '/api/dashboard/stats'],
+  '/api/sessions': ['/api/sessions', '/api/bags', '/api/reviews', '/api/dashboard/stats'],
+  '/api/reviews': ['/api/reviews', '/api/sessions', '/api/reports', '/api/dashboard/stats'],
+  '/api/reports': ['/api/reports'],
+  '/api/admin/members': ['/api/admin/members', '/api/dashboard/stats'],
+  '/api/admin/ai-config': ['/api/admin/ai-config', '/api/admin/ai-usage'],
+  '/api/user-activity': ['/api/user-activity'],
+};
+
+/**
+ * Xóa cache theo prefix hoặc danh sách tài nguyên liên quan
+ */
+function invalidateCache(endpointOrPrefixes) {
+  if (!endpointOrPrefixes) {
+    apiCache.clear();
+    return;
+  }
+
+  let prefixesToInvalidate = [];
+
+  if (Array.isArray(endpointOrPrefixes)) {
+    prefixesToInvalidate = endpointOrPrefixes;
+  } else {
+    // Tìm các tài nguyên liên quan trong danh mục dependencies
+    const matchedKey = Object.keys(RESOURCE_DEPENDENCIES).find((key) =>
+      endpointOrPrefixes.includes(key)
+    );
+
+    if (matchedKey) {
+      prefixesToInvalidate = RESOURCE_DEPENDENCIES[matchedKey];
+    } else {
+      // Mặc định: tách lấy base resource path (ví dụ /api/xyz)
+      const pathOnly = endpointOrPrefixes.split('?')[0];
+      const segments = pathOnly.split('/').filter(Boolean);
+      const baseResource = segments.length >= 2 ? `/${segments[0]}/${segments[1]}` : pathOnly;
+      prefixesToInvalidate = [baseResource];
+    }
+  }
+
+  // Duyệt và xoá các cache entry khớp prefix
+  for (const cacheKey of apiCache.keys()) {
+    if (prefixesToInvalidate.some((prefix) => cacheKey.includes(prefix))) {
+      apiCache.delete(cacheKey);
+    }
+  }
+}
+
 export async function request(endpoint, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
   const token = localStorage.getItem('accessToken');
@@ -21,9 +73,9 @@ export async function request(endpoint, options = {}) {
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
-  // Invalidate read cache on mutation methods (POST, PUT, DELETE)
+  // Invalidate có mục tiêu (Granular Cache Invalidation) khi thực hiện mutation
   if (method !== 'GET') {
-    apiCache.clear();
+    invalidateCache(endpoint);
   } else if (!options.noCache) {
     const cacheKey = `${url}:${token || ''}`;
     const cached = apiCache.get(cacheKey);
@@ -34,6 +86,7 @@ export async function request(endpoint, options = {}) {
       return cached.data;
     }
 
+    // Deduplicate in-flight GET requests
     if (inFlightRequests.has(cacheKey)) {
       return inFlightRequests.get(cacheKey);
     }
@@ -43,6 +96,8 @@ export async function request(endpoint, options = {}) {
         const response = await fetch(url, config);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
+          // Xóa ngay lập tức khỏi in-flight trước khi ném lỗi
+          inFlightRequests.delete(cacheKey);
           const errorMessage = data.message || data.title || `Lỗi kết nối máy chủ (${response.status})`;
           const error = new Error(errorMessage);
           error.status = response.status;
@@ -51,10 +106,19 @@ export async function request(endpoint, options = {}) {
         }
         apiCache.set(cacheKey, { data, timestamp: Date.now() });
         return data;
+      } catch (err) {
+        // Xóa ngay lập tức khỏi in-flight để request gọi tiếp theo không bị nhận nhầm rejected promise cũ
+        inFlightRequests.delete(cacheKey);
+        throw err;
       } finally {
         inFlightRequests.delete(cacheKey);
       }
     })();
+
+    // Gắn handler dọn dẹp và chặn UnhandledPromiseRejection leak
+    fetchPromise.catch(() => {
+      inFlightRequests.delete(cacheKey);
+    });
 
     inFlightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;
@@ -93,6 +157,6 @@ export const apiClient = {
     });
   },
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' }),
-  clearCache: () => apiCache.clear(),
+  clearCache: (prefix) => invalidateCache(prefix),
   baseUrl: API_URL,
 };
