@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using MediatR;
 using Application.Features.Sessions.DTOs;
 using Application.Interfaces.Common;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
+using Application.Interfaces.Repositories;
 using Domain.Entities.NoSql;
 using Domain.Entities.RosbagAnalysis;
 using Domain.Enums;
@@ -17,13 +18,13 @@ namespace Application.Features.Sessions.Commands
 	public class StartAnalysisCommandHandler : IRequestHandler<StartAnalysisCommand, SessionDetailDto>
 	{
 		private readonly IUnitOfWork _unitOfWork;
-		private readonly IMongoDbContext _mongoDbContext;
+		private readonly ISessionEvidenceRepository _evidenceRepo;
 		private readonly IRedisService _redisService;
 
-		public StartAnalysisCommandHandler(IUnitOfWork unitOfWork, IMongoDbContext mongoDbContext, IRedisService redisService)
+		public StartAnalysisCommandHandler(IUnitOfWork unitOfWork, ISessionEvidenceRepository evidenceRepo, IRedisService redisService)
 		{
 			_unitOfWork = unitOfWork;
-			_mongoDbContext = mongoDbContext;
+			_evidenceRepo = evidenceRepo;
 			_redisService = redisService;
 		}
 
@@ -113,7 +114,7 @@ namespace Application.Features.Sessions.Commands
 						Steps = new List<string> { "Xác minh nguồn đồng hồ hai cảm biến", "Kiểm tra thiết lập PTP/Chrony" }
 					}
 				};
-				await _mongoDbContext.FindingsEvidence.InsertManyAsync(evidenceList, cancellationToken: cancellationToken);
+				await _evidenceRepo.InsertEvidencesAsync(evidenceList, cancellationToken);
 			}
 			catch
 			{

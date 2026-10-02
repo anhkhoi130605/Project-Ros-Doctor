@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using static Domain.Enums.UserEnum;
 
 namespace Application.Interfaces.ManageForRole

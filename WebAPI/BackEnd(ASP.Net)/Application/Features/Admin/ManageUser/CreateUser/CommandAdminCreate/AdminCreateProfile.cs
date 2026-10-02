@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using AutoMapper;
-using DomainUser = Domain.Entities.AboutUser.User;
+using DomainUser = Domain.Entities.Identity.User;
 
 namespace Application.Features.Admin.ManageUser.CreateUser.CommandAdminCreate
 {

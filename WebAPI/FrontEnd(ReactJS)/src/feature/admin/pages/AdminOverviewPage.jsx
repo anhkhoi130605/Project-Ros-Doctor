@@ -9,9 +9,8 @@ import {
   triggerTestErrorApi,
   updateUserRoleApi,
 } from '../../dashboard/api/dashboardApi';
-import '../../dashboard/page/dashboard.css';
-
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
+import '../../dashboard/pages/dashboard.css';
+import { fetchUserActivityLogsApi } from '../../../service';
 
 const testErrorOptions = [
   { label: 'System.ArgumentException (Lỗi đối số không hợp lệ)', value: 'ArgumentException' },
@@ -248,21 +247,10 @@ export default function AdminOverviewPage() {
 
   // Fetch User Activity Logs
   const loadUserLogs = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
     try {
       setUserLogsLoading(true);
       setUserLogsError(null);
-      const response = await fetch(`${API_URL}/api/user-activity?take=100`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      if (!response.ok) {
-        throw new Error('Không thể tải nhật ký hoạt động người dùng.');
-      }
-      const data = await response.json();
+      const data = await fetchUserActivityLogsApi(100);
       setUserLogs(Array.isArray(data) ? data : []);
     } catch (err) {
       setUserLogs([]);
@@ -373,7 +361,7 @@ export default function AdminOverviewPage() {
     rpm: 10,
     monthlyBudget: 25,
     modelName: 'Chưa kết nối',
-    vectorDbUrl: 'http://localhost:8333',
+    vectorDbUrl: import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333',
     prompt: 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
   });
 

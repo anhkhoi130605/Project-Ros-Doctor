@@ -43,7 +43,7 @@ namespace API.Controller.Rosbags
 		[HttpPost("inspect")]
 		public async Task<IActionResult> InspectBag([FromBody] InspectRosbagRequestDto request, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new InspectRosbagQuery(request.BagPath, request.SampleName), cancellationToken);
+			var result = await _mediator.Send(new InspectRosbagCommand(request.BagPath, request.SampleName), cancellationToken);
 			return Ok(result);
 		}
 

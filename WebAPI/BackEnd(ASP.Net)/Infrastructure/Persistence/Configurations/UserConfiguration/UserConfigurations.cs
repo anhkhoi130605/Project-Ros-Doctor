@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using static Domain.Enums.UserEnum;
 
 namespace Infrastructure.Persistence.Configurations.UserConfiguration

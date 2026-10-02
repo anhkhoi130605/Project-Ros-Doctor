@@ -1,6 +1,6 @@
 using Application.Common.Helpers;
 using Application.Interfaces.Logging;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Domain.Entities.System;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

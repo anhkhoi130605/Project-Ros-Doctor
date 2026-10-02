@@ -7,7 +7,7 @@ using MediatR;
 using Application.DTOs.Authentication;
 using Application.Interfaces.Authentication;
 using Application.Interfaces.Logging;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 using Domain.Enums;
 
 namespace Application.Features.Authentication.Login.Handler

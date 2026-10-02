@@ -4,8 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
-using Application.Interfaces.ManageTrancsaction;
-using Domain.Entities.AboutUser;
+using Application.Interfaces.ManageTransaction;
+using Domain.Entities.Identity;
 using Domain.Helper;
 using static Domain.Enums.UserEnum;
 

@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
-using Domain.Entities.AboutUser;
+using Domain.Entities.Identity;
 using Infrastructure.Persistence;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 
 namespace Infrastructure.Repository;
 

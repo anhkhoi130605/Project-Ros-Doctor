@@ -3,11 +3,12 @@ using System.Data;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using Domain.Entities.Config;
-using Domain.Entities.AboutUser;
+using Domain.Common;
+using Domain.Entities.Notifications;
+using Domain.Entities.Identity;
 using Domain.Entities.System;
 using Infrastructure.Persistence;
-using Application.Interfaces.ManageTrancsaction;
+using Application.Interfaces.ManageTransaction;
 
 namespace Infrastructure.Repository
 {
