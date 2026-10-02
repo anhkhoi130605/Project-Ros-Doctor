@@ -19,7 +19,7 @@ root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from src.services.carla_rosbag_service import CarlaRosbagRecorder
+from src.services.carla_rosbag_service import CarlaRosbagRecorder  # noqa: E402
 
 
 def main():

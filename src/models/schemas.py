@@ -1,4 +1,4 @@
-from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -21,4 +21,4 @@ class CarlaRecordRequest(BaseModel):
 class CarlaRecordResponse(BaseModel):
     status: str
     message: str
-    bag_path: Optional[str] = None
+    bag_path: str | None = None

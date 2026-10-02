@@ -7,14 +7,13 @@ from __future__ import annotations
 
 import datetime
 import math
-import os
-from pathlib import Path
 import sqlite3
 import struct
 import sys
 import threading
 import time
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -64,8 +63,8 @@ class FallbackRosbagWriter:
         self.topics: dict[str, int] = {}
         self.topic_types: dict[str, str] = {}
         self.message_counts: dict[str, int] = {}
-        self.start_time_ns: Optional[int] = None
-        self.end_time_ns: Optional[int] = None
+        self.start_time_ns: int | None = None
+        self.end_time_ns: int | None = None
         self.total_messages = 0
         self._lock = threading.Lock()
 
@@ -190,7 +189,7 @@ class CarlaRosbagRecorder:
         self,
         host: str = "127.0.0.1",
         port: int = 2000,
-        output_dir: Optional[str | Path] = None,
+        output_dir: str | Path | None = None,
         sampling_interval: float = 1.0,
         image_width: int = 800,
         image_height: int = 600,
@@ -259,7 +258,6 @@ class CarlaRosbagRecorder:
 
     def get_or_spawn_vehicle(self) -> Any:
         """Find an existing ego vehicle or spawn a new one."""
-        import carla
 
         # Check existing actors
         actors = self.world.get_actors()
@@ -352,11 +350,11 @@ class CarlaRosbagRecorder:
         qx, qy, qz, qw = _euler_to_quaternion(0.0, 0.0, -compass_rad)
 
         if ROSBAGS_AVAILABLE:
-            Header = self.typestore.types["std_msgs/msg/Header"]
-            Time = self.typestore.types["builtin_interfaces/msg/Time"]
-            Imu = self.typestore.types["sensor_msgs/msg/Imu"]
-            Quaternion = self.typestore.types["geometry_msgs/msg/Quaternion"]
-            Vector3 = self.typestore.types["geometry_msgs/msg/Vector3"]
+            Header = self.typestore.types["std_msgs/msg/Header"]  # noqa: N806
+            Time = self.typestore.types["builtin_interfaces/msg/Time"]  # noqa: N806
+            Imu = self.typestore.types["sensor_msgs/msg/Imu"]  # noqa: N806
+            Quaternion = self.typestore.types["geometry_msgs/msg/Quaternion"]  # noqa: N806
+            Vector3 = self.typestore.types["geometry_msgs/msg/Vector3"]  # noqa: N806
 
             msg = Imu(
                 header=Header(stamp=Time(sec=sec, nanosec=nanosec), frame_id="imu_link"),
@@ -412,10 +410,10 @@ class CarlaRosbagRecorder:
         data_bytes = points.tobytes()
 
         if ROSBAGS_AVAILABLE:
-            Header = self.typestore.types["std_msgs/msg/Header"]
-            Time = self.typestore.types["builtin_interfaces/msg/Time"]
-            PointCloud2 = self.typestore.types["sensor_msgs/msg/PointCloud2"]
-            PointField = self.typestore.types["sensor_msgs/msg/PointField"]
+            Header = self.typestore.types["std_msgs/msg/Header"]  # noqa: N806
+            Time = self.typestore.types["builtin_interfaces/msg/Time"]  # noqa: N806
+            PointCloud2 = self.typestore.types["sensor_msgs/msg/PointCloud2"]  # noqa: N806
+            PointField = self.typestore.types["sensor_msgs/msg/PointField"]  # noqa: N806
 
             fields = [
                 PointField(name="x", offset=0, datatype=7, count=1),
@@ -487,9 +485,9 @@ class CarlaRosbagRecorder:
         step = data.width * 3
 
         if ROSBAGS_AVAILABLE:
-            Header = self.typestore.types["std_msgs/msg/Header"]
-            Time = self.typestore.types["builtin_interfaces/msg/Time"]
-            Image = self.typestore.types["sensor_msgs/msg/Image"]
+            Header = self.typestore.types["std_msgs/msg/Header"]  # noqa: N806
+            Time = self.typestore.types["builtin_interfaces/msg/Time"]  # noqa: N806
+            Image = self.typestore.types["sensor_msgs/msg/Image"]  # noqa: N806
 
             msg = Image(
                 header=Header(stamp=Time(sec=sec, nanosec=nanosec), frame_id="camera_link"),
