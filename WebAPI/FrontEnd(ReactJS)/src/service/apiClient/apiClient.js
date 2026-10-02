@@ -3,6 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 // In-memory cache & In-flight request deduplication
 const apiCache = new Map();
 const inFlightRequests = new Map();
+const CACHE_DELIMITER = '@@token:';
 
 /**
  * Mapping các tài nguyên liên quan khi có thao tác mutation (POST, PUT, DELETE).
@@ -19,7 +20,8 @@ const RESOURCE_DEPENDENCIES = {
 };
 
 /**
- * Xóa cache theo prefix hoặc danh sách tài nguyên liên quan
+ * Xóa cache theo prefix hoặc danh sách tài nguyên liên quan.
+ * Tách riêng phần URL để so khớp, tránh so nhầm vào chuỗi token hoặc URL không liên quan.
  */
 function invalidateCache(endpointOrPrefixes) {
   if (!endpointOrPrefixes) {
@@ -48,9 +50,26 @@ function invalidateCache(endpointOrPrefixes) {
     }
   }
 
-  // Duyệt và xoá các cache entry khớp prefix
+  // Duyệt và xoá các cache entry khớp prefix dựa trên URL path
   for (const cacheKey of apiCache.keys()) {
-    if (prefixesToInvalidate.some((prefix) => cacheKey.includes(prefix))) {
+    // Tách phần URL ra khỏi token để tránh match nhầm ký tự trong token string
+    const [cachedUrl] = cacheKey.split(CACHE_DELIMITER);
+    let cachedPath = cachedUrl;
+    try {
+      cachedPath = new URL(cachedUrl, API_URL).pathname;
+    } catch {
+      cachedPath = cachedUrl.split('?')[0];
+    }
+
+    const shouldInvalidate = prefixesToInvalidate.some((prefix) => {
+      return (
+        cachedPath === prefix ||
+        cachedPath.startsWith(`${prefix}/`) ||
+        cachedPath.startsWith(`${prefix}?`)
+      );
+    });
+
+    if (shouldInvalidate) {
       apiCache.delete(cacheKey);
     }
   }
@@ -77,7 +96,7 @@ export async function request(endpoint, options = {}) {
   if (method !== 'GET') {
     invalidateCache(endpoint);
   } else if (!options.noCache) {
-    const cacheKey = `${url}:${token || ''}`;
+    const cacheKey = `${url}${CACHE_DELIMITER}${token || ''}`;
     const cached = apiCache.get(cacheKey);
     const now = Date.now();
     const ttl = options.cacheTtlMs || 5000; // 5s short-term cache for rapid navigation
@@ -96,8 +115,6 @@ export async function request(endpoint, options = {}) {
         const response = await fetch(url, config);
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-          // Xóa ngay lập tức khỏi in-flight trước khi ném lỗi
-          inFlightRequests.delete(cacheKey);
           const errorMessage = data.message || data.title || `Lỗi kết nối máy chủ (${response.status})`;
           const error = new Error(errorMessage);
           error.status = response.status;
@@ -106,19 +123,13 @@ export async function request(endpoint, options = {}) {
         }
         apiCache.set(cacheKey, { data, timestamp: Date.now() });
         return data;
-      } catch (err) {
-        // Xóa ngay lập tức khỏi in-flight để request gọi tiếp theo không bị nhận nhầm rejected promise cũ
-        inFlightRequests.delete(cacheKey);
-        throw err;
       } finally {
         inFlightRequests.delete(cacheKey);
       }
     })();
 
-    // Gắn handler dọn dẹp và chặn UnhandledPromiseRejection leak
-    fetchPromise.catch(() => {
-      inFlightRequests.delete(cacheKey);
-    });
+    // Gắn no-op catch handler vào stored promise để tránh UnhandledPromiseRejection leak
+    fetchPromise.catch(() => {});
 
     inFlightRequests.set(cacheKey, fetchPromise);
     return fetchPromise;
