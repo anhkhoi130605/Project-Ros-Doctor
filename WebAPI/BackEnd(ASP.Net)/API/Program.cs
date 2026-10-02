@@ -1,7 +1,10 @@
+using System.IO.Compression;
+using System.Linq;
 using API.Middlewares;
 using API.Middlewares.Extentions;
 using Application.Features.Authentication.Login.Handler;
 using MediatR;
+using Microsoft.AspNetCore.ResponseCompression;
 using ResUpClub.Infrastructure.ConfigModel;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,9 +27,27 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
 {
