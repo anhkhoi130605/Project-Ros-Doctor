@@ -26,6 +26,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         return ChatResponse(
             response=result.get("response", ""),
             analysis=result.get("analysis", ""),
+            report=result.get("report"),
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

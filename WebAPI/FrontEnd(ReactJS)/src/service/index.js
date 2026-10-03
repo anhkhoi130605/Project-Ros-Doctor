@@ -5,3 +5,5 @@ export * from './reviewService';
 export * from './reportService';
 export * from './adminService';
 export * from './dashboardService';
+export * from './chatService';
+export * from './agentService';

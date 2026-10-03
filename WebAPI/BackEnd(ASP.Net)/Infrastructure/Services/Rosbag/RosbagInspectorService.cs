@@ -7,23 +7,48 @@ using System.Threading;
 using System.Threading.Tasks;
 using Application.Features.Rosbags.DTOs;
 using Application.Interfaces.Rosbag;
-using Domain.Entities.RosbagAnalysis;
-using Domain.Enums;
+using Application.Interfaces.Rosbag.Analyzers;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace Infrastructure.Services.Rosbag
 {
+	/// <summary>
+	/// RosbagInspectorService điều phối mô hình Pipeline chẩn đoán 2 tầng:
+	/// - Tầng 1: SQL Metadata Analyzers (ITopicDropoutAnalyzer, IFrequencyDropAnalyzer, ITimestampSyncAnalyzer)
+	/// - Tầng 2: CDR Payload Analyzers (ITfTreeIntegrityAnalyzer, ISensorPayloadAnalyzer)
+	/// - Tầng 3: Finding Aggregator & Severity Ranker (IFindingAggregator)
+	/// </summary>
 	public class RosbagInspectorService : IRosbagInspectorService
 	{
 		private readonly IConfiguration _configuration;
 		private readonly ILogger<RosbagInspectorService> _logger;
+		private readonly ITopicDropoutAnalyzer _topicDropoutAnalyzer;
+		private readonly IFrequencyDropAnalyzer _frequencyDropAnalyzer;
+		private readonly ITimestampSyncAnalyzer _timestampSyncAnalyzer;
+		private readonly ITfTreeIntegrityAnalyzer _tfTreeIntegrityAnalyzer;
+		private readonly ISensorPayloadAnalyzer _sensorPayloadAnalyzer;
+		private readonly IFindingAggregator _findingAggregator;
 
-		public RosbagInspectorService(IConfiguration configuration, ILogger<RosbagInspectorService> logger)
+		public RosbagInspectorService(
+			IConfiguration configuration,
+			ILogger<RosbagInspectorService> logger,
+			ITopicDropoutAnalyzer topicDropoutAnalyzer,
+			IFrequencyDropAnalyzer frequencyDropAnalyzer,
+			ITimestampSyncAnalyzer timestampSyncAnalyzer,
+			ITfTreeIntegrityAnalyzer tfTreeIntegrityAnalyzer,
+			ISensorPayloadAnalyzer sensorPayloadAnalyzer,
+			IFindingAggregator findingAggregator)
 		{
 			_configuration = configuration;
 			_logger = logger;
+			_topicDropoutAnalyzer = topicDropoutAnalyzer;
+			_frequencyDropAnalyzer = frequencyDropAnalyzer;
+			_timestampSyncAnalyzer = timestampSyncAnalyzer;
+			_tfTreeIntegrityAnalyzer = tfTreeIntegrityAnalyzer;
+			_sensorPayloadAnalyzer = sensorPayloadAnalyzer;
+			_findingAggregator = findingAggregator;
 		}
 
 		public async Task<IReadOnlyList<SampleBagInfoDto>> GetSampleBagsAsync(CancellationToken cancellationToken = default)
@@ -100,10 +125,30 @@ namespace Infrastructure.Services.Rosbag
 			return await InspectBagAsync(target.Path, cancellationToken);
 		}
 
-		public async Task<RosbagInspectionReportDto> InspectUploadedFileAsync(Stream fileStream, string fileName, CancellationToken cancellationToken = default)
+		public async Task<RosbagInspectionReportDto> InspectUploadedFileAsync(
+			Stream fileStream,
+			string fileName,
+			Stream? yamlStream = null,
+			string? yamlFileName = null,
+			CancellationToken cancellationToken = default)
 		{
 			var tempFolder = Path.Combine(Path.GetTempPath(), "rosbags_upload", Guid.NewGuid().ToString("N")[..8]);
 			Directory.CreateDirectory(tempFolder);
+
+			if (fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+			{
+				var zipFilePath = Path.Combine(tempFolder, fileName);
+				await using (var outputStream = File.Create(zipFilePath))
+				{
+					await fileStream.CopyToAsync(outputStream, cancellationToken);
+				}
+				System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, tempFolder);
+				var foundDb3 = Directory.GetFiles(tempFolder, "*.db3", SearchOption.AllDirectories).FirstOrDefault();
+				if (foundDb3 != null)
+				{
+					return await InspectBagAsync(foundDb3, cancellationToken);
+				}
+			}
 
 			var tempFilePath = Path.Combine(tempFolder, fileName);
 			await using (var outputStream = File.Create(tempFilePath))
@@ -111,11 +156,19 @@ namespace Infrastructure.Services.Rosbag
 				await fileStream.CopyToAsync(outputStream, cancellationToken);
 			}
 
+			if (yamlStream != null)
+			{
+				var yamlPath = Path.Combine(tempFolder, string.IsNullOrWhiteSpace(yamlFileName) ? "metadata.yaml" : yamlFileName);
+				await using var outputYaml = File.Create(yamlPath);
+				await yamlStream.CopyToAsync(outputYaml, cancellationToken);
+			}
+
 			return await InspectBagAsync(tempFilePath, cancellationToken);
 		}
 
 		public async Task<RosbagInspectionReportDto> InspectBagAsync(string bagPath, CancellationToken cancellationToken = default)
 		{
+			var sw = System.Diagnostics.Stopwatch.StartNew();
 			var (db3Path, bagDirectory, bagName) = ResolveBagPaths(bagPath);
 
 			if (!File.Exists(db3Path))
@@ -124,8 +177,6 @@ namespace Infrastructure.Services.Rosbag
 			}
 
 			var fileInfo = new FileInfo(db3Path);
-			long totalSizeBytes = fileInfo.Length;
-
 			var connectionString = $"Data Source={db3Path};Mode=ReadOnly;";
 			await using var conn = new SqliteConnection(connectionString);
 			await conn.OpenAsync(cancellationToken);
@@ -137,15 +188,17 @@ namespace Infrastructure.Services.Rosbag
 				throw new InvalidOperationException("Rosbag không chứa topic nào trong bảng 'topics'.");
 			}
 
-			// 2. Read and analyze messages
-			var report = await AnalyzeMessagesAsync(conn, topics, fileInfo, bagName, db3Path, cancellationToken);
+			// 2. Read and analyze messages through Pipeline
+			var report = await AnalyzeMessagesPipelineAsync(conn, topics, fileInfo, bagName, db3Path, cancellationToken);
+			sw.Stop();
+			report.ProcessingTimeSec = Math.Round(sw.Elapsed.TotalSeconds, 2);
 
 			return report;
 		}
 
-		private async Task<Dictionary<int, TopicMetadata>> ReadTopicsAsync(SqliteConnection conn, CancellationToken cancellationToken)
+		private async Task<Dictionary<int, TopicMetadataDto>> ReadTopicsAsync(SqliteConnection conn, CancellationToken cancellationToken)
 		{
-			var topics = new Dictionary<int, TopicMetadata>();
+			var topics = new Dictionary<int, TopicMetadataDto>();
 			const string sql = "SELECT id, name, type, serialization_format FROM topics ORDER BY id ASC;";
 
 			await using var cmd = new SqliteCommand(sql, conn);
@@ -154,27 +207,21 @@ namespace Infrastructure.Services.Rosbag
 			while (await reader.ReadAsync(cancellationToken))
 			{
 				var id = reader.GetInt32(0);
-				var name = reader.GetString(1);
-				var type = reader.GetString(2);
-				var format = reader.IsDBNull(3) ? "cdr" : reader.GetString(3);
-
-				topics[id] = new TopicMetadata
+				topics[id] = new TopicMetadataDto
 				{
 					TopicId = id,
-					TopicName = name,
-					TopicType = type,
-					SerializationFormat = format,
-					MessageCount = 0,
-					SizeBytes = 0
+					TopicName = reader.GetString(1),
+					TopicType = reader.GetString(2),
+					SerializationFormat = reader.IsDBNull(3) ? "cdr" : reader.GetString(3)
 				};
 			}
 
 			return topics;
 		}
 
-		private async Task<RosbagInspectionReportDto> AnalyzeMessagesAsync(
+		private async Task<RosbagInspectionReportDto> AnalyzeMessagesPipelineAsync(
 			SqliteConnection conn,
-			Dictionary<int, TopicMetadata> topics,
+			Dictionary<int, TopicMetadataDto> topics,
 			FileInfo fileInfo,
 			string bagName,
 			string db3Path,
@@ -184,7 +231,6 @@ namespace Infrastructure.Services.Rosbag
 			await using var countCmd = new SqliteCommand(countSql, conn);
 			var totalMessages = Convert.ToInt32(await countCmd.ExecuteScalarAsync(cancellationToken));
 
-			var anomalies = new List<RosbagAnomalyDto>();
 			var topicTimestamps = new Dictionary<int, List<long>>();
 			var topicSizes = new Dictionary<int, long>();
 
@@ -202,10 +248,6 @@ namespace Infrastructure.Services.Rosbag
 			await using var cmd = new SqliteCommand(msgSql, conn);
 			await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
-			long lastGlobalTs = 0;
-			int inversionCount = 0;
-			int emptyPayloadCount = 0;
-
 			while (await reader.ReadAsync(cancellationToken))
 			{
 				var topicId = reader.GetInt32(0);
@@ -214,47 +256,6 @@ namespace Infrastructure.Services.Rosbag
 
 				if (ts < overallMinTs) overallMinTs = ts;
 				if (ts > overallMaxTs) overallMaxTs = ts;
-
-				// Anomaly check: Timestamp inversion (đi lùi thời gian)
-				if (lastGlobalTs > 0 && ts < lastGlobalTs)
-				{
-					inversionCount++;
-					if (inversionCount <= 5)
-					{
-						anomalies.Add(new RosbagAnomalyDto
-						{
-							Id = Guid.NewGuid().ToString("N")[..8],
-							Topic = topics.TryGetValue(topicId, out var t) ? t.TopicName : $"ID {topicId}",
-							AnomalyType = "TIMESTAMP_INVERSION",
-							Severity = "CRITICAL",
-							TimeRange = FormatTimestampRange(ts, lastGlobalTs),
-							IssueTitle = "Mốc thời gian bị đảo ngược (Timestamp Inversion)",
-							Description = $"Phát hiện message có timestamp {ts} nhỏ hơn message trước đó {lastGlobalTs}.",
-							SuggestedFix = "Kiểm tra đồng bộ đồng hồ phần cứng (PTP/Chrony) hoặc cảm biến bị lệch clock."
-						});
-					}
-				}
-				lastGlobalTs = ts;
-
-				// Anomaly check: Empty payload
-				if (size <= 0)
-				{
-					emptyPayloadCount++;
-					if (emptyPayloadCount <= 5)
-					{
-						anomalies.Add(new RosbagAnomalyDto
-						{
-							Id = Guid.NewGuid().ToString("N")[..8],
-							Topic = topics.TryGetValue(topicId, out var t) ? t.TopicName : $"ID {topicId}",
-							AnomalyType = "EMPTY_PAYLOAD",
-							Severity = "HIGH",
-							TimeRange = FormatTimestampNs(ts),
-							IssueTitle = "Gói tin rỗng (Empty / Zero-byte Payload)",
-							Description = $"Message thuộc topic {topics[topicId].TopicName} có kích thước 0 bytes.",
-							SuggestedFix = "Kiểm tra driver cảm biến xuất bản dữ liệu rỗng hoặc lỗi tuần tự hóa CDR."
-						});
-					}
-				}
 
 				if (topicTimestamps.TryGetValue(topicId, out var list))
 				{
@@ -273,9 +274,8 @@ namespace Infrastructure.Services.Rosbag
 				? (overallMaxTs - overallMinTs) / 1e9
 				: 0.0;
 
-			// Analyze per-topic stats and frequency anomalies
+			// Calculate per-topic statistics
 			var topicDtos = new List<TopicMetadataDto>();
-
 			foreach (var kvp in topics)
 			{
 				var topicId = kvp.Key;
@@ -297,104 +297,73 @@ namespace Infrastructure.Services.Rosbag
 						? Math.Round((timestamps.Count - 1) / topicDuration, 2)
 						: Math.Round(timestamps.Count / totalDurationSec, 2);
 
-					// Calculate delta times
 					var deltasMs = new List<double>(timestamps.Count - 1);
 					for (int i = 1; i < timestamps.Count; i++)
 					{
-						var dt = (timestamps[i] - timestamps[i - 1]) / 1e6; // ns to ms
-						deltasMs.Add(dt);
+						deltasMs.Add((timestamps[i] - timestamps[i - 1]) / 1e6);
 					}
 
 					meta.MinDeltaTimeMs = Math.Round(deltasMs.Min(), 2);
 					meta.MaxDeltaTimeMs = Math.Round(deltasMs.Max(), 2);
 					meta.AvgDeltaTimeMs = Math.Round(deltasMs.Average(), 2);
-
-					// Check for dropped frames / severe jitter
-					var avgDt = meta.AvgDeltaTimeMs;
-					var droppedThreshold = Math.Max(avgDt * 3.0, 1000.0); // > 3x average or > 1 second
-					int dropCount = 0;
-
-					for (int i = 0; i < deltasMs.Count; i++)
-					{
-						if (deltasMs[i] > droppedThreshold)
-						{
-							dropCount++;
-							if (dropCount <= 3)
-							{
-								anomalies.Add(new RosbagAnomalyDto
-								{
-									Id = Guid.NewGuid().ToString("N")[..8],
-									Topic = meta.TopicName,
-									AnomalyType = "DROPPED_FRAME",
-									Severity = deltasMs[i] > 3000 ? "HIGH" : "MEDIUM",
-									TimeRange = FormatTimestampRange(timestamps[i], timestamps[i + 1]),
-									IssueTitle = $"Trễ chu kỳ / Rớt gói tin ({Math.Round(deltasMs[i], 1)} ms)",
-									Description = $"Khoảng cách giữa 2 tin nhắn liên tiếp đạt {Math.Round(deltasMs[i], 1)} ms, cao hơn nhiều so với chu kỳ trung bình {Math.Round(avgDt, 1)} ms.",
-									SuggestedFix = "Kiểm tra tải CPU, QoS depth hoặc băng thông mạng truyền cảm biến."
-								});
-							}
-						}
-					}
-
-					// Check topic early dropout (Topic chết sớm trước khi hết rosbag)
-					double endDiffSec = (overallMaxTs - meta.LastTimestampNs) / 1e9;
-					if (endDiffSec > 2.0 && totalDurationSec > 5.0)
-					{
-						anomalies.Add(new RosbagAnomalyDto
-						{
-							Id = Guid.NewGuid().ToString("N")[..8],
-							Topic = meta.TopicName,
-							AnomalyType = "TOPIC_TIMEOUT",
-							Severity = "HIGH",
-							TimeRange = FormatTimestampRange(meta.LastTimestampNs, overallMaxTs),
-							IssueTitle = "Mất tín hiệu cảm biến sớm (Topic Dropout)",
-							Description = $"Topic {meta.TopicName} ngừng gửi dữ liệu trước khi kết thúc bản ghi {Math.Round(endDiffSec, 1)} giây.",
-							SuggestedFix = "Kiểm tra node publisher có bị crash hoặc ngắt kết nối giữa chừng không."
-						});
-					}
-				}
-				else if (timestamps.Count == 1 && totalDurationSec > 3.0)
-				{
-					meta.AvgFrequencyHz = 0;
-					anomalies.Add(new RosbagAnomalyDto
-					{
-						Id = Guid.NewGuid().ToString("N")[..8],
-						Topic = meta.TopicName,
-						AnomalyType = "INSUFFICIENT_DATA",
-						Severity = "LOW",
-						TimeRange = FormatTimestampNs(timestamps[0]),
-						IssueTitle = "Topic chỉ có 1 message duy nhất",
-						Description = $"Topic {meta.TopicName} chỉ xuất bản 1 tin nhắn duy nhất trong toàn bộ {Math.Round(totalDurationSec, 1)}s.",
-						SuggestedFix = "Xác nhận xem topic này là dạng cấu hình tĩnh (latched topic) hay bị treo."
-					});
 				}
 				else
 				{
 					meta.AvgFrequencyHz = 0;
 				}
 
-				topicDtos.Add(new TopicMetadataDto
-				{
-					TopicId = meta.TopicId,
-					TopicName = meta.TopicName,
-					TopicType = meta.TopicType,
-					SerializationFormat = meta.SerializationFormat,
-					MessageCount = meta.MessageCount,
-					SizeBytes = meta.SizeBytes,
-					AvgFrequencyHz = meta.AvgFrequencyHz,
-					MinDeltaTimeMs = meta.MinDeltaTimeMs,
-					MaxDeltaTimeMs = meta.MaxDeltaTimeMs,
-					AvgDeltaTimeMs = meta.AvgDeltaTimeMs,
-					FirstTimestampNs = meta.FirstTimestampNs,
-					LastTimestampNs = meta.LastTimestampNs
-				});
+				topicDtos.Add(meta);
 			}
 
-			// Generate Timeline Buckets (chia timeline thành các khoảng 1s hoặc tương ứng)
+			// Khởi tạo ngữ cảnh phân tích chung RosbagAnalysisContext
+			var bagDir = Path.GetDirectoryName(db3Path) ?? "";
+			var yamlPath = Directory.Exists(bagDir) ? Directory.GetFiles(bagDir, "*.yaml").FirstOrDefault() : null;
+
+			var context = new RosbagAnalysisContext
+			{
+				Connection = conn,
+				BagPath = db3Path,
+				BagDirectory = bagDir,
+				BagName = bagName,
+				Db3Path = db3Path,
+				YamlPath = yamlPath,
+				FileSizeBytes = fileInfo.Length,
+				TotalMessages = totalMessages,
+				OverallMinTs = overallMinTs,
+				OverallMaxTs = overallMaxTs,
+				TotalDurationSec = totalDurationSec,
+				Topics = topicDtos.ToDictionary(t => t.TopicId, t => t),
+				TopicTimestamps = topicTimestamps,
+				TopicSizes = topicSizes
+			};
+
+			// ================= PIPELINE CHẨN ĐOÁN 2 TẦNG =================
+			// TẦNG 1: SQL Metadata Analyzers
+			var dropoutTask = _topicDropoutAnalyzer.AnalyzeAsync(context, cancellationToken);
+			var freqDropTask = _frequencyDropAnalyzer.AnalyzeAsync(context, cancellationToken);
+			var timeSyncTask = _timestampSyncAnalyzer.AnalyzeAsync(context, cancellationToken);
+
+			// TẦNG 2: CDR Payload Deserialization Analyzers
+			var tfTask = _tfTreeIntegrityAnalyzer.AnalyzeAsync(context, cancellationToken);
+			var sensorTask = _sensorPayloadAnalyzer.AnalyzeAsync(context, cancellationToken);
+
+			await Task.WhenAll(dropoutTask, freqDropTask, timeSyncTask, tfTask, sensorTask);
+
+			var rawAnomalies = new List<RosbagAnomalyDto>();
+			rawAnomalies.AddRange(await dropoutTask);
+			rawAnomalies.AddRange(await freqDropTask);
+			rawAnomalies.AddRange(await timeSyncTask);
+			rawAnomalies.AddRange(await tfTask);
+			rawAnomalies.AddRange(await sensorTask);
+
+			// ================= TẦNG 3: FINDING AGGREGATOR & SEVERITY RANKER =================
+			var rankedAnomalies = _findingAggregator.AggregateAndRank(rawAnomalies, context);
+
+			// Generate Timeline Buckets
 			var timeline = GenerateTimelineBuckets(overallMinTs, overallMaxTs, totalDurationSec, topicTimestamps, topics);
 
 			// Calculate Health Score
-			int healthScore = CalculateHealthScore(anomalies);
+			int healthScore = CalculateHealthScore(rankedAnomalies);
 
 			return new RosbagInspectionReportDto
 			{
@@ -408,7 +377,7 @@ namespace Infrastructure.Services.Rosbag
 				HealthScore = healthScore,
 				Timeline = timeline,
 				Topics = topicDtos.OrderByDescending(t => t.MessageCount).ToList(),
-				Anomalies = anomalies
+				Anomalies = rankedAnomalies
 			};
 		}
 
@@ -417,7 +386,7 @@ namespace Infrastructure.Services.Rosbag
 			long maxTs,
 			double durationSec,
 			Dictionary<int, List<long>> topicTimestamps,
-			Dictionary<int, TopicMetadata> topics)
+			Dictionary<int, TopicMetadataDto> topics)
 		{
 			var timeline = new BagTimelineDto
 			{
@@ -431,7 +400,6 @@ namespace Infrastructure.Services.Rosbag
 
 			if (durationSec <= 0 || minTs >= maxTs) return timeline;
 
-			// Bucket count: 1 second per bucket, or min 10, max 60 buckets
 			int bucketCount = Math.Clamp((int)Math.Ceiling(durationSec), 5, 60);
 			double bucketSpanNs = (double)(maxTs - minTs) / bucketCount;
 
@@ -488,7 +456,6 @@ namespace Infrastructure.Services.Rosbag
 		{
 			var rawPath = bagPath.Trim('\"', '\'');
 
-			// If rawPath is a directory
 			if (Directory.Exists(rawPath))
 			{
 				var dir = new DirectoryInfo(rawPath);
@@ -499,14 +466,12 @@ namespace Infrastructure.Services.Rosbag
 				}
 			}
 
-			// If rawPath is directly a file
 			if (File.Exists(rawPath))
 			{
 				var file = new FileInfo(rawPath);
 				return (file.FullName, file.DirectoryName ?? "", file.Name);
 			}
 
-			// Try relative to sample paths
 			foreach (var sampleDir in GetPossibleSampleDirectories())
 			{
 				var combined = Path.Combine(sampleDir, rawPath);
@@ -537,25 +502,14 @@ namespace Infrastructure.Services.Rosbag
 				list.Add(configured);
 			}
 
-			// Standard paths relative to workspace
 			list.Add(@"d:\Project-VinUni\P-137\src\Data");
+			list.Add(@"D:\katzensee_d\golden_benchmark_suite\scenarios\1_fault_type_scenarios");
+			list.Add(@"D:\katzensee_d\golden_benchmark_suite\scenarios\2_case_benchmark_scenarios");
 			list.Add(Path.Combine(AppContext.BaseDirectory, "Data"));
 			list.Add(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "src", "Data"));
 			list.Add(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Data"));
 
 			return list.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-		}
-
-		private static string FormatTimestampNs(long ns)
-		{
-			if (ns <= 0) return "0s";
-			var dt = DateTimeOffset.FromUnixTimeMilliseconds(ns / 1_000_000);
-			return dt.ToString("HH:mm:ss.fff");
-		}
-
-		private static string FormatTimestampRange(long startNs, long endNs)
-		{
-			return $"{FormatTimestampNs(startNs)} -> {FormatTimestampNs(endNs)}";
 		}
 	}
 }

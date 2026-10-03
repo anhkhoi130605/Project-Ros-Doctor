@@ -1,0 +1,215 @@
+---
+source: "ROS 2 REP 103 Conventions"
+title: "REP 103: Standard Units and Coordinate Conventions (SI Units & Right Hand Rule)"
+primary_fault_type: "Value_Outlier"
+primary_layer: "Hardware_Sensor"
+primary_action_type: "Specification_Standard"
+---
+
+# REP 103: Standard Units and Coordinate Conventions (SI Units & Right Hand Rule)
+
+**Source:** Official ROS 2 Knowledge Base
+**Domain:** 01_interfaces
+
+---
+
+REP: 103
+Title: Standard Units of Measure and Coordinate Conventions
+Author: Tully Foote, Mike Purvis
+Status: Active
+Type: Informational
+Content-Type: text/x-rst
+Created: 07-Oct-2010
+Post-History: 31-Dec-2014
+
+### Abstract
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+This REP provides a reference for the units and coordinate conventions
+used within ROS.
+
+### Rationale
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+Inconsistency in units and conventions is a common source of
+integration issues for developers and can also lead to software
+bugs. It can also create unnecessary computation due to data
+conversion. This REP documents the standard conventions for ROS in
+order to lessen these issues.
+
+### Exceptions
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+The scope of potential robotics software is too broad to require all
+ROS software to follow the guidelines of this REP.  However, choosing different
+conventions should be well justified and well documented.
+
+For example, there are domains where the default conventions are not
+appropriate. Interstellar lengths are not appropriately measured in
+meters, and space-oriented libraries may wish to choose a different
+convention. There are other exceptions that different domains may wish
+to address.
+
+### Units
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+We have chosen to standardize on SI units.  These units are the most
+consistent international standard. SI units are maintained by Bureau
+International des Poids et Mesures. [1]_ There is good documentation
+on Wikipedia for `International System Of Units`_
+
+### Base Units
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+These are the base units which are commonly used
+
+========  ========
+Quantity  Unit
+========  ========
+length    meter
+mass      kilogram
+time      second
+current   ampere
+========  ========
+
+### Derived Units
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+SI defines seven base units and many derived units.  If you are not using
+SI base units, you should use SI-derived units.
+
+Good documentation can be found on Wikipedia about `SI derived units`_
+
+Commonly used SI-derived units in ROS are:
+
+===========   =======
+Quantity      Unit
+===========   =======
+angle         radian
+frequency     hertz
+force         newton
+power         watt
+voltage       volt
+temperature   celsius
+magnetism     tesla
+===========   =======
+
+### Coordinate Frame Conventions
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+All coordinate frames should follow these conventions.
+
+### Chirality
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+All systems are right handed.  This means they comply with the `right hand rule`_.
+
+### Axis Orientation
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+In relation to a body the standard is:
+
+* x forward
+* y left
+* z up
+
+For short-range Cartesian representations of geographic locations, use the
+`east north up`_ (ENU) convention:
+
+* X east
+* Y north
+* Z up
+
+To avoid precision problems with large float32 values, it is recommended to
+choose a nearby origin such as your system's starting position.
+
+### Suffix Frames
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Recovery_Adaptation -->
+
+In the case of cameras, there is often a second frame defined with a
+"_optical" suffix. This uses a slightly different convention:
+
+* z forward
+* x right
+* y down
+
+For outdoor systems where it is desirable to work under the
+`north east down`_ (NED) convention, define an appropriately transformed
+secondary frame with the "_ned" suffix:
+
+* X north
+* Y east
+* Z down
+
+### Rotation Representation
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+There are many ways to represent rotations. The preferred order is listed below, along with rationale.
+
+1. quaternion
+
+  * Compact representation
+  * No singularities
+
+2. rotation matrix
+
+  * No singularities
+
+3. fixed axis roll, pitch, yaw about X, Y, Z axes respectively
+
+  * No ambiguity on order
+  * Used for angular velocities
+
+4. euler angles yaw, pitch, and roll about Z, Y, X axes respectively
+
+  * Euler angles are generally discouraged due to having 24 'valid'
+    conventions with different domains using different conventions by
+    default.
+
+By the right hand rule, the yaw component of orientation increases as the child frame
+rotates counter-clockwise, and for geographic poses, yaw is zero when pointing east.
+
+This requires special mention only because it differs from a traditional compass bearing,
+which is zero when pointing north and increments clockwise. Hardware drivers should make
+the appropriate transformations before publishing standard ROS messages.
+
+### Covariance Representation
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+Linear
+::
+
+    float64[9] linear_acceleration_covariance # 3x3 row major matrix in x, y, z order
+
+Angular
+
+::
+
+    float64[9] angular_velocity_covariance # 3x3 row major matrix about x, y, z order with fixed axes
+
+Six Dimensional
+
+::
+
+    # Row-major representation of the 6x6 covariance matrix
+    # The orientation parameters use a fixed-axis representation.
+    # In order, the parameters are:
+    # (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+    float64[36] covariance
+
+### References
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+   (
+
+### Copyright
+<!-- Metadata: Fault_Type=Value_Outlier | Layer=Hardware_Sensor | Action_Type=Specification_Standard -->
+
+This document has been placed in the public domain.
+
+..
+   Local Variables:
+   mode: indented-text
+   indent-tabs-mode: nil
+   sentence-end-double-space: t
+   fill-column: 70
+   coding: utf-8
+   End:

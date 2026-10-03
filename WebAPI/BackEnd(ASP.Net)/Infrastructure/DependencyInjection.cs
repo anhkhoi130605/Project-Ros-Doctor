@@ -43,7 +43,11 @@ public static class DependencyInjection
 		}
 
 		services.AddDbContext<AppDbContext>(options =>
-			options.UseMySql(connectionString, ServerVersion.Parse("8.4.8-mysql")));
+			options.UseMySql(connectionString, ServerVersion.Parse("8.4.8-mysql"), mySqlOptions =>
+				mySqlOptions.EnableRetryOnFailure(
+					maxRetryCount: 5,
+					maxRetryDelay: TimeSpan.FromSeconds(5),
+					errorNumbersToAdd: null)));
 
 		// 1. Bind configuration sections
 		// JWTConfiguration is a POCO used by infrastructure JwtTokenGenerator
@@ -73,6 +77,14 @@ public static class DependencyInjection
 		services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 		services.AddScoped<IOtpService, OtpService>();
 		services.AddScoped<IAccountPolicyService, AccountPolicyService>();
+
+		// Rosbag Pipeline Analyzers & Aggregator
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ITopicDropoutAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.TopicDropoutAnalyzer>();
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.IFrequencyDropAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.FrequencyDropAnalyzer>();
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ITimestampSyncAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.TimestampSyncAnalyzer>();
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ITfTreeIntegrityAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.TfTreeIntegrityAnalyzer>();
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ISensorPayloadAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.SensorPayloadAnalyzer>();
+		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.IFindingAggregator, global::Infrastructure.Services.Rosbag.Analyzers.FindingAggregator>();
 		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
 
 		// MongoDB Registration & NoSQL Repositories

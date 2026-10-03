@@ -15,7 +15,7 @@ using MediatR;
 
 namespace Application.Features.Rosbags.Commands
 {
-	public record UploadAndInspectBagCommand(Stream Stream, string FileName) : IRequest<RosbagInspectionReportDto>;
+	public record UploadAndInspectBagCommand(Stream Stream, string FileName, Stream? YamlStream = null, string? YamlFileName = null) : IRequest<RosbagInspectionReportDto>;
 
 	public class UploadAndInspectBagCommandHandler : IRequestHandler<UploadAndInspectBagCommand, RosbagInspectionReportDto>
 	{
@@ -32,7 +32,7 @@ namespace Application.Features.Rosbags.Commands
 
 		public async Task<RosbagInspectionReportDto> Handle(UploadAndInspectBagCommand request, CancellationToken cancellationToken)
 		{
-			var report = await _inspectorService.InspectUploadedFileAsync(request.Stream, request.FileName, cancellationToken);
+			var report = await _inspectorService.InspectUploadedFileAsync(request.Stream, request.FileName, request.YamlStream, request.YamlFileName, cancellationToken);
 
 			try
 			{
@@ -63,11 +63,13 @@ namespace Application.Features.Rosbags.Commands
 					EngineerId = userId,
 					Status = SessionStatus.Complete,
 					HealthScore = report.HealthScore,
-					ExecutionTimeSec = 2,
+					ExecutionTimeSec = (int)Math.Max(1, Math.Round(report.ProcessingTimeSec)),
 					StartedAt = DateTime.UtcNow.AddSeconds(-report.DurationSec),
 					CompletedAt = DateTime.UtcNow
 				};
 				await _unitOfWork.AnalysisSessions.CreateAsync(session, cancellationToken);
+				report.SessionId = session.Id;
+				report.BagId = rosbag.Id;
 
 				if (report.Anomalies != null && report.Anomalies.Count > 0)
 				{

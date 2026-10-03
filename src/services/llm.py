@@ -5,8 +5,12 @@ from src.config import get_settings
 
 def get_llm() -> ChatOpenAI:
     settings = get_settings()
-    return ChatOpenAI(
-        model=settings.model_name,
-        api_key=settings.openai_api_key,
-        temperature=settings.llm_temperature,
-    )
+    kwargs = {
+        "model": settings.model_name,
+        "api_key": settings.openai_api_key,
+        "temperature": settings.llm_temperature,
+    }
+    if settings.openai_base_url:
+        kwargs["base_url"] = settings.openai_base_url
+    return ChatOpenAI(**kwargs)
+

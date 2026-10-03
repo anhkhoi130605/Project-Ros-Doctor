@@ -10,6 +10,7 @@ namespace Infrastructure.Persistence.Mongo
 		public static async Task InitializeCollectionsAsync(IMongoDbContext mongoContext)
 		{
 			var db = mongoContext.Database;
+			if (db == null) return;
 			var collectionsCursor = await db.ListCollectionNamesAsync();
 			var existing = await collectionsCursor.ToListAsync();
 
