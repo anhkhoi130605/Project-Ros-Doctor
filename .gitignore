@@ -275,3 +275,6 @@ Note.txt
 .agents/mcp_config.json
 jsconfig.json
 src/config.py
+src/Rag_knowledge
+src/golden_dataset
+src/1_fault_type_scenarios

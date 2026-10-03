@@ -48,20 +48,54 @@ namespace API.Controller.Rosbags
 		}
 
 		/// <summary>
-		/// Upload trực tiếp file .db3 và nạp/phân tích ngay lập tức
+		/// Upload trực tiếp file .db3 và tùy chọn metadata.yaml (hoặc file .zip) và nạp/phân tích ngay lập tức
 		/// </summary>
 		[HttpPost("upload-and-inspect")]
 		[Consumes("multipart/form-data")]
-		public async Task<IActionResult> UploadAndInspect([FromForm] IFormFile file, CancellationToken cancellationToken)
+		[DisableRequestSizeLimit]
+		[RequestFormLimits(MultipartBodyLengthLimit = 10L * 1024 * 1024 * 1024)]
+		public async Task<IActionResult> UploadAndInspect(
+			[FromForm] IFormFile? file,
+			[FromForm] IFormFile? yamlFile,
+			[FromForm] System.Collections.Generic.List<IFormFile>? files,
+			CancellationToken cancellationToken)
 		{
-			if (file == null || file.Length == 0)
+			IFormFile? db3 = file;
+			IFormFile? yaml = yamlFile;
+
+			if (files != null && files.Count > 0)
 			{
-				return BadRequest(new { message = "Vui lòng chọn file rosbag (.db3) hợp lệ để tải lên." });
+				db3 ??= files.Find(f => f.FileName.EndsWith(".db3", System.StringComparison.OrdinalIgnoreCase)
+				                        || f.FileName.EndsWith(".mcap", System.StringComparison.OrdinalIgnoreCase)
+				                        || f.FileName.EndsWith(".zip", System.StringComparison.OrdinalIgnoreCase));
+				yaml ??= files.Find(f => f.FileName.EndsWith(".yaml", System.StringComparison.OrdinalIgnoreCase)
+				                         || f.FileName.EndsWith(".yml", System.StringComparison.OrdinalIgnoreCase));
 			}
 
-			await using var stream = file.OpenReadStream();
-			var result = await _mediator.Send(new UploadAndInspectBagCommand(stream, file.FileName), cancellationToken);
-			return Ok(result);
+			if (db3 == null || db3.Length == 0)
+			{
+				return BadRequest(new { message = "Vui lòng chọn file rosbag (.db3 hoặc .zip) hợp lệ để tải lên." });
+			}
+
+			await using var db3Stream = db3.OpenReadStream();
+			Stream? yamlStream = null;
+			if (yaml != null && yaml.Length > 0)
+			{
+				yamlStream = yaml.OpenReadStream();
+			}
+
+			try
+			{
+				var result = await _mediator.Send(new UploadAndInspectBagCommand(db3Stream, db3.FileName, yamlStream, yaml?.FileName), cancellationToken);
+				return Ok(result);
+			}
+			finally
+			{
+				if (yamlStream != null)
+				{
+					await yamlStream.DisposeAsync();
+				}
+			}
 		}
 
 		[HttpGet("{id}")]

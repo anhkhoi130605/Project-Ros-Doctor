@@ -24,8 +24,11 @@ export async function getSampleBagsApi() {
   return apiClient.get('/api/bags/samples');
 }
 
-export async function uploadAndInspectBagApi(file) {
+export async function uploadAndInspectBagApi(file, yamlFile = null) {
   const formData = new FormData();
   formData.append('file', file);
+  if (yamlFile) {
+    formData.append('yamlFile', yamlFile);
+  }
   return apiClient.post('/api/bags/upload-and-inspect', formData);
 }

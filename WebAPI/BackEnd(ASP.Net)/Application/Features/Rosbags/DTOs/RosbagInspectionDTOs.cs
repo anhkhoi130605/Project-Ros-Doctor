@@ -74,6 +74,9 @@ namespace Application.Features.Rosbags.DTOs
 		public int TopicCount { get; set; }
 		public double DurationSec { get; set; }
 		public int HealthScore { get; set; } = 100;
+		public double ProcessingTimeSec { get; set; }
+		public string? SessionId { get; set; }
+		public string? BagId { get; set; }
 		public BagTimelineDto Timeline { get; set; } = new BagTimelineDto();
 		public List<TopicMetadataDto> Topics { get; set; } = new List<TopicMetadataDto>();
 		public List<RosbagAnomalyDto> Anomalies { get; set; } = new List<RosbagAnomalyDto>();

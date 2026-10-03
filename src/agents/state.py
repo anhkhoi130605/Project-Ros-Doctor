@@ -12,7 +12,9 @@ class AgentState(TypedDict, total=False):
 
     query: str
     context: str
+    telemetry: str
     analysis: str
     response: str
+    report: dict
     error: str
     metadata: dict

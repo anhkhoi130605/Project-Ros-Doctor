@@ -21,6 +21,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.FindingsEvidence == null) return null;
 				return await _context.FindingsEvidence
 					.Find(e => e.FindingId == findingId)
 					.FirstOrDefaultAsync(cancellationToken);
@@ -36,6 +37,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.FindingsEvidence == null) return new List<FindingEvidenceDocument>();
 				return await _context.FindingsEvidence
 					.Find(e => e.SessionId == sessionId)
 					.ToListAsync(cancellationToken);
@@ -51,6 +53,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.FindingsEvidence == null) return new List<FindingEvidenceDocument>();
 				return await _context.FindingsEvidence
 					.Find(_ => true)
 					.ToListAsync(cancellationToken);
@@ -66,6 +69,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.FindingsEvidence == null) return;
 				await _context.FindingsEvidence.InsertManyAsync(documents, cancellationToken: cancellationToken);
 			}
 			catch (Exception ex)
@@ -78,6 +82,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.SessionTfTrees == null) return null;
 				return await _context.SessionTfTrees
 					.Find(t => t.SessionId == sessionId)
 					.FirstOrDefaultAsync(cancellationToken);
@@ -93,6 +98,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.SessionTfTrees == null) return;
 				await _context.SessionTfTrees.InsertOneAsync(doc, cancellationToken: cancellationToken);
 			}
 			catch (Exception ex)
@@ -105,6 +111,7 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
+				if (_context.TopicMetricsTimeseries == null) return;
 				await _context.TopicMetricsTimeseries.InsertManyAsync(documents, cancellationToken: cancellationToken);
 			}
 			catch (Exception ex)

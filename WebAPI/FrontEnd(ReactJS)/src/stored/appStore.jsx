@@ -55,102 +55,17 @@ function getInitialState() {
     signedIn: false,
     role: ROLES.ENGINEER,
     profile: {
-      name: 'An Nguyễn',
+      name: 'Kỹ sư hệ thống',
       email: 'engineer@ros2doctor.local',
       workspace: 'Robotics Lab',
     },
     settings: { ...DEFAULT_SETTINGS },
-    selectedBagId: 'bag-024',
+    selectedBagId: null,
     analysisConfig: null,
-    bags: [
-      {
-        id: 'bag-024',
-        name: 'agv_lab_2026_09_22.mcap',
-        size: 2576980378,
-        format: 'MCAP',
-        duration: 272,
-        topics: 12,
-        status: 'complete',
-        date: '2026-09-22T09:24:00',
-        sessionId: '024',
-        isSample: true,
-      },
-      {
-        id: 'bag-023',
-        name: 'warehouse_route_03.mcap',
-        size: 1181116006,
-        format: 'MCAP',
-        duration: 495,
-        topics: 18,
-        status: 'complete',
-        date: '2026-09-22T08:42:00',
-        sessionId: '023',
-        isSample: true,
-      },
-      {
-        id: 'bag-022',
-        name: 'sensor_test_02.db3',
-        size: 679477248,
-        format: 'SQLite3',
-        duration: 120,
-        topics: 8,
-        status: 'ready',
-        date: '2026-09-21T16:10:00',
-        isSample: true,
-      },
-      {
-        id: 'bag-021',
-        name: 'agv_split_recording.zip',
-        size: 2254857830,
-        format: 'ZIP',
-        duration: null,
-        topics: null,
-        status: 'invalid',
-        date: '2026-09-20T10:12:00',
-        isSample: true,
-      },
-    ],
-    sessions: [
-      {
-        id: '024',
-        bagId: 'bag-024',
-        name: 'AGV-Lab',
-        duration: 272,
-        topics: 12,
-        messages: 387284,
-        status: 'pending',
-        createdAt: '2026-09-22T09:24:00',
-        processingSeconds: 24,
-        isDemo: true,
-      },
-      {
-        id: '023',
-        bagId: 'bag-023',
-        name: 'Warehouse',
-        duration: 495,
-        topics: 18,
-        messages: 418217,
-        status: 'complete',
-        createdAt: '2026-09-22T08:42:00',
-        processingSeconds: 19,
-        isDemo: true,
-      },
-    ],
+    bags: [],
+    sessions: [],
     findings: [],
-    reports: [
-      {
-        id: 'RPT-023',
-        sessionId: '023',
-        title: 'Warehouse · Không phát hiện bất thường',
-        status: 'approved',
-        generatedAt: '2026-09-22T09:12:00',
-        reviewer: 'Minh Nguyễn',
-        findings: [],
-        pendingCount: 0,
-        totalFindings: 0,
-        isDemo: true,
-      },
-    ],
+    reports: [],
     users: [
       {
         id: 'u1',
@@ -168,14 +83,6 @@ function getInitialState() {
         project: 'Robotics Lab',
         active: true,
       },
-      {
-        id: 'u3',
-        name: 'Khách quan sát',
-        email: 'viewer@ros2doctor.local',
-        role: 'viewer',
-        project: 'Robotics Lab',
-        active: true,
-      },
     ],
     aiSettings: {
       dailyRequests: 100,
@@ -183,7 +90,7 @@ function getInitialState() {
       requestsPerMinute: 10,
       monthlyBudget: 25,
       vectorUrl: import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333',
-      model: 'Chưa kết nối',
+      model: 'LangGraph RAG Agent',
       prompt: 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
     },
     conversations: {},
@@ -198,10 +105,24 @@ function loadSavedState(savedJson) {
   try {
     const parsed = JSON.parse(savedJson);
     const parsedFindings = (parsed.findings || []).filter((f) => !String(f.id).startsWith('A-00'));
+    // Filter out old mock bags and demo sessions
+    const parsedBags = (parsed.bags || []).filter(
+      (b) => !b.isSample && !['bag-024', 'bag-023', 'bag-022', 'bag-021'].includes(b.id)
+    );
+    const parsedSessions = (parsed.sessions || []).filter(
+      (s) => !s.isDemo && !['024', '023'].includes(s.id)
+    );
+    const parsedReports = (parsed.reports || []).filter(
+      (r) => !r.isDemo && !['RPT-023'].includes(r.id)
+    );
+
     const stateObj = parsed
       ? {
         ...initial,
         ...parsed,
+        bags: parsedBags,
+        sessions: parsedSessions,
+        reports: parsedReports,
         findings: parsedFindings,
         settings: { ...initial.settings, ...parsed.settings },
         profile: { ...initial.profile, ...parsed.profile },
@@ -401,11 +322,38 @@ function appReducer(state, action) {
         settings: action.settings,
       };
 
-    case 'SET_BAGS':
+    case 'SET_BAGS': {
+      const incomingBags = Array.isArray(action.bags) ? action.bags : [];
+      const currentSessions = state.sessions || [];
+      const newSessionStubs = [];
+
+      incomingBags.forEach((b) => {
+        const sessId = b.sessionId || b.id;
+        if (sessId && !currentSessions.some((s) => s.id === sessId) && !newSessionStubs.some((s) => s.id === sessId)) {
+          newSessionStubs.push({
+            id: sessId,
+            bagId: b.id,
+            name: (b.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+            duration: b.duration ?? b.durationSec ?? 0,
+            topics: b.topics ?? b.topicCount ?? 0,
+            messages: b.totalMessages ?? 0,
+            status: b.status || 'complete',
+            createdAt: b.date || new Date().toISOString(),
+            processingSeconds: b.processingSeconds || 0,
+            isDemo: false,
+            healthScore: b.healthScore ?? 100,
+            realTopics: b.realTopics || [],
+            realTimeline: b.realTimeline || null,
+          });
+        }
+      });
+
       return {
         ...state,
-        bags: action.bags,
+        bags: incomingBags,
+        sessions: [...currentSessions, ...newSessionStubs],
       };
+    }
 
     case 'SET_REVIEWS':
       return {
@@ -424,6 +372,50 @@ function appReducer(state, action) {
         ...state,
         aiSettings: { ...state.aiSettings, ...action.aiSettings },
       };
+
+    case 'SET_AGENT_ANALYSIS': {
+      const { sessionId, status, report, response, error } = action;
+      const exists = (state.sessions || []).some((s) => s.id === sessionId);
+      let updatedSessions;
+      if (exists) {
+        updatedSessions = (state.sessions || []).map((s) => {
+          if (s.id !== sessionId) return s;
+          return {
+            ...s,
+            agentStatus: status,
+            agentReport: report !== undefined ? report : s.agentReport,
+            agentResponse: response !== undefined ? response : s.agentResponse,
+            agentError: error !== undefined ? error : null,
+          };
+        });
+      } else {
+        const bag = (state.bags || []).find((b) => b.id === sessionId || b.sessionId === sessionId);
+        const newSession = {
+          id: sessionId,
+          bagId: bag?.id || sessionId,
+          name: (bag?.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
+          duration: bag?.duration ?? bag?.durationSec ?? 0,
+          topics: bag?.topics ?? bag?.topicCount ?? 0,
+          messages: bag?.totalMessages ?? 0,
+          status: bag?.status || 'complete',
+          createdAt: bag?.date || new Date().toISOString(),
+          processingSeconds: bag?.processingSeconds || 0,
+          isDemo: false,
+          healthScore: bag?.healthScore ?? 100,
+          realTopics: bag?.realTopics || [],
+          realTimeline: bag?.realTimeline || null,
+          agentStatus: status,
+          agentReport: report !== undefined ? report : null,
+          agentResponse: response !== undefined ? response : '',
+          agentError: error !== undefined ? error : null,
+        };
+        updatedSessions = [...(state.sessions || []), newSession];
+      }
+      return {
+        ...state,
+        sessions: updatedSessions,
+      };
+    }
 
     case 'SAVE_USER': {
       if (state.role !== ROLES.ADMIN) return state;
@@ -467,11 +459,14 @@ export function AppProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch {
-      // Ignore quota errors
-    }
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch {
+        // Ignore quota errors
+      }
+    }, 300);
+    return () => clearTimeout(timer);
   }, [state]);
 
   const value = useMemo(

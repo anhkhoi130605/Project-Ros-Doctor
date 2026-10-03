@@ -37,10 +37,29 @@ public class RequestResponseLoggingMiddleware
             return;
         }
 
+        // Bỏ qua đọc body cho multipart/form-data và file upload:
+        // 1. Tránh làm lệch con trỏ stream của FormFeature (nguyên nhân gây "The inner stream position has changed unexpectedly")
+        // 2. Không in binary rác hàng triệu ký tự ra terminal
+        // 3. Tránh tràn RAM OutOfMemory khi user upload file rosbag từ máy tính
+        bool isMultipart = context.Request.HasFormContentType
+            || (context.Request.ContentType?.Contains("multipart", StringComparison.OrdinalIgnoreCase) ?? false)
+            || (context.Request.Path.Value?.Contains("upload", StringComparison.OrdinalIgnoreCase) ?? false);
+
+        if (isMultipart)
+        {
+            await _next(context);
+            _logger.LogInformation(
+                "HTTP {Method} {Path} responded {StatusCode} (Multipart / File Upload)",
+                context.Request.Method,
+                context.Request.Path,
+                context.Response.StatusCode);
+            return;
+        }
+
         var requestBody = string.Empty;
         var originalBodyStream = context.Response.Body;
 
-        if (context.Request.ContentLength > 0)
+        if (context.Request.ContentLength > 0 && context.Request.ContentLength < 1_000_000)
         {
             context.Request.EnableBuffering();
             using var reader = new StreamReader(

@@ -1,8 +1,12 @@
 from functools import lru_cache
 from typing import Literal
 
+from dotenv import load_dotenv
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Ensure .env values take precedence over system environment variables
+load_dotenv(override=True)
 
 
 class Settings(BaseSettings):
@@ -19,9 +23,11 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     cors_origins: str = "http://localhost:3000"
+    backend_api_url: str = "https://localhost:7149"
 
     # LLM
     openai_api_key: str = ""
+    openai_base_url: str | None = None
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     embedding_model: str = "text-embedding-3-small"

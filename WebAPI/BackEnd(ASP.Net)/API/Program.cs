@@ -9,6 +9,17 @@ using ResUpClub.Infrastructure.ConfigModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 10L * 1024 * 1024 * 1024; // 10 GB
+});
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.ValueLengthLimit = int.MaxValue;
+    options.MultipartBodyLengthLimit = 10L * 1024 * 1024 * 1024; // 10 GB
+    options.MultipartHeadersLengthLimit = int.MaxValue;
+});
+
 builder.Services.AddInfrastructureServices(builder.Configuration);
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

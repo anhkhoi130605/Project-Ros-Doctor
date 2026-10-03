@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../../../stored/appStore';
 import { PageHeader, Card, Button, Notice, Icon, Badge } from '../../../../components/common/UIComponents';
-import { uploadAndInspectBagApi, getSampleBagsApi, inspectBagApi } from '../../../../service';
+import { uploadAndInspectBagApi, getSampleBagsApi, inspectBagApi, runAgentDiagnosticApi } from '../../../../service';
 
 export default function UploadPage() {
   const navigate = useNavigate();
   const { dispatch, notify } = useApp();
   const [file, setFile] = useState(null);
+  const [yamlFile, setYamlFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sampleBags, setSampleBags] = useState([]);
@@ -30,26 +31,37 @@ export default function UploadPage() {
     loadSamples();
   }, []);
 
+  const handleIncomingFiles = (fileList) => {
+    if (!fileList || fileList.length === 0) return;
+    const filesArray = Array.from(fileList);
+    const db3 = filesArray.find((f) => f.name.endsWith('.db3') || f.name.endsWith('.mcap') || f.name.endsWith('.zip')) || filesArray[0];
+    const yaml = filesArray.find((f) => f.name.endsWith('.yaml') || f.name.endsWith('.yml'));
+    setFile(db3);
+    if (yaml) setYamlFile(yaml);
+  };
+
   const handleFileDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleIncomingFiles(e.dataTransfer.files);
     }
   };
 
   const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      handleIncomingFiles(e.target.files);
     }
   };
 
   const handleInspectSample = async (sample) => {
+    const startTime = Date.now();
     try {
       setLoading(true);
       notify(`Đang nạp và phân tích rosbag mẫu: ${sample.name}...`, 'info');
       const report = await inspectBagApi({ bagPath: sample.path });
-      processInspectionResult(report, sample.name, sample.sizeBytes);
+      const elapsedSec = Math.round((Date.now() - startTime) / 100) / 10;
+      processInspectionResult(report, sample.name, sample.sizeBytes, elapsedSec);
     } catch (err) {
       notify(`Lỗi khi nạp mẫu: ${err.message || 'Không thể kết nối Backend'}`, 'error');
     } finally {
@@ -65,41 +77,26 @@ export default function UploadPage() {
     }
 
     setLoading(true);
-    notify(`Đang tải lên và phân tích ${file.name}...`, 'info');
+    notify(`Đang tải lên và phân tích ${file.name}${yamlFile ? ` kèm ${yamlFile.name}` : ''}...`, 'info');
+    const startTime = Date.now();
 
     try {
       // 1. Try real backend upload and inspection
-      const report = await uploadAndInspectBagApi(file);
-      processInspectionResult(report, file.name, file.size);
+      const report = await uploadAndInspectBagApi(file, yamlFile);
+      const elapsedSec = Math.round((Date.now() - startTime) / 100) / 10;
+      processInspectionResult(report, file.name, file.size, elapsedSec);
     } catch (err) {
-      console.warn('Backend API call failed, falling back to local simulation:', err);
-      // 2. Fallback to local import if backend is unreachable
-      const newSessionId = `SESS-${Date.now().toString().slice(-4)}`;
-      const fallbackBag = {
-        id: `bag-${Date.now().toString().slice(-4)}`,
-        name: file.name,
-        size: file.size,
-        sizeMb: Math.round(file.size / (1024 * 1024)) || 145,
-        format: file.name.endsWith('.mcap') ? 'MCAP' : 'SQLite3',
-        duration: 180,
-        durationSec: 180,
-        topics: 14,
-        topicCount: 14,
-        status: 'complete',
-        sessionId: newSessionId,
-      };
-
-      dispatch({ type: 'IMPORT_BAG', bag: fallbackBag });
-      notify(`Đã nạp tệp ${file.name} (chế độ dự phòng).`, 'success');
-      navigate(`/sessions/${newSessionId}/overview`);
+      console.error('Backend upload API error:', err);
+      notify(`Lỗi tải tệp lên Backend: ${err.message || 'Không thể kết nối máy chủ'}. Vui lòng kiểm tra kết nối API.`, 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const processInspectionResult = (report, defaultName, defaultSize) => {
-    const newSessionId = `SESS-${Date.now().toString().slice(-4)}`;
-    const newBagId = `bag-${Date.now().toString().slice(-4)}`;
+  const processInspectionResult = (report, defaultName, defaultSize, elapsedSec = 2) => {
+    const newSessionId = report.sessionId || report.SessionId || `SESS-${Date.now().toString().slice(-4)}`;
+    const newBagId = report.bagId || report.BagId || `bag-${Date.now().toString().slice(-4)}`;
+    const actualProcessingSec = Number(report.processingTimeSec || elapsedSec || 2);
 
     const newBag = {
       id: newBagId,
@@ -115,6 +112,7 @@ export default function UploadPage() {
       status: 'complete',
       sessionId: newSessionId,
       healthScore: report.healthScore ?? 100,
+      processingSeconds: actualProcessingSec,
       realTopics: report.topics || [],
       realTimeline: report.timeline || null,
       realAnomalies: report.anomalies || [],
@@ -133,7 +131,7 @@ export default function UploadPage() {
       messages: newBag.totalMessages,
       status: 'complete',
       createdAt: new Date().toISOString(),
-      processingSeconds: 15,
+      processingSeconds: actualProcessingSec,
       isDemo: false,
       healthScore: newBag.healthScore,
       realTopics: newBag.realTopics,
@@ -162,7 +160,33 @@ export default function UploadPage() {
       findings: initialFindings,
     });
 
-    notify(`Nạp và phân tích ${newBag.name} thành công (${newBag.topics} topics, ${newBag.totalMessages} msgs).`, 'success');
+    // Tự động kích hoạt AI Agent phân tích RCA chuyên sâu ở chế độ nền
+    dispatch({ type: 'SET_AGENT_ANALYSIS', sessionId: newSessionId, status: 'analyzing' });
+    runAgentDiagnosticApi({
+      session: initialSession,
+      findings: initialFindings,
+      topics: newBag.realTopics || [],
+    })
+      .then((res) => {
+        dispatch({
+          type: 'SET_AGENT_ANALYSIS',
+          sessionId: newSessionId,
+          status: 'completed',
+          report: res.report || null,
+          response: res.response || '',
+        });
+      })
+      .catch((err) => {
+        console.warn('AI Agent background analysis error:', err);
+        dispatch({
+          type: 'SET_AGENT_ANALYSIS',
+          sessionId: newSessionId,
+          status: 'error',
+          error: err.message || 'Không thể kết nối Python AI Agent (port 8000)',
+        });
+      });
+
+    notify(`Nạp và phân tích ${newBag.name} thành công. AI Agent đang chạy RCA...`, 'success');
     navigate(`/sessions/${newSessionId}/overview`);
   };
 
@@ -170,54 +194,13 @@ export default function UploadPage() {
     <div className="upload-page">
       <PageHeader
         eyebrow="NẠP DỮ LIỆU"
-        title="Nạp bản ghi ROSBag mới"
-        subtitle="Tải lên tệp log .db3 / .mcap hoặc chọn mẫu CARLA sẵn có từ hệ thống."
+        title="Nạp bản ghi ROSBag từ máy tính"
+        subtitle="Chọn tệp log .db3 (hoặc .zip) kèm metadata.yaml trực tiếp từ máy của bạn để chẩn đoán hệ thống."
       />
 
       <div style={{ maxWidth: '780px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {/* Sample bags available from server */}
-        {sampleBags.length > 0 && (
-          <Card title="Các bản ghi Rosbag mẫu trong hệ thống (src/Data)">
-            <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--muted)' }}>
-              Phát hiện các tệp bản ghi CARLA vừa ghi được trong thư mục <code>src/Data</code>. Bấm nạp ngay:
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {sampleBags.map((sample) => (
-                <div
-                  key={sample.path}
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--panel)',
-                  }}
-                >
-                  <div>
-                    <strong>{sample.name}</strong>
-                    <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
-                      {Math.round(sample.sizeBytes / 1024)} KB · {sample.hasYaml ? 'Có metadata.yaml' : 'SQLite3 db3'}
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    icon="arrow"
-                    disabled={loading}
-                    onClick={() => handleInspectSample(sample)}
-                  >
-                    Nạp &amp; Xem phiên
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Upload Custom File */}
-        <Card title="Hoặc tải lên tệp ROSBag từ máy tính">
+        {/* KHU VỰC CHÍNH 1: TẢI LÊN TỆP ROSBAG TỪ MÁY TÍNH CỦA BẠN */}
+        <Card title="Tải lên tệp ROSBag từ máy tính của bạn">
           <form onSubmit={handleUploadSubmit}>
             <div
               onDragOver={(e) => {
@@ -229,7 +212,7 @@ export default function UploadPage() {
               style={{
                 border: isDragOver ? '2px dashed var(--cyan)' : '2px dashed var(--border)',
                 borderRadius: '12px',
-                padding: '40px 24px',
+                padding: '44px 24px',
                 textAlign: 'center',
                 background: isDragOver ? 'rgba(81, 220, 248, 0.05)' : 'var(--panel)',
                 cursor: 'pointer',
@@ -238,40 +221,93 @@ export default function UploadPage() {
               }}
               onClick={() => document.getElementById('bag-file-input')?.click()}
             >
-              <div style={{ color: 'var(--cyan)', marginBottom: '12px' }}>
-                <Icon name="upload" size={44} />
+              <div style={{ color: 'var(--cyan)', marginBottom: '14px' }}>
+                <Icon name="upload" size={48} />
               </div>
-              <h3 style={{ margin: '0 0 8px', color: 'var(--text)' }}>
-                {file ? file.name : 'Kéo thả tệp rosbag (.db3, .mcap) vào đây'}
+              <h3 style={{ margin: '0 0 10px', color: 'var(--text)', fontSize: '18px' }}>
+                {file ? file.name : 'Kéo thả tệp rosbag từ máy tính vào đây hoặc bấm để chọn'}
               </h3>
-              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)' }}>
-                Hệ thống backend .NET sẽ tự động đọc topics, tính tần số Hz, timeline và phát hiện lỗi.
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted)', lineHeight: '1.6' }}>
+                Hỗ trợ tải lên tệp dữ liệu <strong>.db3</strong> / <strong>.mcap</strong> và tệp cấu hình <strong>metadata.yaml</strong> hoặc file nén <strong>.zip</strong>.
               </p>
               <input
                 id="bag-file-input"
                 type="file"
-                accept=".db3,.mcap,.zip"
+                multiple
+                accept=".db3,.mcap,.zip,.yaml,.yml"
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
             </div>
 
             {file && (
-              <Notice tone="green" icon="check" className="mb-4">
-                Đã chọn: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)
+              <Notice tone="green" icon="check" className="mb-2">
+                📁 Tệp dữ liệu máy tính: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)
               </Notice>
             )}
 
-            <div className="button-row" style={{ justifyContent: 'flex-end' }}>
-              <Button variant="ghost" onClick={() => navigate('/bags')} disabled={loading}>
-                Về danh sách
-              </Button>
-              <Button type="submit" icon="arrow" disabled={!file || loading}>
-                {loading ? 'Đang phân tích...' : 'Bắt đầu nạp & phân tích'}
-              </Button>
+            {yamlFile && (
+              <Notice tone="cyan" icon="check" className="mb-4">
+                📄 Tệp cấu hình QoS: <strong>{yamlFile.name}</strong> ({Math.round(yamlFile.size / 1024)} KB)
+              </Notice>
+            )}
+
+            <div className="button-row" style={{ justifyContent: 'space-between', alignItems: 'center', marginTop: '16px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                {file ? '✓ Tệp đã sẵn sàng tải lên và phân tích' : 'Chưa chọn tệp'}
+              </span>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Button variant="ghost" onClick={() => navigate('/bags')} disabled={loading}>
+                  Về danh sách
+                </Button>
+                <Button type="submit" icon="arrow" disabled={!file || loading}>
+                  {loading ? 'Đang phân tích...' : 'Bắt đầu nạp & phân tích từ máy'}
+                </Button>
+              </div>
             </div>
           </form>
         </Card>
+
+        {/* KHU VỰC PHỤ 2: CÁC BẢN GHI MẪU (TUỲ CHỌN CHO THỬ NGHIỆM NHANH) */}
+        {sampleBags.length > 0 && (
+          <details style={{ borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--panel)', padding: '12px 16px' }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '13px', color: 'var(--muted)', userSelect: 'none' }}>
+              ⚡ Hoặc chọn nhanh bản ghi mẫu có sẵn trên máy chủ ({sampleBags.length} tệp)
+            </summary>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '14px' }}>
+              {sampleBags.map((sample) => (
+                <div
+                  key={sample.path}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 14px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--border)',
+                    background: 'var(--bg)',
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: '13px' }}>{sample.name}</strong>
+                    <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
+                      {Math.round(sample.sizeBytes / 1024)} KB · {sample.hasYaml ? 'Có metadata.yaml' : 'SQLite3 db3'}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    icon="arrow"
+                    disabled={loading}
+                    onClick={() => handleInspectSample(sample)}
+                  >
+                    Thử mẫu này
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     </div>
   );
