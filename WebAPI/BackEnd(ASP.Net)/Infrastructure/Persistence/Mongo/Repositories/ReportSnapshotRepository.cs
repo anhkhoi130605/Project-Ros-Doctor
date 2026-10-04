@@ -20,7 +20,6 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
-				if (_context.ReportSnapshots == null) return null;
 				return await _context.ReportSnapshots
 					.Find(s => s.ReportId == reportId)
 					.FirstOrDefaultAsync(cancellationToken);
@@ -36,7 +35,6 @@ namespace Infrastructure.Persistence.Mongo.Repositories
 		{
 			try
 			{
-				if (_context.ReportSnapshots == null) return;
 				await _context.ReportSnapshots.InsertOneAsync(snapshot, cancellationToken: cancellationToken);
 			}
 			catch (Exception ex)

@@ -1,4 +1,4 @@
-const AI_AGENT_URL = import.meta.env.VITE_AI_AGENT_URL || 'http://localhost:8000';
+const AI_AGENT_URL = import.meta.env.VITE_AI_AGENT_URL || '/ai-agent';
 
 /**
  * Gửi tin nhắn hỏi đáp chẩn đoán sự cố ROS2 tới Python AI Agent (LangGraph + RAG).
