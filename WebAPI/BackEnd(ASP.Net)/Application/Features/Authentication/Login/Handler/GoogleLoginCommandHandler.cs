@@ -34,7 +34,7 @@ namespace Application.Features.Authentication.Login.Handler
             var principal = request.Principal;
 
             // Extract email
-            var email = principal.FindFirst(ClaimTypes.Email)?.Value ?? principal.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Email)?.Value;
+            var email = principal.FindFirst(ClaimTypes.Email)?.Value ?? principal.FindFirst("email")?.Value;
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Không lấy được email từ Google.");
 

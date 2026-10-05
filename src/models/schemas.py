@@ -33,6 +33,7 @@ class FaultDetail(BaseModel):
     root_cause: str = Field(default="", description="Phân tích nguyên nhân gốc rễ RCA")
     recommended_action: str = Field(default="", description="Khuyến nghị khắc phục kèm lệnh ROS 2")
     citation: CitationInfo | None = Field(default=None, description="Trích dẫn playbook")
+    raw_logs: list[str] = Field(default_factory=list, description="Danh sách log chi tiết /rosout và telemetry trace")
 
 
 class DiagnosticReport(BaseModel):
@@ -45,6 +46,8 @@ class DiagnosticReport(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=100000, description="Tin nhắn từ user hoặc prompt chẩn đoán telemetry")
+    session_id: str | None = Field(default=None, description="Mã session chẩn đoán cần hỏi đáp")
+    bag_id: str | None = Field(default=None, description="Mã rosbag cần hỏi đáp")
 
 
 class ChatResponse(BaseModel):

@@ -18,7 +18,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 def convert_db3_to_mcap(input_path: Path, output_mcap_path: Path | None = None) -> Path:
     input_path = Path(input_path).resolve()
-    
+
     # Neu input la thu muc rosbag, tim file .db3 ben trong
     if input_path.is_dir():
         db3_files = list(input_path.glob("*.db3"))

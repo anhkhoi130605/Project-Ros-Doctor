@@ -277,3 +277,4 @@ jsconfig.json
 src/config.py
 src/golden_dataset
 src/1_fault_type_scenarios
+.codegraphy/*

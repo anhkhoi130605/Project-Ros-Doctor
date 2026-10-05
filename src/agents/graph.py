@@ -18,9 +18,9 @@ def build_graph() -> StateGraph:
     graph.add_node("analyze", analyze_node)
     graph.add_node("respond", respond_node)
 
-    # Add edges
+    # Add edges: analyze -> respond -> END
     graph.set_entry_point("analyze")
-    graph.add_conditional_edges("analyze", should_continue)
+    graph.add_edge("analyze", "respond")
     graph.add_edge("respond", END)
 
     return graph.compile()
