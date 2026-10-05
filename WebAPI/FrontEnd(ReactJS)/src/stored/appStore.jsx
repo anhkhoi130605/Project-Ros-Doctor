@@ -79,7 +79,7 @@ function getInitialState() {
         id: 'u2',
         name: 'An Nguyễn',
         email: 'engineer@ros2doctor.local',
-        role: 'engineer',
+        role: ROLES.ENGINEERING,
         project: 'Robotics Lab',
         active: true,
       },
