@@ -173,7 +173,7 @@ def _synthesize_autonomous_diagnostic(
     status_eval = "Hoạt động danh định (Tốt)" if health_score >= 90 else ("Cảnh báo bất thường" if health_score >= 60 else "Nguy cấp (Critical)")
 
     response_lines: list[str] = [
-        f"### 📋 BÁO CÁO PHÂN TÍCH CHẨN ĐOÁN SỰ CỐ ROS2",
+        "### 📋 BÁO CÁO PHÂN TÍCH CHẨN ĐOÁN SỰ CỐ ROS2",
         f"- **Rosbag mục tiêu:** `{bag_name}` (ID: `{bag_id}`)",
         f"- **Phiên chẩn đoán:** `{sess_id}`",
         f"- **Thời lượng ghi:** `{duration}s` | **Tổng số Topic:** `{topic_count}`",
@@ -210,7 +210,7 @@ def _synthesize_autonomous_diagnostic(
             elif "tf" in title_lower or "tf" in topic.lower():
                 sub_type = "tf_tree_inconsistency"
                 rca = "Mất liên kết biến đổi khung tọa độ (TF Frame), trễ timestamp giữa parent và child frame khiến TF Buffer bị timeout."
-                rec = f"Chạy lệnh kiểm tra cấu trúc cây tọa độ: `ros2 run tf2_tools view_frames` và kiểm tra timestamp."
+                rec = "Chạy lệnh kiểm tra cấu trúc cây tọa độ: `ros2 run tf2_tools view_frames` và kiểm tra timestamp."
                 source_file = "guide_tf_tree_broken_diagnosis.md"
             elif "imu" in title_lower or "imu" in topic.lower() or "sensor" in title_lower:
                 sub_type = "sensor_anomaly"
@@ -220,7 +220,7 @@ def _synthesize_autonomous_diagnostic(
             elif "timestamp" in title_lower or "thời gian" in title_lower or "clock" in title_lower:
                 sub_type = "timestamp_anomaly"
                 rca = "Lệch clock giữa các sensor do không dùng chung sim_time hoặc xung đột giữa Header Stamp và RMW publish time."
-                rec = f"Xác minh tham số: `ros2 param get <node> use_sim_time` và đối chiếu topic `/clock`."
+                rec = "Xác minh tham số: `ros2 param get <node> use_sim_time` và đối chiếu topic `/clock`."
                 source_file = "guide_timestamp_anomaly_diagnosis.md"
 
             # Detailed realistic ROS2 trace / rosout logs
@@ -232,22 +232,22 @@ def _synthesize_autonomous_diagnostic(
             if sub_type == "topic_dropout":
                 raw_logs.extend([
                     f"[00:00:05.450] [WARN] [rmw_cyclonedds]: Message publication stalled on topic '{topic}'. Liveliness lease expired.",
-                    f"[00:00:08.200] [ERROR] [ros2_doctor]: Topic dropout confirmed. 0 messages received in last 2.75s (Threshold: 1.0s).",
+                    "[00:00:08.200] [ERROR] [ros2_doctor]: Topic dropout confirmed. 0 messages received in last 2.75s (Threshold: 1.0s).",
                     f"[00:00:12.600] [ERROR] [rclcpp]: QoS Deadline missed callback triggered for subscriber on '{topic}'.",
                     f"[00:00:24.100] [WARN] [rosout]: Topic '{topic}' publisher node heartbeat lost. Burst drop count: 18 frames.",
                 ])
             elif sub_type == "tf_tree_inconsistency":
                 raw_logs.extend([
-                    f"[00:00:02.300] [WARN] [tf2_ros]: Lookup would require extrapolation into the past for target 'base_link' to 'odom'.",
-                    f"[00:00:06.150] [ERROR] [tf2_ros]: Transform timeout (0.100s exceeded). Could not find parent frame for child 'base_link'.",
-                    f"[00:00:15.800] [ERROR] [robot_state_publisher]: TF Tree broken: disconnected branch between 'map' and 'odom'.",
-                    f"[00:00:32.400] [WARN] [tf2_listener]: Timestamp jump backward detected in TF message header: delta = -42.8ms.",
+                    "[00:00:02.300] [WARN] [tf2_ros]: Lookup would require extrapolation into the past for target 'base_link' to 'odom'.",
+                    "[00:00:06.150] [ERROR] [tf2_ros]: Transform timeout (0.100s exceeded). Could not find parent frame for child 'base_link'.",
+                    "[00:00:15.800] [ERROR] [robot_state_publisher]: TF Tree broken: disconnected branch between 'map' and 'odom'.",
+                    "[00:00:32.400] [WARN] [tf2_listener]: Timestamp jump backward detected in TF message header: delta = -42.8ms.",
                 ])
             elif sub_type == "frequency_drop":
                 raw_logs.extend([
                     f"[00:00:03.200] [INFO] [{topic}]: Nominal expected rate = 30.00 Hz (dt = 33.3ms).",
                     f"[00:00:10.550] [WARN] [{topic}]: Inter-arrival jitter threshold exceeded: measured dt = 168.4ms (Rate dropped to 5.94 Hz).",
-                    f"[00:00:18.900] [ERROR] [diagnostics]: Publisher queue buffer overflow (depth 10 reached). Dropping incoming packets.",
+                    "[00:00:18.900] [ERROR] [diagnostics]: Publisher queue buffer overflow (depth 10 reached). Dropping incoming packets.",
                     f"[00:00:41.250] [WARN] [{topic}]: Average window frequency: 8.2 Hz (Standard deviation = 6.4 Hz).",
                 ])
             elif sub_type == "sensor_anomaly":
@@ -259,9 +259,9 @@ def _synthesize_autonomous_diagnostic(
                 ])
             else:
                 raw_logs.extend([
-                    f"[00:00:04.100] [WARN] [ros2_clock]: Timestamp discrepancy between header.stamp and bag recording time: delta = 124.6ms.",
+                    "[00:00:04.100] [WARN] [ros2_clock]: Timestamp discrepancy between header.stamp and bag recording time: delta = 124.6ms.",
                     f"[00:00:11.850] [ERROR] [diagnostics]: Non-monotonic timestamp detected on topic '{topic}'.",
-                    f"[00:00:30.200] [WARN] [rclcpp]: use_sim_time configuration conflict between node and playback bag.",
+                    "[00:00:30.200] [WARN] [rclcpp]: use_sim_time configuration conflict between node and playback bag.",
                 ])
 
             response_lines.append(f"#### {idx}. ⚠️ {title} [{severity.upper()}]")
@@ -276,8 +276,8 @@ def _synthesize_autonomous_diagnostic(
                 "sub_type": sub_type,
                 "severity": severity,
                 "topic": topic,
-                "start_sec": 0.0,
-                "end_sec": float(duration) if duration else 10.0,
+                "start_sec": start_s,
+                "end_sec": end_s,
                 "evidence": obs,
                 "root_cause": rca,
                 "recommended_action": rec,
