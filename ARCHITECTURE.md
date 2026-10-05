@@ -1,6 +1,6 @@
 # Architecture Document — CTRL SHIFT N: ROS2 Doctor & AI Diagnostic Agent Platform
 
-## 1. System Overview
+## System Overview
 
 **CTRL SHIFT N (ROS2 Doctor)** là nền tảng chẩn đoán và phân tích nguyên nhân gốc rễ (Root Cause Analysis - RCA) toàn diện cho các hệ thống xe tự hành và robot vận hành trên **ROS2 (Robot Operating System 2)**. Hệ thống kết hợp giữa bộ phân tích đo đạc số liệu xác thực (Deterministic Telemetry Analyzers) viết bằng **ASP.NET Core / C#** và **AI Diagnostic Agent** xây dựng trên **Python, LangGraph & RAG (Retrieval-Augmented Generation)** nhằm phát hiện, phân loại và khắc phục các bất thường nghiêm trọng trên các luồng dữ liệu cảm biến (IMU, LiDAR, Camera, Odometry, TF Tree, QoS/DDS).
 
@@ -12,7 +12,7 @@ Hệ thống hỗ trợ nạp dữ liệu từ các file ROS2 bag chuẩn (`.db3
 
 ---
 
-## 2. Architecture Diagram
+## Architecture Diagram
 
 ```mermaid
 graph TB

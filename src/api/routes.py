@@ -1,6 +1,10 @@
+import asyncio
+import json
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from starlette.concurrency import run_in_threadpool
 
 from src.agents.graph import agent
@@ -20,9 +24,14 @@ router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
-    """Chat với AI agent."""
+    """Chat với AI agent (Non-streaming)."""
     try:
-        result = await agent.ainvoke({"query": request.message})
+        input_state = {
+            "query": request.message,
+            "session_id": request.session_id,
+            "bag_id": request.bag_id,
+        }
+        result = await agent.ainvoke(input_state)
         return ChatResponse(
             response=result.get("response", ""),
             analysis=result.get("analysis", ""),
@@ -30,6 +39,60 @@ async def chat(request: ChatRequest) -> ChatResponse:
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/chat/stream")
+async def chat_stream(request: ChatRequest):
+    """Stream chat response token-by-token using Server-Sent Events (SSE)."""
+    async def event_generator():
+        try:
+            input_state = {
+                "query": request.message,
+                "session_id": request.session_id,
+                "bag_id": request.bag_id,
+            }
+            result = await agent.ainvoke(input_state)
+            full_response = result.get("response", "")
+            analysis = result.get("analysis", "")
+            report = result.get("report")
+
+            # Stream words/tokens in small bursts (ChatGPT-style fast cadence)
+            tokens = re.findall(r"\S+|\n+", full_response)
+            chunk_size = 2  # 2 từ mỗi gói burst
+            for i in range(0, len(tokens), chunk_size):
+                chunk = tokens[i : i + chunk_size]
+                chunk_str = ""
+                for t in chunk:
+                    if t.startswith("\n"):
+                        chunk_str += t
+                    else:
+                        chunk_str += (t + " ")
+                data = json.dumps({"token": chunk_str, "done": False}, ensure_ascii=False)
+                yield f"data: {data}\n\n"
+                await asyncio.sleep(0.008)  # 8ms per burst = ~250 từ/phút cực nhanh và mượt mà
+
+            # Final completion event with analysis and structured report
+            final_data = json.dumps({
+                "token": "",
+                "done": True,
+                "analysis": analysis,
+                "report": report
+            }, ensure_ascii=False)
+            yield f"data: {final_data}\n\n"
+
+        except Exception as e:
+            err_data = json.dumps({"error": str(e), "done": True}, ensure_ascii=False)
+            yield f"data: {err_data}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/status")

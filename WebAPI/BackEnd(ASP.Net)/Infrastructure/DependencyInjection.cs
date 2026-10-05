@@ -30,7 +30,7 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 
-namespace ResUpClub.Infrastructure.ConfigModel;
+namespace Infrastructure;
 
 public static class DependencyInjection
 {
@@ -118,9 +118,6 @@ public static class DependencyInjection
 			services.AddDistributedMemoryCache();
 		}
 
-		// 5. Register AutoMapper: scan the Application assembly for Profile classes so
-		// AutoMapper.IMapper will be available for application handlers.
-		services.AddAutoMapper(cfg => cfg.AddMaps(typeof(Application.Features.Admin.ManageUser.ReadDataUser.DTOs.AdminReadDataProfile).Assembly));
 
 		// 4. Authentication configuration (Google + JWT for APIs)
 		var googleSettings = configuration.GetSection("Authentication:Google");

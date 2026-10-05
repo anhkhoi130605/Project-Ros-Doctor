@@ -82,6 +82,21 @@ class BackendClient:
             pass
         return []
 
+    def get_latest_session_and_bag(self) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+        """Fetch the most recent rosbag and its associated diagnostic session."""
+        try:
+            bags = self.list_bags()
+            if not bags:
+                return None, None
+            latest_bag = bags[0]
+            session_id = latest_bag.get("sessionId")
+            session_data = None
+            if session_id:
+                session_data = self.get_session(session_id)
+            return latest_bag, session_data
+        except Exception:
+            return None, None
+
 
 @lru_cache(maxsize=1)
 def get_backend_client() -> BackendClient:

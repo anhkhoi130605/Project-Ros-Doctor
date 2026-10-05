@@ -11,8 +11,12 @@ class AgentState(TypedDict, total=False):
     """
 
     query: str
+    session_id: str
+    bag_id: str
     context: str
     telemetry: str
+    session_data: dict
+    bag_data: dict
     analysis: str
     response: str
     report: dict
