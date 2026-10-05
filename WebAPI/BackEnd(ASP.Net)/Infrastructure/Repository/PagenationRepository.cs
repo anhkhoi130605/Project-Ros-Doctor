@@ -21,31 +21,42 @@ namespace Infrastructure.Repository
 			_dbSet = _context.Set<T>();
 		}
 
-		public async Task<PaginationResult<T>> GetPaginatedAsync(int pageNumber = 1, int pageSize = 10, Expression<Func<T, bool>>? filter = null, Func<IQueryable<T>, IQueryable<T>>? includes = null)
+		public async Task<PaginationResult<T>> GetPaginatedAsync(
+			int pageNumber = 1,
+			int pageSize = 10,
+			Expression<Func<T, bool>>? filter = null,
+			Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+			Func<IQueryable<T>, IQueryable<T>>? includes = null,
+			CancellationToken cancellationToken = default)
 		{
-			try
+			// Validation: pageSize capped at 100, pageNumber at minimum 1
+			pageNumber = Math.Max(1, pageNumber);
+			pageSize = Math.Clamp(pageSize, 1, 100);
+
+			IQueryable<T> query = _dbSet.AsNoTracking();
+
+			if (filter != null)
 			{
-				IQueryable<T> query = _dbSet;
-
-				if (filter != null)
-				{
-					query = query.Where(filter);
-				}
-				if (includes != null)
-				{
-					query = includes(query);
-				}
-
-				var totalCount = await query.CountAsync();
-
-				IEnumerable<T> totalItems = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
-
-				return new PaginationResult<T>(totalItems, totalCount, pageNumber, pageSize);
+				query = query.Where(filter);
 			}
-			catch (Exception ex)
+			if (includes != null)
 			{
-				throw new Exception($"Error fetching all records: {ex.Message}", ex);
+				query = includes(query);
 			}
+
+			var totalCount = await query.CountAsync(cancellationToken);
+
+			if (orderBy != null)
+			{
+				query = orderBy(query);
+			}
+
+			IEnumerable<T> totalItems = await query
+				.Skip((pageNumber - 1) * pageSize)
+				.Take(pageSize)
+				.ToListAsync(cancellationToken);
+
+			return new PaginationResult<T>(totalItems, totalCount, pageNumber, pageSize);
 		}
 	}
 }

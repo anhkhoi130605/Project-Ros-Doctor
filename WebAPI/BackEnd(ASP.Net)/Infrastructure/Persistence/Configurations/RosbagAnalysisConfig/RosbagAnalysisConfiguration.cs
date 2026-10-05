@@ -31,6 +31,10 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.WithMany()
 				.HasForeignKey(x => x.UserId)
 				.OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasIndex(x => x.CreatedAt);
+			builder.HasIndex(x => x.UserId);
+			builder.HasIndex(x => x.Status);
 		}
 	}
 
@@ -62,6 +66,10 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.WithOne(r => r.Session)
 				.HasForeignKey<Report>(r => r.SessionId)
 				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasIndex(x => x.RosbagId);
+			builder.HasIndex(x => x.StartedAt);
+			builder.HasIndex(x => x.EngineerId);
 		}
 	}
 
@@ -85,6 +93,10 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.WithMany(s => s.DiagnosticIssues)
 				.HasForeignKey(x => x.SessionId)
 				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasIndex(x => x.SessionId);
+			builder.HasIndex(x => new { x.SessionId, x.Severity });
+			builder.HasIndex(x => x.CreatedAt);
 		}
 	}
 
@@ -105,6 +117,8 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.IsRequired();
 
 			builder.HasIndex(x => x.SessionId).IsUnique();
+			builder.HasIndex(x => x.CreatedAt);
+			builder.HasIndex(x => x.Status);
 
 			builder.HasOne(x => x.Reviewer)
 				.WithMany()
@@ -130,6 +144,9 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.WithMany(s => s.AiUsageLogs)
 				.HasForeignKey(x => x.SessionId)
 				.OnDelete(DeleteBehavior.Cascade);
+
+			builder.HasIndex(x => x.SessionId);
+			builder.HasIndex(x => x.CreatedAt);
 		}
 	}
 
@@ -157,6 +174,10 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 				.WithMany()
 				.HasForeignKey(x => x.ReviewerId)
 				.OnDelete(DeleteBehavior.Restrict);
+
+			builder.HasIndex(x => x.FindingId);
+			builder.HasIndex(x => x.ReviewedAt);
+			builder.HasIndex(x => x.CreatedAt);
 		}
 	}
 }

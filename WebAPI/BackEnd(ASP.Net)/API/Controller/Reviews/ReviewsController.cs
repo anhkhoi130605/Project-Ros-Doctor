@@ -20,9 +20,17 @@ namespace API.Controller.Reviews
 		}
 
 		[HttpGet]
-		public async Task<IActionResult> GetReviews(CancellationToken cancellationToken)
+		public async Task<IActionResult> GetReviews([FromQuery] int? pageNumber, [FromQuery] int? pageSize, CancellationToken cancellationToken)
 		{
 			var result = await _mediator.Send(new GetReviewsQuery(), cancellationToken);
+			if (pageNumber.HasValue && pageSize.HasValue && pageSize.Value > 0)
+			{
+				var pNum = System.Math.Max(1, pageNumber.Value);
+				var pSize = pageSize.Value;
+				var total = result.Count;
+				var paged = System.Linq.Enumerable.ToList(System.Linq.Enumerable.Take(System.Linq.Enumerable.Skip(result, (pNum - 1) * pSize), pSize));
+				return Ok(new Domain.Common.PaginationResult<ReviewItemDto>(paged, total, pNum, pSize));
+			}
 			return Ok(result);
 		}
 

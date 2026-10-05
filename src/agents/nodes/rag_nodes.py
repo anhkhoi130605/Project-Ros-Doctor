@@ -172,13 +172,20 @@ def _synthesize_autonomous_diagnostic(
 
     status_eval = "Hoạt động danh định (Tốt)" if health_score >= 90 else ("Cảnh báo bất thường" if health_score >= 60 else "Nguy cấp (Critical)")
 
+    if not issues:
+        issues_status_str = "✓ Hoàn toàn bình thường (0 sự cố)"
+    elif health_score >= 60:
+        issues_status_str = f"⚠️ Có {len(issues)} cảnh báo cần lưu ý"
+    else:
+        issues_status_str = f"❌ Có {len(issues)} sự cố lỗi nghiêm trọng"
+
     response_lines: list[str] = [
         "### 📋 BÁO CÁO PHÂN TÍCH CHẨN ĐOÁN SỰ CỐ ROS2",
         f"- **Rosbag mục tiêu:** `{bag_name}` (ID: `{bag_id}`)",
         f"- **Phiên chẩn đoán:** `{sess_id}`",
         f"- **Thời lượng ghi:** `{duration}s` | **Tổng số Topic:** `{topic_count}`",
         f"- **Điểm sức khỏe hệ sinh thái (Health Score):** **`{health_score}/100`** ({status_eval})",
-        f"- **Số sự cố phát hiện:** **`{len(issues)}` sự cố**\n",
+        f"- **Tình trạng giám sát:** **`{issues_status_str}`**\n",
         "---",
         "### 🔍 CHI TIẾT SỰ CỐ & PHÂN TÍCH NGUYÊN NHÂN GỐC RỄ (RCA):\n",
     ]
@@ -289,10 +296,18 @@ def _synthesize_autonomous_diagnostic(
     response_lines.append("💡 *Gợi ý:* Bạn có thể bấm nút **Duyệt kết luận (HITL)** để phê duyệt kết quả chẩn đoán này hoặc yêu cầu tôi phân tích sâu hơn về bất kỳ topic nào ở trên!")
 
     clean_text = "\n".join(response_lines)
+
+    if len(faults_list) == 0:
+        summary_text = f"Hệ thống danh định bình thường (không có lỗi) trên rosbag {bag_name}. Điểm sức khỏe: {health_score}/100."
+    elif health_score >= 60:
+        summary_text = f"Phát hiện {len(faults_list)} cảnh báo cần lưu ý trên rosbag {bag_name}. Điểm sức khỏe: {health_score}/100."
+    else:
+        summary_text = f"Phát hiện {len(faults_list)} sự cố lỗi nghiêm trọng trên rosbag {bag_name}. Điểm sức khỏe: {health_score}/100."
+
     report_dict = {
         "has_fault": len(faults_list) > 0,
         "faults": faults_list,
-        "summary": f"Chẩn đoán hoàn tất {len(faults_list)} lỗi trên rosbag {bag_name}. Điểm sức khỏe: {health_score}/100.",
+        "summary": summary_text,
         "duration_sec": float(duration) if duration else None,
         "analyzed_topics": [f["topic"] for f in faults_list if f.get("topic")],
     }

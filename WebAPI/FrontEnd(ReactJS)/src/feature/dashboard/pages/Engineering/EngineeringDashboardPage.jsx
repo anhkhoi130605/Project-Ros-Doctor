@@ -4,6 +4,7 @@ import useEngineeringDashboard from './hook/useEngineeringDashboard';
 import EngineeringStatWidget from './components/EngineeringStatWidget';
 import HeroDiagnosisCard from './components/HeroDiagnosisCard';
 import DiagnosticPriorityPanel from './components/DiagnosticPriorityPanel';
+import DiagnosticChartsSection from './components/DiagnosticChartsSection';
 import RecentAnalysisSessionsTable from './components/RecentAnalysisSessionsTable';
 
 export default function EngineeringDashboardPage({ onSwitchToViewer }) {
@@ -14,6 +15,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
     sessionsCount,
     highWarningsCount,
     recentSessions,
+    topicStats,
   } = useEngineeringDashboard();
 
   return (
@@ -73,6 +75,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
           sublabel="Trong không gian làm việc"
           icon="activity"
           tone="blue"
+          chartType="bar"
         />
         <EngineeringStatWidget
           label="Rosbag đã nạp"
@@ -80,6 +83,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
           sublabel="Dữ liệu mẫu và tệp đã chọn"
           icon="database"
           tone="blue"
+          chartType="sparkline"
         />
         <EngineeringStatWidget
           label="Sự cố cần kiểm tra"
@@ -88,6 +92,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
           icon="alert"
           tone="red"
           detailTone="#dc2626"
+          chartType="alert-bar"
         />
         <EngineeringStatWidget
           label="Kết luận chờ duyệt"
@@ -96,8 +101,19 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
           icon="file-text"
           tone="amber"
           detailTone="#d97706"
+          chartType="ring"
         />
       </div>
+
+      {/* Visual Diagnostic Charts: Donut + Bar Chart */}
+      <DiagnosticChartsSection
+        sessionsCount={sessionsCount}
+        bagsCount={bagsCount}
+        highWarningsCount={highWarningsCount}
+        pendingCount={pendingCount}
+        topicStats={topicStats}
+        recentSessions={recentSessions}
+      />
 
       {/* Recent Analysis Sessions Table */}
       <RecentAnalysisSessionsTable sessions={recentSessions} />

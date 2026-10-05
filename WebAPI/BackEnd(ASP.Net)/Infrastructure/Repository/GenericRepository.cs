@@ -74,5 +74,54 @@ namespace Infrastructure.Repository
 			if (predicate != null) query = query.Where(predicate);
 			return await query.CountAsync(cancellationToken);
 		}
+
+		public async Task<long> SumLongAsync(
+			Expression<Func<T, long>> selector,
+			Expression<Func<T, bool>>? predicate = null,
+			CancellationToken cancellationToken = default)
+		{
+			IQueryable<T> query = _dbSet.AsNoTracking();
+			if (predicate != null) query = query.Where(predicate);
+			return await query.SumAsync(selector, cancellationToken);
+		}
+
+		public async Task<decimal> SumDecimalAsync(
+			Expression<Func<T, decimal>> selector,
+			Expression<Func<T, bool>>? predicate = null,
+			CancellationToken cancellationToken = default)
+		{
+			IQueryable<T> query = _dbSet.AsNoTracking();
+			if (predicate != null) query = query.Where(predicate);
+			return await query.SumAsync(selector, cancellationToken);
+		}
+
+		public async Task<double> AverageDoubleAsync(
+			Expression<Func<T, double>> selector,
+			Expression<Func<T, bool>>? predicate = null,
+			double defaultValue = 0,
+			CancellationToken cancellationToken = default)
+		{
+			IQueryable<T> query = _dbSet.AsNoTracking();
+			if (predicate != null) query = query.Where(predicate);
+			var hasAny = await query.AnyAsync(cancellationToken);
+			if (!hasAny) return defaultValue;
+			return await query.AverageAsync(selector, cancellationToken);
+		}
+
+		public async Task<List<TResult>> SelectAsync<TResult>(
+			Expression<Func<T, TResult>> selector,
+			Expression<Func<T, bool>>? filter = null,
+			Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
+			int? skip = null,
+			int? take = null,
+			CancellationToken cancellationToken = default)
+		{
+			IQueryable<T> query = _dbSet.AsNoTracking();
+			if (filter != null) query = query.Where(filter);
+			if (orderBy != null) query = orderBy(query);
+			if (skip.HasValue && skip.Value > 0) query = query.Skip(skip.Value);
+			if (take.HasValue && take.Value > 0) query = query.Take(take.Value);
+			return await query.Select(selector).ToListAsync(cancellationToken);
+		}
 	}
 }

@@ -28,70 +28,134 @@ namespace Infrastructure.Services.Logging
             _logger = logger;
         }
 
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Name, string Email, DateTime Expiry)> _userCache = new();
+
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("UserActivityLogBackgroundService đang lắng nghe hàng đợi log...");
+            _logger.LogInformation("UserActivityLogBackgroundService đang lắng nghe hàng đợi log (chế độ gom mẻ Batching)...");
 
-            try
+            var buffer = new List<LogActivityRequest>(50);
+
+            while (!stoppingToken.IsCancellationRequested)
             {
-                await foreach (var request in _queue.ReadAllAsync(stoppingToken))
+                try
                 {
+                    // Đọc theo mẻ (lên đến 50 log hoặc sau 500ms)
+                    var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeoutTokenSource.Token);
+
                     try
                     {
-                        using var scope = _scopeFactory.CreateScope();
-                        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-                        string? userName = request.UserName;
-                        string? email = request.Email;
-
-                        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email))
+                        await foreach (var request in _queue.ReadAllAsync(linkedCts.Token))
                         {
-                            var user = await unitOfWork.User.GetByIdAsync(request.UserId, stoppingToken);
-                            if (user != null)
+                            buffer.Add(request);
+                            if (buffer.Count >= 50)
                             {
-                                userName = user.FullName;
-                                email = user.Email;
+                                break;
                             }
                         }
-
-                        var log = new UserActivityLog
-                        {
-                            UserId = request.UserId,
-                            UserName = userName,
-                            Email = email,
-                            Action = request.ActionType.ToString(),
-                            EntityType = request.TargetType.ToString(),
-                            EntityId = request.TargetId,
-                            RequestPath = request.RequestPath ?? request.Description,
-                            HttpMethod = request.HttpMethod,
-                            IpAddress = request.IpAddress,
-                            UserAgent = request.UserAgent,
-                            StatusSystemResponse = HttpStatusCode.OK,
-                        };
-
-                        await unitOfWork.UserActivityLogs.CreateAsync(log, stoppingToken);
-                        await unitOfWork.SaveChangesAsync(stoppingToken);
                     }
-                    catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                    catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
                     {
-                        break;
+                        // Hết thời gian chờ 500ms -> tiến hành xả buffer hiện tại
                     }
-                    catch (Exception ex)
+
+                    if (buffer.Count > 0)
                     {
-                        _logger.LogError(ex, "Lỗi khi lưu UserActivityLog cho User {UserId}", request.UserId);
+                        await FlushBatchAsync(buffer, stoppingToken);
+                        buffer.Clear();
                     }
                 }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Lỗi xảy ra trong vòng lặp batching của UserActivityLogBackgroundService.");
+                }
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+
+            // Xả nốt các log còn tồn đọng trước khi dừng dịch vụ
+            if (buffer.Count > 0)
             {
-                // Graceful shutdown
+                try
+                {
+                    await FlushBatchAsync(buffer, CancellationToken.None);
+                }
+                catch
+                {
+                    // Ignored on shutdown
+                }
+            }
+        }
+
+        private async Task FlushBatchAsync(List<LogActivityRequest> batch, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+                // Gom danh sách userId cần truy vấn thông tin
+                var missingUserIds = batch
+                    .Where(r => string.IsNullOrWhiteSpace(r.UserName) || string.IsNullOrWhiteSpace(r.Email))
+                    .Select(r => r.UserId)
+                    .Distinct()
+                    .Where(uid => !_userCache.TryGetValue(uid, out var cached) || cached.Expiry < DateTime.UtcNow)
+                    .ToList();
+
+                if (missingUserIds.Count > 0)
+                {
+                    var users = await unitOfWork.User.GetAllAsync(u => missingUserIds.Contains(u.Id), null, cancellationToken);
+                    foreach (var u in users)
+                    {
+                        _userCache[u.Id] = (u.FullName, u.Email, DateTime.UtcNow.AddMinutes(10));
+                    }
+                }
+
+                var entities = new List<UserActivityLog>(batch.Count);
+                foreach (var req in batch)
+                {
+                    string? userName = req.UserName;
+                    string? email = req.Email;
+
+                    if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(email))
+                    {
+                        if (_userCache.TryGetValue(req.UserId, out var cached))
+                        {
+                            userName = cached.Name;
+                            email = cached.Email;
+                        }
+                    }
+
+                    entities.Add(new UserActivityLog
+                    {
+                        UserId = req.UserId,
+                        UserName = userName,
+                        Email = email,
+                        Action = req.ActionType.ToString(),
+                        EntityType = req.TargetType.ToString(),
+                        EntityId = req.TargetId,
+                        RequestPath = req.RequestPath ?? req.Description,
+                        HttpMethod = req.HttpMethod,
+                        IpAddress = req.IpAddress,
+                        UserAgent = req.UserAgent,
+                        StatusSystemResponse = HttpStatusCode.OK,
+                    });
+                }
+
+                foreach (var entity in entities)
+                {
+                    await unitOfWork.UserActivityLogs.CreateAsync(entity, cancellationToken);
+                }
+
+                await unitOfWork.SaveChangesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UserActivityLogBackgroundService gặp sự cố ngoài mong đợi.");
+                _logger.LogError(ex, "Lỗi khi ghi batch {Count} UserActivityLogs vào Database.", batch.Count);
             }
-
-            _logger.LogInformation("UserActivityLogBackgroundService đã hoàn tất tắt máy an toàn.");
         }
     }
 }

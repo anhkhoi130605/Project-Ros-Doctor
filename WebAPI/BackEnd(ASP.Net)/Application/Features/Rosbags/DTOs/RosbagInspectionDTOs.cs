@@ -80,5 +80,6 @@ namespace Application.Features.Rosbags.DTOs
 		public BagTimelineDto Timeline { get; set; } = new BagTimelineDto();
 		public List<TopicMetadataDto> Topics { get; set; } = new List<TopicMetadataDto>();
 		public List<RosbagAnomalyDto> Anomalies { get; set; } = new List<RosbagAnomalyDto>();
+		public List<Domain.Entities.NoSql.TfFrameNode> TfFrames { get; set; } = new();
 	}
 }

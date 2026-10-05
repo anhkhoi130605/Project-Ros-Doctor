@@ -8,8 +8,13 @@ export const ROLES = {
 
 export const ROLE_NAMES = {
   Admin: 'Quản trị viên (Admin)',
+  admin: 'Quản trị viên (Admin)',
   Engineering: 'Kỹ sư Robotics (Engineer)',
+  engineering: 'Kỹ sư Robotics (Engineer)',
+  Engineer: 'Kỹ sư Robotics (Engineer)',
+  engineer: 'Kỹ sư Robotics (Engineer)',
   User: 'Người dùng (User)',
+  user: 'Người dùng (User)',
 };
 
 export const DEFAULT_SETTINGS = {
@@ -133,3 +138,55 @@ export const STATUS_MAP = {
   processing: 'Đang xử lý',
   draft: 'Bản nháp',
 };
+
+/**
+ * Phân loại tình trạng phiên / rosbag theo 3 trường hợp chuẩn:
+ * 1. Bình thường: Xanh lá (#16a34a) - Điểm >= 90 (hoặc 100đ), không có sự cố
+ * 2. Cảnh báo: Vàng (#d97706) - Điểm 60-89 hoặc có cảnh báo nhẹ
+ * 3. Lỗi: Đỏ (#dc2626) - Điểm < 60 hoặc có lỗi nghiêm trọng (high severity > 0)
+ */
+export function getHealthCondition(healthScore, warningsCount = 0, highSeverityCount = 0) {
+  const score = Number.isFinite(Number(healthScore)) ? Number(healthScore) : 100;
+  const count = Number(warningsCount) || 0;
+  const highCount = Number(highSeverityCount) || 0;
+
+  // Trường hợp 3: Lỗi (Màu đỏ)
+  if (score < 60 || highCount > 0 || (count >= 3 && score < 75)) {
+    return {
+      type: 'error',
+      label: 'Lỗi',
+      summary: `❌ ${count > 0 ? count : highCount} lỗi`,
+      badgeText: '● Lỗi',
+      color: '#dc2626',
+      bgColor: '#fef2f2',
+      borderColor: '#fecaca',
+      scoreColor: '#dc2626',
+    };
+  }
+
+  // Trường hợp 2: Cảnh báo (Màu vàng)
+  if ((score >= 60 && score < 90) || count > 0) {
+    return {
+      type: 'warning',
+      label: 'Cảnh báo',
+      summary: `⚠️ ${count > 0 ? count : 1} cảnh báo`,
+      badgeText: '● Cảnh báo',
+      color: '#d97706',
+      bgColor: '#fffbeb',
+      borderColor: '#fef3c7',
+      scoreColor: '#d97706',
+    };
+  }
+
+  // Trường hợp 1: Bình thường (Xanh lá)
+  return {
+    type: 'normal',
+    label: 'Bình thường',
+    summary: '✓ Bình thường',
+    badgeText: '● Bình thường',
+    color: '#16a34a',
+    bgColor: '#f0fdf4',
+    borderColor: '#bbf7d0',
+    scoreColor: '#16a34a',
+  };
+}

@@ -92,35 +92,7 @@ export default function LoginPage() {
     window.location.href = getGoogleLoginUrl();
   };
 
-  const handleRoleSwitch = (role) => {
-    const userMap = {
-      Admin: { email: 'admin@ros2doctor.local', name: 'Quản trị viên' },
-      Engineering: { email: 'engineer@ros2doctor.local', name: 'Kỹ sư Robotics' },
-      User: { email: 'user@ros2doctor.local', name: 'Người dùng' },
-    };
-    const u = userMap[role] || userMap.Engineering;
-    setEmail(u.email);
-    setPassword('demo123');
-    
-    dispatch({
-      type: 'LOGIN',
-      role,
-      email: u.email,
-      userName: u.name,
-    });
-    
-    localStorage.setItem('accessToken', 'demo-token-' + role);
-    localStorage.setItem('userRole', role);
-    localStorage.setItem('userEmail', u.email);
-    
-    notify(`Đã chuyển sang luồng ${ROLE_NAMES[role] || role}`, 'success');
 
-    if (role.toLowerCase() === 'admin') {
-      navigate('/admin', { replace: true });
-    } else {
-      navigate('/dashboard', { replace: true });
-    }
-  };
 
   return (
     <div className="editorial-login">
@@ -259,62 +231,7 @@ export default function LoginPage() {
               Bản preview sử dụng mật khẩu mẫu <strong>demo123</strong>.
             </small>
 
-            <div style={{ marginTop: '20px', borderTop: '1px solid #e2e8f0', paddingTop: '14px' }}>
-              <span style={{ fontSize: '11px', color: '#64748b', display: 'block', marginBottom: '8px' }}>XEM LUỒNG MẪU:</span>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSwitch('Admin')}
-                  style={{
-                    flex: 1,
-                    padding: '6px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#0369a1',
-                    cursor: 'pointer',
-                  }}
-                >
-                  👑 Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSwitch('Engineering')}
-                  style={{
-                    flex: 1,
-                    padding: '6px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#15803d',
-                    cursor: 'pointer',
-                  }}
-                >
-                  ⚙ Kỹ sư
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleRoleSwitch('User')}
-                  style={{
-                    flex: 1,
-                    padding: '6px 8px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
-                    background: '#f8fafc',
-                    color: '#475569',
-                    cursor: 'pointer',
-                  }}
-                >
-                  👤 User
-                </button>
-              </div>
-            </div>
+
           </form>
         </div>
       </div>

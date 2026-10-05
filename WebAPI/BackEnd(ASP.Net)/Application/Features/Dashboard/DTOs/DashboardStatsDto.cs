@@ -13,7 +13,7 @@ namespace Application.Features.Dashboard.DTOs
 		public int TotalIssues { get; set; }
 		public int HighSeverityIssues { get; set; }
 		public int TotalReports { get; set; }
-		public int TotalTokensUsed { get; set; }
+		public long TotalTokensUsed { get; set; }
 		public decimal TotalCostUsd { get; set; }
 		public int HealthScoreAvg { get; set; } = 92;
 	}

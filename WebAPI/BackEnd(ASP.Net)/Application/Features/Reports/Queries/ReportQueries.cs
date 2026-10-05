@@ -26,8 +26,14 @@ namespace Application.Features.Reports.Queries
 
 		public async Task<List<ReportDto>> Handle(GetReportsQuery request, CancellationToken cancellationToken)
 		{
-			var reports = await _unitOfWork.Reports.GetAllAsync(null, null, cancellationToken);
-			var issues = await _unitOfWork.DiagnosticIssues.GetAllAsync(null, null, cancellationToken);
+			var reports = (await _unitOfWork.Reports.GetAllAsync(null, null, cancellationToken))
+				.OrderByDescending(r => r.CreatedAt)
+				.ToList();
+
+			if (reports.Count == 0) return new List<ReportDto>();
+
+			var sessionIds = reports.Select(r => r.SessionId).Distinct().ToHashSet();
+			var issues = await _unitOfWork.DiagnosticIssues.GetAllAsync(i => sessionIds.Contains(i.SessionId), null, cancellationToken);
 			var issueCounts = issues.GroupBy(i => i.SessionId).ToDictionary(g => g.Key, g => g.Count());
 
 			return reports.Select(r => new ReportDto

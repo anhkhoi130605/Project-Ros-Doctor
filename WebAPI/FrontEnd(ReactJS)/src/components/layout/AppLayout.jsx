@@ -30,7 +30,12 @@ export default function AppLayout() {
     navigate('/login');
   };
 
-  const currentRole = (state.role || 'Engineering').toLowerCase();
+  const rawRole = String(state.role || localStorage.getItem('userRole') || 'Engineering').toLowerCase();
+  const currentRole = rawRole.includes('admin')
+    ? 'admin'
+    : rawRole.includes('user')
+    ? 'user'
+    : 'engineering';
   const isUserRole = currentRole === 'user';
 
   const navItems = [
@@ -46,7 +51,13 @@ export default function AppLayout() {
     ['/settings', 'Cài đặt', 'settings', ['Admin']],
   ];
   const filteredNav = navItems.filter(([, , , roles]) =>
-    roles.some((r) => r.toLowerCase() === currentRole)
+    roles.some((r) => {
+      const rLower = r.toLowerCase();
+      if (currentRole === 'admin') return true; // Admin có thể xem tất cả hoặc các tab admin
+      if (currentRole === 'engineering') return rLower.includes('engineer') || rLower.includes('user');
+      if (currentRole === 'user') return rLower.includes('user');
+      return false;
+    })
   );
 
   const getPageTitle = (pathname) => {

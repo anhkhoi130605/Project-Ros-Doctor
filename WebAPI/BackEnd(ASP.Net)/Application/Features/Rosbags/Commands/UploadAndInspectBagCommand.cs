@@ -149,10 +149,21 @@ namespace Application.Features.Rosbags.Commands
 
 						await _evidenceRepo.InsertTopicMetricsTimeseriesAsync(tsDocs, cancellationToken);
 					}
+
+					// Persist Session TF Tree to MongoDB
+					if (report.TfFrames != null && report.TfFrames.Count > 0)
+					{
+						await _evidenceRepo.InsertTfTreeAsync(new SessionTfTreeDocument
+						{
+							SessionId = session.Id,
+							Frames = report.TfFrames,
+							CreatedAt = DateTime.UtcNow
+						}, cancellationToken);
+					}
 				}
 				catch (Exception tsEx)
 				{
-					Console.WriteLine($"[MongoDB] Error inserting timeseries: {tsEx.Message}");
+					Console.WriteLine($"[MongoDB] Error inserting timeseries or TF tree: {tsEx.Message}");
 				}
 
 				await _unitOfWork.SaveChangesAsync(cancellationToken);

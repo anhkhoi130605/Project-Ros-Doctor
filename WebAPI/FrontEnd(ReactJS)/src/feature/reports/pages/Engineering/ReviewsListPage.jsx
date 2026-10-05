@@ -14,9 +14,10 @@ export default function EngineeringReviewsListPage() {
     setLoading(true);
     setError(null);
     try {
-      const reviews = await getReviewsApi();
-      if (Array.isArray(reviews)) {
-        const mapped = reviews.map((r) => ({
+      const res = await getReviewsApi();
+      const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
+      if (Array.isArray(rawList)) {
+        const mapped = rawList.map((r) => ({
           ...r,
           review: {
             status: r.status || 'pending',
@@ -104,6 +105,9 @@ export default function EngineeringReviewsListPage() {
         <DataTable
           label="Danh sách Thẩm định"
           rows={filteredFindings}
+          paginate={true}
+          pageSize={10}
+          pageSizeOptions={[10, 20, 50, 100]}
           empty={loading ? 'Đang nạp dữ liệu từ MySQL Database...' : 'Chưa có kết luận nào trong cơ sở dữ liệu.'}
           columns={[
             {

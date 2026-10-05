@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PageHeader, Badge, Card, Button, FormField, Icon } from '../../../../components/common/UIComponents';
+import { PageHeader, Badge, Card, Button, FormField, Icon, Pagination } from '../../../../components/common/UIComponents';
 import useEngineeringBags from '../../hooks/useEngineeringBags';
 
 export default function EngineeringBagsListPage() {
@@ -12,6 +12,17 @@ export default function EngineeringBagsListPage() {
     setStatusFilter,
     stats,
   } = useEngineeringBags();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredBags.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+  const pagedBags = filteredBags.slice((safePage - 1) * pageSize, safePage * pageSize);
 
   return (
     <div className="bags-page engineering-bags-page">
@@ -88,7 +99,7 @@ export default function EngineeringBagsListPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredBags.map((bag) => (
+              {pagedBags.map((bag) => (
                 <tr key={bag.id}>
                   <td>
                     <Link className="table-title-link" to={`/bags/${bag.id}`}>
@@ -119,6 +130,20 @@ export default function EngineeringBagsListPage() {
             </tbody>
           </table>
         </div>
+
+        {filteredBags.length > 0 && (
+          <Pagination
+            totalItems={filteredBags.length}
+            pageSize={pageSize}
+            currentPage={safePage}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[10, 20, 50]}
+          />
+        )}
       </Card>
     </div>
   );
