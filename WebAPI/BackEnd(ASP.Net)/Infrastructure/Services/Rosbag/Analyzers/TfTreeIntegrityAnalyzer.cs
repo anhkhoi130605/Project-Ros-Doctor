@@ -24,29 +24,38 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 			"laser", "camera_link", "imu_link", "wheel_left_link", "wheel_right_link"
 		};
 
+		public List<Domain.Entities.NoSql.TfFrameNode> ExtractedFrames { get; } = new();
+
 		public async Task<List<RosbagAnomalyDto>> AnalyzeAsync(RosbagAnalysisContext context, CancellationToken cancellationToken = default)
 		{
 			var anomalies = new List<RosbagAnomalyDto>();
+			ExtractedFrames.Clear();
+			var framesDict = new Dictionary<string, Domain.Entities.NoSql.TfFrameNode>(StringComparer.OrdinalIgnoreCase);
 
-			var tfTopic = context.Topics.Values.FirstOrDefault(t => t.TopicName == "/tf" || t.TopicName == "tf");
-			if (tfTopic == null) return anomalies;
+			var tfTopics = context.Topics.Values
+				.Where(t => t.TopicName == "/tf" || t.TopicName == "tf" || t.TopicName == "/tf_static" || t.TopicName == "tf_static")
+				.ToList();
+
+			if (tfTopics.Count == 0) return anomalies;
 
 			try
 			{
-				const string tfSql = "SELECT timestamp, data FROM messages WHERE topic_id = @tid ORDER BY timestamp ASC;";
-				await using var cmd = new SqliteCommand(tfSql, (SqliteConnection)context.Connection);
-				cmd.Parameters.AddWithValue("@tid", tfTopic.TopicId);
-				await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
+				foreach (var tfTopic in tfTopics)
+				{
+					const string tfSql = "SELECT timestamp, data FROM messages WHERE topic_id = @tid ORDER BY timestamp ASC;";
+					await using var cmd = new SqliteCommand(tfSql, (SqliteConnection)context.Connection);
+					cmd.Parameters.AddWithValue("@tid", tfTopic.TopicId);
+					await using var reader = await cmd.ExecuteReaderAsync(cancellationToken);
 
-				var childParents = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-				var prevPositions = new Dictionary<string, (double X, double Y, double Z)>(StringComparer.OrdinalIgnoreCase);
+					var childParents = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+					var prevPositions = new Dictionary<string, (double X, double Y, double Z)>(StringComparer.OrdinalIgnoreCase);
 
-				int ghostReported = 0;
-				int corruptedChildReported = 0;
-				int cycleReported = 0;
-				int parentSwitchReported = 0;
-				int quatReported = 0;
-				int jumpReported = 0;
+					int ghostReported = 0;
+					int corruptedChildReported = 0;
+					int cycleReported = 0;
+					int parentSwitchReported = 0;
+					int quatReported = 0;
+					int jumpReported = 0;
 
 				while (await reader.ReadAsync(cancellationToken))
 				{
@@ -94,6 +103,29 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 						double qz = BitConverter.ToDouble(raw, offset + 16);
 						double qw = BitConverter.ToDouble(raw, offset + 24);
 						offset += 32;
+
+						// Lưu trữ frame thực tế giải mã được từ Rosbag
+						if (!string.IsNullOrWhiteSpace(child) && !string.IsNullOrWhiteSpace(parent))
+						{
+							framesDict[child] = new Domain.Entities.NoSql.TfFrameNode
+							{
+								Name = child,
+								Parent = parent,
+								Translation = new[] { Math.Round(tx, 3), Math.Round(ty, 3), Math.Round(tz, 3) },
+								Rotation = new[] { Math.Round(qx, 4), Math.Round(qy, 4), Math.Round(qz, 4), Math.Round(qw, 4) }
+							};
+
+							if (!framesDict.ContainsKey(parent))
+							{
+								framesDict[parent] = new Domain.Entities.NoSql.TfFrameNode
+								{
+									Name = parent,
+									Parent = null,
+									Translation = new[] { 0.0, 0.0, 0.0 },
+									Rotation = new[] { 0.0, 0.0, 0.0, 1.0 }
+								};
+							}
+						}
 
 						// 1. Kiểm tra ghost_frame (Frame cha không hợp lệ hoặc chứa chuỗi ghost_frame) -> Bắt trúng scen_08!
 						if (parent.Contains("ghost", StringComparison.OrdinalIgnoreCase) ||
@@ -236,12 +268,14 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 						prevPositions[child] = (tx, ty, tz);
 					}
 				}
+				}
 			}
 			catch
 			{
 				// Bỏ qua định dạng TF dị biệt không đúng quy chuẩn
 			}
 
+			ExtractedFrames.AddRange(framesDict.Values);
 			return anomalies;
 		}
 	}

@@ -15,6 +15,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
     sessionsCount,
     highWarningsCount,
     recentSessions,
+    topicStats,
   } = useEngineeringDashboard();
 
   return (
@@ -110,6 +111,8 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
         bagsCount={bagsCount}
         highWarningsCount={highWarningsCount}
         pendingCount={pendingCount}
+        topicStats={topicStats}
+        recentSessions={recentSessions}
       />
 
       {/* Recent Analysis Sessions Table */}

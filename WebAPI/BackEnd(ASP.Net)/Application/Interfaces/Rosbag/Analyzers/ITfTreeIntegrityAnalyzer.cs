@@ -12,5 +12,6 @@ namespace Application.Interfaces.Rosbag.Analyzers
 	public interface ITfTreeIntegrityAnalyzer
 	{
 		Task<List<RosbagAnomalyDto>> AnalyzeAsync(RosbagAnalysisContext context, CancellationToken cancellationToken = default);
+		List<Domain.Entities.NoSql.TfFrameNode> ExtractedFrames { get; }
 	}
 }

@@ -86,6 +86,8 @@ public static class DependencyInjection
 		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ISensorPayloadAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.SensorPayloadAnalyzer>();
 		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.IFindingAggregator, global::Infrastructure.Services.Rosbag.Analyzers.FindingAggregator>();
 		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
+		services.AddSingleton<Application.Interfaces.Rosbag.IRosbagJobQueue, global::Infrastructure.Services.Rosbag.RosbagJobQueue>();
+		services.AddHostedService<global::Infrastructure.Services.Rosbag.RosbagJobBackgroundService>();
 
 		// MongoDB Registration & NoSQL Repositories
 		services.AddSingleton<global::Infrastructure.Persistence.Mongo.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();

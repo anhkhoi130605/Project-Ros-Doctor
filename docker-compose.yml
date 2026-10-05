@@ -1,7 +1,22 @@
 version: "3.8"
 
 services:
-  backend:
+  backend-aspnet:
+    build:
+      context: ./WebAPI/BackEnd(ASP.Net)
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/api/dashboard/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backend-python:
     build:
       context: .
       dockerfile: Dockerfile
@@ -17,3 +32,4 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+

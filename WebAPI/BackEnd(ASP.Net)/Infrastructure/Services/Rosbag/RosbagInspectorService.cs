@@ -377,7 +377,8 @@ namespace Infrastructure.Services.Rosbag
 				HealthScore = healthScore,
 				Timeline = timeline,
 				Topics = topicDtos.OrderByDescending(t => t.MessageCount).ToList(),
-				Anomalies = rankedAnomalies
+				Anomalies = rankedAnomalies,
+				TfFrames = _tfTreeIntegrityAnalyzer.ExtractedFrames
 			};
 		}
 

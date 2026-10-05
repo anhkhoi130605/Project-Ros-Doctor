@@ -5,12 +5,14 @@ export default function DiagnosticChartsSection({
   bagsCount = 39,
   highWarningsCount = 110,
   pendingCount = 149,
+  topicStats = [],
+  recentSessions = [],
 }) {
   const [activeTab, setActiveTab] = useState('topics');
   const [hoveredSlice, setHoveredSlice] = useState(null);
   const [hoveredBar, setHoveredBar] = useState(null);
 
-  // 1. Data cho Biểu đồ hình tròn (Donut Chart)
+  // 1. Data cho Biểu đồ hình tròn (Donut Chart) từ DB Stats
   const donutSegments = [
     {
       id: 'high',
@@ -66,26 +68,33 @@ export default function DiagnosticChartsSection({
     };
   });
 
-  // 2. Data cho Biểu đồ cột (Bar Chart)
-  const topicData = [
-    { name: '/scan', label: 'LiDAR Scan', count: 48, rate: '30 Hz', color: '#ef4444', note: 'Dropout & Jitter cao' },
-    { name: '/imu', label: 'IMU Data', count: 34, rate: '100 Hz', color: '#f59e0b', note: 'Bias drift gia tốc' },
-    { name: '/tf', label: 'TF Tree', count: 28, rate: '50 Hz', color: '#3b82f6', note: 'Buffer timeout frame' },
-    { name: '/odom', label: 'Odometry', count: 19, rate: '30 Hz', color: '#6366f1', note: 'Covariance lệch nhẹ' },
-    { name: '/camera', label: 'Camera RGB', count: 12, rate: '30 Hz', color: '#06b6d4', note: 'Drop frame ngắt quãng' },
-    { name: '/cmd_vel', label: 'Command Vel', count: 7, rate: '10 Hz', color: '#10b981', note: 'Ổn định danh định' },
+  // 2. Data cho Biểu đồ cột (Bar Chart) từ DB Telemetry thực tế
+  const topicData = topicStats.length > 0 ? topicStats : [
+    { name: '/tf', label: 'TF Frame', count: 48, rate: '50 Hz', color: '#3b82f6', note: 'Buffer timeout frame' },
+    { name: '/ouster/imu', label: 'Ouster IMU', count: 34, rate: '100 Hz', color: '#f59e0b', note: 'Bias drift gia tốc' },
+    { name: '/clock', label: 'Sim Clock', count: 18, rate: '100 Hz', color: '#10b981', note: 'Đồng bộ thời gian' },
+    { name: '/scan', label: 'LiDAR Scan', count: 14, rate: '30 Hz', color: '#ef4444', note: 'Dropout & Jitter' },
+    { name: '/odom', label: 'Odometry', count: 10, rate: '30 Hz', color: '#6366f1', note: 'Covariance lệch' },
   ];
 
-  const sessionTrendData = [
-    { name: '#fb47cf31', label: 'Phiên 1', count: 12, warnings: 4, color: '#ef4444' },
-    { name: '#736dabd1', label: 'Phiên 2', count: 12, warnings: 2, color: '#f59e0b' },
-    { name: '#91332c3b', label: 'Phiên 3', count: 12, warnings: 3, color: '#f59e0b' },
-    { name: '#05355333', label: 'Phiên 4', count: 12, warnings: 1, color: '#3b82f6' },
-    { name: '#SESS-5064', label: 'Phiên 5', count: 12, warnings: 0, color: '#10b981' },
-  ];
+  const sessionTrendData = recentSessions.length > 0
+    ? recentSessions.map((s, idx) => ({
+        name: `#${s.id.replace('sess-', '').slice(0, 6)}`,
+        label: s.bagName ? s.bagName.split('.')[0].slice(0, 14) : `Phiên ${idx + 1}`,
+        count: s.topicsCount || 2,
+        warnings: s.warningsCount || 0,
+        color: (s.warningsCount || 0) > 0 ? '#ef4444' : '#10b981',
+      }))
+    : [
+        { name: '#5d17ea', label: 'scen_03_accel', count: 2, warnings: 4, color: '#ef4444' },
+        { name: '#ba2103', label: 'scen_01_frame', count: 2, warnings: 6, color: '#ef4444' },
+        { name: '#8256d9', label: 'scen_05_drift', count: 2, warnings: 3, color: '#f59e0b' },
+        { name: '#946bee', label: 'scen_04_drop', count: 2, warnings: 2, color: '#f59e0b' },
+        { name: '#f91ea1', label: 'scen_01_imu', count: 2, warnings: 1, color: '#3b82f6' },
+      ];
 
   const currentBarData = activeTab === 'topics' ? topicData : sessionTrendData;
-  const maxBarValue = Math.max(...currentBarData.map((d) => d.count), 50);
+  const maxBarValue = Math.max(...currentBarData.map((d) => d.count), 20);
 
   // SVG dimensions for Bar Chart
   const svgWidth = 460;

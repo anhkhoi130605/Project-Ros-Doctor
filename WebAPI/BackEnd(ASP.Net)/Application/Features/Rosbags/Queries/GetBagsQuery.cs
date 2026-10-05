@@ -8,7 +8,7 @@ using Application.Interfaces.ManageTransaction;
 
 namespace Application.Features.Rosbags.Queries
 {
-	public record GetBagsQuery() : IRequest<List<RosbagDto>>;
+	public record GetBagsQuery(int? PageNumber = null, int? PageSize = null) : IRequest<List<RosbagDto>>;
 
 	public class GetBagsQueryHandler : IRequestHandler<GetBagsQuery, List<RosbagDto>>
 	{
@@ -21,12 +21,44 @@ namespace Application.Features.Rosbags.Queries
 
 		public async Task<List<RosbagDto>> Handle(GetBagsQuery request, CancellationToken cancellationToken)
 		{
-			var bags = await _unitOfWork.Rosbags.GetAllAsync(null, null, cancellationToken);
-			var bagsList = bags.OrderByDescending(b => b.CreatedAt).ToList();
+			int? skip = null;
+			int? take = null;
+
+			if (request.PageNumber.HasValue && request.PageSize.HasValue)
+			{
+				var pNum = System.Math.Max(1, request.PageNumber.Value);
+				var pSize = System.Math.Clamp(request.PageSize.Value, 1, 100);
+				skip = (pNum - 1) * pSize;
+				take = pSize;
+			}
+
+			// Projection query at SQL level with AsNoTracking
+			var bagsList = await _unitOfWork.Rosbags.SelectAsync(
+				b => new
+				{
+					b.Id,
+					Name = b.FileName,
+					b.StorageUrl,
+					Size = b.SizeBytes,
+					Format = b.Format.ToString(),
+					Duration = b.DurationSec,
+					Topics = b.TopicCount,
+					Status = b.Status.ToString().ToLower(),
+					Date = b.CreatedAt.ToString("o"),
+					b.UserId
+				},
+				null,
+				q => q.OrderByDescending(b => b.CreatedAt),
+				skip,
+				take,
+				cancellationToken);
+
 			if (bagsList.Count == 0) return new List<RosbagDto>();
 
 			var bagIds = bagsList.Select(b => b.Id).ToHashSet();
-			var sessions = await _unitOfWork.AnalysisSessions.GetAllAsync(s => bagIds.Contains(s.RosbagId), null, cancellationToken);
+			var sessions = bagIds.Count > 0
+				? await _unitOfWork.AnalysisSessions.GetAllAsync(s => bagIds.Contains(s.RosbagId), null, cancellationToken)
+				: System.Linq.Enumerable.Empty<Domain.Entities.RosbagAnalysis.AnalysisSession>();
 
 			var sessionMap = sessions
 				.OrderByDescending(s => s.StartedAt)
@@ -37,14 +69,14 @@ namespace Application.Features.Rosbags.Queries
 				.Select(b => new RosbagDto
 				{
 					Id = b.Id,
-					Name = b.FileName,
+					Name = b.Name,
 					StorageUrl = b.StorageUrl,
-					Size = b.SizeBytes,
-					Format = b.Format.ToString(),
-					Duration = b.DurationSec,
-					Topics = b.TopicCount,
-					Status = b.Status.ToString().ToLower(),
-					Date = b.CreatedAt.ToString("o"),
+					Size = b.Size,
+					Format = b.Format,
+					Duration = b.Duration,
+					Topics = b.Topics,
+					Status = b.Status,
+					Date = b.Date,
 					SessionId = sessionMap.TryGetValue(b.Id, out var sId) ? sId : null,
 					UserId = b.UserId
 				})

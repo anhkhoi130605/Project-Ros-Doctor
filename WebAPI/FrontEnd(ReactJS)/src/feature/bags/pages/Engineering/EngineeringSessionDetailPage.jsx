@@ -1,10 +1,14 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useParams, Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useApp, formatDuration } from '../../../../stored/appStore';
 import { Badge, Card, Button, Notice, FormField, Icon } from '../../../../components/common/UIComponents';
+import { buildRealTfTree } from '../../utils/tfTreeHelper';
+import { getSessionByIdApi } from '../../../../service';
 
 export default function EngineeringSessionDetailPage() {
-  const { id } = useParams();
+  const { id, tab } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { state, dispatch, notify } = useApp();
 
@@ -28,7 +32,31 @@ export default function EngineeringSessionDetailPage() {
   };
 
   // Tab State: 'overview' (V03) | 'timeline' (V04) | 'issues' | 'tf' (V05) | 'sync'
-  const [activeTab, setActiveTab] = useState('overview');
+  const getInitialTab = () => {
+    if (tab) {
+      if (tab === 'topics') return 'timeline';
+      return tab;
+    }
+    const path = location.pathname;
+    if (path.endsWith('/tf')) return 'tf';
+    if (path.endsWith('/topics') || path.endsWith('/timeline')) return 'timeline';
+    if (path.endsWith('/issues')) return 'issues';
+    if (path.endsWith('/sync')) return 'sync';
+    return 'overview';
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab);
+
+  useEffect(() => {
+    const next = getInitialTab();
+    setActiveTab(next);
+  }, [tab, location.pathname]);
+
+  const changeTab = (newTab) => {
+    setActiveTab(newTab);
+    const sub = newTab === 'overview' ? '' : `/${newTab === 'timeline' ? 'topics' : newTab}`;
+    navigate(`/sessions/${id}${sub}`, { replace: true });
+  };
 
   // V04 Timeline & Topics State
   const [topicSearch, setTopicSearch] = useState('');
@@ -37,7 +65,7 @@ export default function EngineeringSessionDetailPage() {
 
   // V05 TF 3D State
   const [selectedFrame, setSelectedFrame] = useState('map');
-  const [tfTimeSec, setTfTimeSec] = useState(135.2); // 02:15.200 matching Figma
+  const [tfTimeSec, setTfTimeSec] = useState(30.005); // Khởi tạo tại thời điểm xảy ra bất thường của rosbag
   const [yaw, setYaw] = useState(-0.55);
   const [pitch, setPitch] = useState(0.35);
   const [zoom, setZoom] = useState(1.0);
@@ -71,17 +99,39 @@ export default function EngineeringSessionDetailPage() {
     notify(`Đã lưu quyết định (${decision}) cho kết luận ${activeFinding.id}`, 'success');
   };
 
+  const [liveSession, setLiveSession] = useState(null);
+
+  useEffect(() => {
+    if (id) {
+      getSessionByIdApi(id)
+        .then((res) => {
+          if (res) setLiveSession(res);
+        })
+        .catch((err) => console.warn('Could not fetch session detail in EngineeringSessionDetailPage:', err));
+    }
+  }, [id]);
+
+  const effectiveSession = liveSession || session;
+  const effectiveIssues = liveSession?.issues || findings || [];
+
   // -------------------------------------------------------------
-  // V05 TF 3D Frames (matching Figma V05: map, odom, base_link, laser, camera_link, imu_link)
+  // V05 TF 3D Frames mapped to real session rosbag data & dynamic time timeline
   // -------------------------------------------------------------
-  const tfFrames = [
-    { id: 'map', name: 'map', x: 0, y: 80, z: -30, parent: null, color: '#38bdf8' },
-    { id: 'odom', name: 'odom', x: 0, y: 30, z: -10, parent: 'map', color: '#38bdf8' },
-    { id: 'base_link', name: 'base_link', x: 0, y: -25, z: 0, parent: 'odom', color: '#38bdf8' },
-    { id: 'imu_link', name: 'imu_link', x: -65, y: -5, z: -20, parent: 'base_link', color: '#38bdf8' },
-    { id: 'laser', name: 'laser', x: -15, y: -90, z: 35, parent: 'base_link', color: '#38bdf8' },
-    { id: 'camera_link', name: 'camera_link', x: 80, y: -45, z: 25, parent: 'base_link', color: '#38bdf8' },
-  ];
+  const { frames: tfFrames, edgeCount, tfIssuesCount, hasAnomalies } = useMemo(
+    () => buildRealTfTree(effectiveSession, bag, effectiveIssues, tfTimeSec),
+    [effectiveSession, bag, effectiveIssues, tfTimeSec]
+  );
+
+  const formatTfTime = (totalSec) => {
+    const safeSec = Math.max(0, totalSec || 0);
+    const m = Math.floor(safeSec / 60);
+    const s = Math.floor(safeSec % 60);
+    const ms = Math.floor((safeSec % 1) * 1000);
+    return {
+      main: `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`,
+      ms: ` . ${String(ms).padStart(3, '0')}`
+    };
+  };
 
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -131,36 +181,49 @@ export default function EngineeringSessionDetailPage() {
     // Sort by depth (Z)
     projected.sort((a, b) => b.depth - a.depth);
 
-    // Draw connecting edges (light cyan lines matching Figma V05)
+    // Draw connecting edges
     tfFrames.forEach((f) => {
       if (!f.parent) return;
       const parent = projected.find((p) => p.id === f.parent);
       const child = projected.find((p) => p.id === f.id);
       if (!parent || !child) return;
 
+      const isBroken = f.anomaly?.type === 'error';
+      const isWarning = f.anomaly?.type === 'warning';
+
       ctx.beginPath();
       ctx.moveTo(parent.x, parent.y);
       ctx.lineTo(child.x, child.y);
-      ctx.strokeStyle = '#7dd3fc';
-      ctx.lineWidth = 2.0;
+      ctx.strokeStyle = isBroken ? '#ef4444' : isWarning ? '#f59e0b' : '#7dd3fc';
+      ctx.lineWidth = isBroken ? 2.5 : isWarning ? 2.0 : 1.8;
+      if (isBroken) {
+        ctx.setLineDash([6, 4]);
+      } else if (isWarning) {
+        ctx.setLineDash([4, 4]);
+      } else {
+        ctx.setLineDash([]);
+      }
       ctx.stroke();
+      ctx.setLineDash([]);
     });
 
-    // Draw glossy 3D spheres & labels (matching Figma V05)
+    // Draw glossy 3D spheres & labels (matching condition)
     projected.forEach((node) => {
       const isSelected = selectedFrame === node.id;
+      const isBroken = node.anomaly?.type === 'error';
+      const isWarning = node.anomaly?.type === 'warning';
       const radius = 13;
 
-      // Orange highlight ring for selected frame (like `map` in Figma V05)
-      if (isSelected) {
+      // Glow / highlight ring
+      if (isSelected || isBroken) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, radius + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = '#f59e0b';
-        ctx.lineWidth = 2;
+        ctx.strokeStyle = isSelected ? '#f59e0b' : isBroken ? '#ef4444' : '#38bdf8';
+        ctx.lineWidth = isSelected ? 2.5 : 1.5;
         ctx.stroke();
       }
 
-      // Glossy 3D sphere gradient (deep cyan to dark blue)
+      // Glossy 3D sphere gradient based on condition
       const sphereGrad = ctx.createRadialGradient(
         node.x - 4,
         node.y - 4,
@@ -169,15 +232,25 @@ export default function EngineeringSessionDetailPage() {
         node.y,
         radius
       );
-      sphereGrad.addColorStop(0, '#7dd3fc');
-      sphereGrad.addColorStop(0.4, '#0284c7');
-      sphereGrad.addColorStop(1, '#082f49');
+      if (isBroken) {
+        sphereGrad.addColorStop(0, '#fca5a5');
+        sphereGrad.addColorStop(0.4, '#dc2626');
+        sphereGrad.addColorStop(1, '#7f1d1d');
+      } else if (isWarning) {
+        sphereGrad.addColorStop(0, '#fde68a');
+        sphereGrad.addColorStop(0.4, '#d97706');
+        sphereGrad.addColorStop(1, '#78350f');
+      } else {
+        sphereGrad.addColorStop(0, '#7dd3fc');
+        sphereGrad.addColorStop(0.4, '#0284c7');
+        sphereGrad.addColorStop(1, '#082f49');
+      }
 
       ctx.beginPath();
       ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
       ctx.fillStyle = sphereGrad;
       ctx.fill();
-      ctx.strokeStyle = '#0369a1';
+      ctx.strokeStyle = isBroken ? '#b91c1c' : isWarning ? '#b45309' : '#0369a1';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
@@ -187,7 +260,7 @@ export default function EngineeringSessionDetailPage() {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
       ctx.fill();
 
-      // Dark capsule badge label below sphere (matching Figma V05)
+      // Capsule badge label below sphere
       const labelText = node.name;
       ctx.font = '700 12px Inter, sans-serif';
       const textWidth = ctx.measureText(labelText).width;
@@ -196,7 +269,7 @@ export default function EngineeringSessionDetailPage() {
       const labelX = node.x - labelW / 2;
       const labelY = node.y + radius + 6;
 
-      ctx.fillStyle = '#0f172a';
+      ctx.fillStyle = isBroken ? '#7f1d1d' : isWarning ? '#78350f' : '#0f172a';
       roundRect(ctx, labelX, labelY, labelW, labelH, 4);
       ctx.fill();
 
@@ -205,7 +278,7 @@ export default function EngineeringSessionDetailPage() {
     });
 
     ctx.restore();
-  }, [yaw, pitch, zoom, selectedFrame]);
+  }, [yaw, pitch, zoom, selectedFrame, tfFrames]);
 
   useEffect(() => {
     if (activeTab === 'tf') {
@@ -287,10 +360,10 @@ export default function EngineeringSessionDetailPage() {
       <div className="page-title" style={{ marginBottom: '16px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 6px 0', color: '#0f172a' }}>
-            {session.name} · phiên #{session.id}
+            {effectiveSession?.name || effectiveSession?.bagName || bag?.fileName || bag?.name || 'Robot Di Động AGV'} · phiên #{id || effectiveSession?.id}
           </h1>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-            {bag?.name || (session.id === '024' ? 'agv_lab_2026.09_22.mcap' : 'warehouse_route_03.mcap')} / {session.createdAt ? '08:42 22/09/2026' : (session.date || '08:42 22/09/2026')}
+            {bag?.fileName || bag?.name || effectiveSession?.bagName || effectiveSession?.name || 'scen_05_invalid_quaternion_denorm.db3'} / {effectiveSession?.createdAt ? new Date(effectiveSession.createdAt).toLocaleString('vi-VN') : (effectiveSession?.date || '08:42 22/09/2026')}
           </p>
         </div>
       </div>
@@ -301,7 +374,7 @@ export default function EngineeringSessionDetailPage() {
           href="#overview"
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('overview');
+            changeTab('overview');
           }}
           className={activeTab === 'overview' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
@@ -312,7 +385,7 @@ export default function EngineeringSessionDetailPage() {
           href="#timeline"
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('timeline');
+            changeTab('timeline');
           }}
           className={activeTab === 'timeline' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
@@ -323,7 +396,7 @@ export default function EngineeringSessionDetailPage() {
           href="#issues"
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('issues');
+            changeTab('issues');
           }}
           className={activeTab === 'issues' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
@@ -335,7 +408,7 @@ export default function EngineeringSessionDetailPage() {
           href="#tf"
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('tf');
+            changeTab('tf');
           }}
           className={activeTab === 'tf' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
@@ -346,7 +419,7 @@ export default function EngineeringSessionDetailPage() {
           href="#sync"
           onClick={(e) => {
             e.preventDefault();
-            setActiveTab('sync');
+            changeTab('sync');
           }}
           className={activeTab === 'sync' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
@@ -368,8 +441,8 @@ export default function EngineeringSessionDetailPage() {
               <div className="stat-icon" style={{ background: '#ecfeff', color: '#0891b2' }}>
                 <Icon name="clock" size={16} />
               </div>
-              <strong style={{ color: '#0f172a' }}>{session.durationFormatted || '08:15'}</strong>
-              <small>418.217 message mẫu</small>
+              <strong style={{ color: '#0f172a' }}>{effectiveSession?.durationFormatted || formatDuration(effectiveSession?.duration || 86)}</strong>
+              <small>{(effectiveSession?.messages || 387000).toLocaleString('vi-VN')} message thực tế</small>
             </div>
 
             {/* Stat 2: Topic trong bag */}
@@ -378,28 +451,28 @@ export default function EngineeringSessionDetailPage() {
               <div className="stat-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
                 <Icon name="database" size={16} />
               </div>
-              <strong style={{ color: '#0f172a' }}>{session.topics || 18}</strong>
-              <small>Theo metadata của bộ mẫu</small>
+              <strong style={{ color: '#0f172a' }}>{effectiveSession?.topics || 2}</strong>
+              <small>Từ tệp .db3 thực tế</small>
             </div>
 
-            {/* Stat 3: Bất thường phát hiện */}
-            <div className="card stat red" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
-              <span className="stat-label">Bất thường phát hiện</span>
-              <div className="stat-icon" style={{ background: '#fff1f2', color: '#e11d48' }}>
+            {/* Stat 3: Bất thường đo đạc */}
+            <div className="card stat amber" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
+              <span className="stat-label">Bất thường đo đạc</span>
+              <div className="stat-icon" style={{ background: '#fffbeb', color: '#d97706' }}>
                 <Icon name="alert" size={16} />
               </div>
-              <strong style={{ color: '#0f172a' }}>{findings.length}</strong>
-              <small>{findings.length > 0 ? `${findings.length} phát hiện cần duyệt` : '0 cao · cần kiểm tra'}</small>
+              <strong style={{ color: '#0f172a' }}>{effectiveIssues.length}</strong>
+              <small>{effectiveIssues.filter(f => f.severity === 'high' || f.severity === 'critical').length} mức cao / nghiêm trọng</small>
             </div>
 
-            {/* Stat 4: Thời gian phân tích */}
+            {/* Stat 4: Thời gian xử lý */}
             <div className="card stat green" style={{ background: '#ffffff', border: '1px solid #e2e8f0' }}>
-              <span className="stat-label">Thời gian phân tích</span>
+              <span className="stat-label">Thời gian xử lý</span>
               <div className="stat-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
-                <Icon name="activity" size={16} />
+                <Icon name="trend" size={16} />
               </div>
-              <strong style={{ color: '#0f172a' }}>19 giây</strong>
-              <small style={{ color: '#0284c7', fontWeight: 600 }}>Số liệu minh họa</small>
+              <strong style={{ color: '#0f172a' }}>{effectiveSession?.processingSeconds ?? 1}s</strong>
+              <small>Thời gian thực thi trích xuất</small>
             </div>
           </div>
 
@@ -1018,7 +1091,7 @@ export default function EngineeringSessionDetailPage() {
                 </button>
               </div>
 
-              {/* Instructions text matching Figma V05 */}
+              {/* Instructions text matching real data */}
               <div
                 style={{
                   display: 'flex',
@@ -1031,7 +1104,9 @@ export default function EngineeringSessionDetailPage() {
                 }}
               >
                 <span>KÉO ĐỂ XOAY · PHÍM MŨI TÊN</span>
-                <span>6 FRAME / 5 QUAN HỆ</span>
+                <span style={{ color: hasAnomalies ? '#ef4444' : '#0284c7' }}>
+                  {tfFrames.length} FRAME / {edgeCount} QUAN HỆ {hasAnomalies ? `(${tfIssuesCount} SỰ CỐ)` : ''}
+                </span>
               </div>
 
               {/* 3D Canvas on clean white background matching Figma */}
@@ -1064,8 +1139,8 @@ export default function EngineeringSessionDetailPage() {
                 }}
               >
                 <div style={{ color: '#64748b' }}>
-                  THỜI ĐIỂM <strong style={{ color: '#0f172a', fontWeight: 800, marginLeft: '6px' }}>02:15</strong>
-                  <span style={{ color: '#0284c7', fontWeight: 700 }}> . 200</span>
+                  THỜI ĐIỂM <strong style={{ color: '#0f172a', fontWeight: 800, marginLeft: '6px' }}>{formatTfTime(tfTimeSec).main}</strong>
+                  <span style={{ color: '#0284c7', fontWeight: 700 }}>{formatTfTime(tfTimeSec).ms}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b' }}>
                   <span>Frame đang chọn</span>
@@ -1083,25 +1158,26 @@ export default function EngineeringSessionDetailPage() {
                   >
                     {tfFrames.map((f) => (
                       <option key={f.id} value={f.id}>
-                        {f.name}
+                        {f.name} {f.anomaly?.type === 'error' ? '❌' : f.anomaly?.type === 'warning' ? '⚠️' : ''}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* Slider track matching Figma */}
+              {/* Slider track matching real duration */}
               <input
                 type="range"
                 min="0"
-                max="495"
+                max={Math.max(10, Math.round(effectiveSession?.duration || effectiveSession?.durationSec || 86))}
+                step="0.05"
                 value={tfTimeSec}
-                onChange={(e) => setTfTimeSec(Number(e.target.value))}
+                onChange={(e) => setTfTimeSec(parseFloat(e.target.value))}
                 style={{ width: '100%', marginTop: '12px', accentColor: '#0284c7' }}
               />
             </section>
 
-            {/* Right Information Card: Chi tiết kết nối matching Figma V05 */}
+            {/* Right Information Card: Chi tiết kết nối matching real data */}
             <section
               className="card"
               style={{
@@ -1112,7 +1188,7 @@ export default function EngineeringSessionDetailPage() {
               }}
             >
               <h2 style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a', margin: '0 0 16px 0' }}>
-                Chi tiết kết nối
+                Chi tiết khung tọa độ
               </h2>
 
               <span
@@ -1120,8 +1196,9 @@ export default function EngineeringSessionDetailPage() {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '6px',
-                  background: '#f0fdf4',
-                  color: '#16a34a',
+                  background: activeTfObj.anomaly?.type === 'error' ? '#fef2f2' : activeTfObj.anomaly?.type === 'warning' ? '#fffbeb' : '#f0fdf4',
+                  color: activeTfObj.anomaly?.color || '#16a34a',
+                  border: `1px solid ${activeTfObj.anomaly?.type === 'error' ? '#fecaca' : activeTfObj.anomaly?.type === 'warning' ? '#fef3c7' : '#bbf7d0'}`,
                   padding: '4px 12px',
                   borderRadius: '12px',
                   fontSize: '11px',
@@ -1129,43 +1206,65 @@ export default function EngineeringSessionDetailPage() {
                   marginBottom: '20px',
                 }}
               >
-                ● Có kết nối trong mẫu
+                {activeTfObj.anomaly?.badgeText || '● Có kết nối trong mẫu'}
               </span>
 
-              <h3 style={{ fontSize: '24px', fontWeight: 800, color: '#0f172a', margin: '0 0 24px 0' }}>
-                {activeTfObj.parent ? `${activeTfObj.parent} → ${activeTfObj.name}` : `map → ${activeTfParent}`}
+              <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '0 0 20px 0' }}>
+                {activeTfObj.parent ? `${activeTfObj.parent} → ${activeTfObj.name}` : `Khung gốc: ${activeTfObj.name}`}
               </h3>
 
-              <div style={{ display: 'grid', gap: '20px' }}>
+              <div style={{ display: 'grid', gap: '16px' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
                     Frame đang chọn
                   </div>
-                  <strong style={{ fontSize: '13px', color: '#0f172a' }}>{activeTfObj.name}</strong>
+                  <strong style={{ fontSize: '14px', color: '#0f172a' }}>{activeTfObj.name}</strong>
+                  {activeTfObj.parent && (
+                    <small style={{ display: 'block', color: '#64748b', marginTop: '2px' }}>
+                      (Thuộc nhánh cha: <code>{activeTfObj.parent}</code>)
+                    </small>
+                  )}
                 </div>
 
-                <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
-                    Khoảng bất thường trong mẫu
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 700, display: 'block', marginBottom: '2px' }}>TỌA ĐỘ TỊNH TIẾN [X, Y, Z] (m)</span>
+                    <code style={{ fontSize: '11px', color: '#0284c7', fontWeight: 700 }}>
+                      [{activeTfObj.translation ? activeTfObj.translation.join(', ') : '0.0, 0.0, 0.0'}]
+                    </code>
                   </div>
-                  <strong style={{ fontSize: '13px', color: '#0f172a' }}>Không có</strong>
+                  <div>
+                    <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 700, display: 'block', marginBottom: '2px' }}>QUATERNION [qx, qy, qz, qw]</span>
+                    <code style={{ fontSize: '11px', color: '#0284c7', fontWeight: 700 }}>
+                      [{activeTfObj.rotation ? activeTfObj.rotation.join(', ') : '0.0, 0.0, 0.0, 1.0'}]
+                    </code>
+                  </div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
-                    Quan sát tại thời điểm chọn
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                    Khoảng thời gian bất thường
+                  </div>
+                  <strong style={{ fontSize: '13px', color: activeTfObj.anomaly?.type === 'error' ? '#dc2626' : activeTfObj.anomaly?.type === 'warning' ? '#d97706' : '#0f172a' }}>
+                    {activeTfObj.anomaly?.timeRange || 'Không có'}
+                  </strong>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                    Quan sát thực tế từ dữ liệu
                   </div>
                   <p style={{ fontSize: '13px', color: '#334155', margin: 0, lineHeight: 1.6 }}>
-                    Bộ mẫu có phép biến đổi tại thời điểm này.
+                    {activeTfObj.anomaly?.observation || 'Bộ mẫu có phép biến đổi tại thời điểm này.'}
                   </p>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '6px' }}>
-                    Bước kiểm tra tiếp
+                  <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                    Bước kiểm tra & khắc phục tiếp theo
                   </div>
                   <p style={{ fontSize: '12px', color: '#475569', margin: 0, lineHeight: 1.6 }}>
-                    Đối chiếu /tf, /tf_static, nguồn phát và phạm vi ghi. Kiểm tra timestamp của phép biến đổi.
+                    {activeTfObj.anomaly?.suggestedFix || 'Đối chiếu /tf, /tf_static, nguồn phát và phạm vi ghi. Kiểm tra timestamp của phép biến đổi.'}
                   </p>
                 </div>
               </div>

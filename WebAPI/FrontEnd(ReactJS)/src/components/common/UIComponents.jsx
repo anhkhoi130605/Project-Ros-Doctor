@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { STATUS_MAP } from '../../domain/appTypes';
 
@@ -407,39 +407,281 @@ export function StatWidget({ title, value, note, tone = 'default', icon }) {
   );
 }
 
-// Prototype Data Table
-export function DataTable({ columns = [], rows = [], empty = 'Không có dữ liệu phù hợp.', label = 'Bảng dữ liệu' }) {
+// Reusable Pagination Component (Phù hợp với Domain.Common.PaginationResult<T>)
+export function Pagination({
+  totalItems = 0,
+  pageSize = 10,
+  currentPage = 1,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [10, 20, 50, 100],
+  className = '',
+}) {
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const page = Math.min(Math.max(1, currentPage), totalPages);
+
+  const startItem = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endItem = Math.min(page * pageSize, totalItems);
+
+  // Tính toán dãy nút trang hiển thị (hỗ trợ dấu ba chấm ...)
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (page <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+    if (page >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', page - 1, page, page + 1, '...', totalPages];
+  };
+
+  const pages = getPageNumbers();
+
   return (
-    <div className="table-scroll" tabIndex={0} role="region" aria-label={label}>
-      <table>
-        <thead>
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key} scope="col">
-                {col.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, idx) => (
-            <tr key={row.id || idx}>
+    <div
+      className={`pagination-container ${className}`}
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '14px 18px',
+        borderTop: '1px solid #e2e8f0',
+        background: '#ffffff',
+        borderRadius: '0 0 12px 12px',
+        flexWrap: 'wrap',
+        gap: '12px',
+      }}
+    >
+      {/* Thông tin số lượng hiển thị */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#64748b' }}>
+        <span>
+          Hiển thị <strong>{startItem} – {endItem}</strong> trong tổng số <strong>{totalItems}</strong> mục
+        </span>
+        {onPageSizeChange && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span>Số mục:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              style={{
+                padding: '4px 8px',
+                fontSize: '12px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                background: '#f8fafc',
+                color: '#334155',
+                cursor: 'pointer',
+              }}
+            >
+              {pageSizeOptions.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt} / trang
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
+      {/* Cụm nút chuyển trang */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+        <button
+          type="button"
+          onClick={() => onPageChange(1)}
+          disabled={page <= 1}
+          style={{
+            minWidth: '32px',
+            height: '32px',
+            padding: '0 8px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: page <= 1 ? '#f8fafc' : '#ffffff',
+            color: page <= 1 ? '#94a3b8' : '#334155',
+            fontSize: '12px',
+            cursor: page <= 1 ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+          }}
+          title="Trang đầu"
+        >
+          «
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(page - 1)}
+          disabled={page <= 1}
+          style={{
+            height: '32px',
+            padding: '0 12px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: page <= 1 ? '#f8fafc' : '#ffffff',
+            color: page <= 1 ? '#94a3b8' : '#334155',
+            fontSize: '12px',
+            cursor: page <= 1 ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          ← Trước
+        </button>
+
+        {pages.map((p, idx) => {
+          if (p === '...') {
+            return (
+              <span key={`ellipsis-${idx}`} style={{ padding: '0 6px', color: '#94a3b8', fontSize: '13px' }}>
+                …
+              </span>
+            );
+          }
+          const isActive = p === page;
+          return (
+            <button
+              key={p}
+              type="button"
+              onClick={() => onPageChange(p)}
+              style={{
+                minWidth: '32px',
+                height: '32px',
+                padding: '0 8px',
+                borderRadius: '6px',
+                border: isActive ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                background: isActive ? '#0f172a' : '#ffffff',
+                color: isActive ? '#ffffff' : '#334155',
+                fontSize: '12px',
+                fontWeight: isActive ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {p}
+            </button>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => onPageChange(page + 1)}
+          disabled={page >= totalPages}
+          style={{
+            height: '32px',
+            padding: '0 12px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: page >= totalPages ? '#f8fafc' : '#ffffff',
+            color: page >= totalPages ? '#94a3b8' : '#334155',
+            fontSize: '12px',
+            cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+          }}
+        >
+          Sau →
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(totalPages)}
+          disabled={page >= totalPages}
+          style={{
+            minWidth: '32px',
+            height: '32px',
+            padding: '0 8px',
+            borderRadius: '6px',
+            border: '1px solid #e2e8f0',
+            background: page >= totalPages ? '#f8fafc' : '#ffffff',
+            color: page >= totalPages ? '#94a3b8' : '#334155',
+            fontSize: '12px',
+            cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+            fontWeight: 600,
+          }}
+          title="Trang cuối"
+        >
+          »
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Data Table có hỗ trợ phân trang thông minh
+export function DataTable({
+  columns = [],
+  rows = [],
+  empty = 'Không có dữ liệu phù hợp.',
+  label = 'Bảng dữ liệu',
+  paginate = false,
+  pageSize: initialPageSize = 10,
+  pageSizeOptions = [10, 20, 50, 100],
+}) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+
+  // Tự động trở về trang 1 khi danh sách dữ liệu lọc thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows.length]);
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const displayRows = paginate
+    ? rows.slice((safePage - 1) * pageSize, safePage * pageSize)
+    : rows;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="table-scroll" tabIndex={0} role="region" aria-label={label}>
+        <table>
+          <thead>
+            <tr>
               {columns.map((col) => (
-                <td key={col.key}>
-                  {col.render ? col.render(row, idx) : row[col.key]}
-                </td>
+                <th key={col.key} scope="col">
+                  {col.label}
+                </th>
               ))}
             </tr>
-          ))}
-          {!rows.length && (
-            <tr>
-              <td colSpan={columns.length} className="table-empty">
-                {empty}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {displayRows.map((row, idx) => (
+              <tr key={row.id || idx}>
+                {columns.map((col) => (
+                  <td key={col.key}>
+                    {col.render ? col.render(row, idx) : row[col.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {!rows.length && (
+              <tr>
+                <td colSpan={columns.length} className="table-empty">
+                  {empty}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {paginate && rows.length > 0 && (
+        <Pagination
+          totalItems={rows.length}
+          pageSize={pageSize}
+          currentPage={safePage}
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(newSize) => {
+            setPageSize(newSize);
+            setCurrentPage(1);
+          }}
+          pageSizeOptions={pageSizeOptions}
+        />
+      )}
     </div>
   );
 }

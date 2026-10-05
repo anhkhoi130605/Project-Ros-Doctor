@@ -131,12 +131,7 @@ export default function AppRouter() {
           <Route path="/analysis/processing" element={<AnalysisProcessingPage />} />
           <Route path="/analysis" element={<AnalysisPage />} />
           <Route path="/sessions/:id" element={<SessionDetailPage />} />
-          <Route path="/sessions/:id/overview" element={<SessionOverviewPage />} />
-          <Route path="/sessions/:id/topics" element={<SessionTopicsPage />} />
-          <Route path="/sessions/:id/issues" element={<SessionIssuesPage />} />
-          <Route path="/sessions/:id/tf" element={<SessionTfPage />} />
-          <Route path="/sessions/:id/sync" element={<SessionSyncPage />} />
-          <Route path="/sessions/:id/agent" element={<SessionAgentPage />} />
+          <Route path="/sessions/:id/:tab" element={<SessionDetailPage />} />
           <Route path="/upload" element={<UploadPage />} />
           <Route path="/reports" element={<ReportsListPage />} />
           <Route path="/reports/:id" element={<ReportDetailPage />} />

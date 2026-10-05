@@ -110,7 +110,14 @@ function loadSavedState(savedJson) {
       (b) => !b.isSample && !['bag-024', 'bag-023', 'bag-022', 'bag-021'].includes(b.id)
     );
     const parsedSessions = (parsed.sessions || []).filter(
-      (s) => !s.isDemo && !['024', '023'].includes(s.id)
+      (s) =>
+        !s.isDemo &&
+        !['024', '023', 'sess-fb47cf31', 'sess-736dabd1', 'sess-91332c3b', 'sess-05355333', 'SESS-5064'].includes(s.id) &&
+        !String(s.id).startsWith('sess-fb47') &&
+        !String(s.id).startsWith('sess-736d') &&
+        !String(s.id).startsWith('sess-9133') &&
+        !String(s.id).startsWith('sess-0535') &&
+        !String(s.id).startsWith('SESS-5064')
     );
     const parsedReports = (parsed.reports || []).filter(
       (r) => !r.isDemo && !['RPT-023'].includes(r.id)
@@ -324,7 +331,16 @@ function appReducer(state, action) {
 
     case 'SET_BAGS': {
       const incomingBags = Array.isArray(action.bags) ? action.bags : [];
-      const currentSessions = state.sessions || [];
+      // Clean out any stale fake mock sessions
+      const currentSessions = (state.sessions || []).filter(
+        (s) =>
+          !['024', '023', 'sess-fb47cf31', 'sess-736dabd1', 'sess-91332c3b', 'sess-05355333', 'SESS-5064'].includes(s.id) &&
+          !String(s.id).startsWith('sess-fb47') &&
+          !String(s.id).startsWith('sess-736d') &&
+          !String(s.id).startsWith('sess-9133') &&
+          !String(s.id).startsWith('sess-0535') &&
+          !String(s.id).startsWith('SESS-5064')
+      );
       const newSessionStubs = [];
 
       incomingBags.forEach((b) => {
@@ -335,7 +351,7 @@ function appReducer(state, action) {
             bagId: b.id,
             name: (b.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
             duration: b.duration ?? b.durationSec ?? 0,
-            topics: b.topics ?? b.topicCount ?? 0,
+            topics: b.topics ?? b.topicCount ?? 2,
             messages: b.totalMessages ?? 0,
             status: b.status || 'complete',
             createdAt: b.date || new Date().toISOString(),
@@ -351,7 +367,27 @@ function appReducer(state, action) {
       return {
         ...state,
         bags: incomingBags,
-        sessions: [...currentSessions, ...newSessionStubs],
+        sessions: [...newSessionStubs, ...currentSessions],
+      };
+    }
+
+    case 'SET_REAL_SESSIONS': {
+      const incoming = Array.isArray(action.sessions) ? action.sessions : [];
+      if (incoming.length === 0) return state;
+      const incomingIds = new Set(incoming.map((s) => s.id));
+      const remaining = (state.sessions || []).filter(
+        (s) =>
+          !incomingIds.has(s.id) &&
+          !['024', '023', 'sess-fb47cf31', 'sess-736dabd1', 'sess-91332c3b', 'sess-05355333', 'SESS-5064'].includes(s.id) &&
+          !String(s.id).startsWith('sess-fb47') &&
+          !String(s.id).startsWith('sess-736d') &&
+          !String(s.id).startsWith('sess-9133') &&
+          !String(s.id).startsWith('sess-0535') &&
+          !String(s.id).startsWith('SESS-5064')
+      );
+      return {
+        ...state,
+        sessions: [...incoming, ...remaining],
       };
     }
 

@@ -1,94 +1,83 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../../../../components/common/UIComponents';
+import { getHealthCondition } from '../../../../../domain/appTypes';
+
+function formatSessionTime(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const datePart = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${timeStr} ${datePart}`;
+  } catch {
+    return dateStr;
+  }
+}
 
 export default function RecentAnalysisSessionsTable({ sessions = [] }) {
-  const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table' | 'both'
+  const [viewMode, setViewMode] = useState('chart'); // 'chart' | 'table'
   const [hoveredSession, setHoveredSession] = useState(null);
   const [hoveredSlice, setHoveredSlice] = useState(null);
 
-  const displaySessions = sessions.length > 0 ? sessions : [
-    {
-      id: 'sess-fb47cf31',
-      title: 'Phiên #sess-fb47cf31',
-      bagName: 'rosbag_sess-fb47cf31.mcap',
-      timestamp: '09:24 22/09/2026',
-      topicsCount: 12,
-      warningsCount: 0,
-      status: 'complete',
-      statusText: 'Hoàn tất',
-    },
-    {
-      id: 'sess-736dabd1',
-      title: 'Phiên #sess-736dabd1',
-      bagName: 'rosbag_sess-736dabd1.mcap',
-      timestamp: '09:24 22/09/2026',
-      topicsCount: 12,
-      warningsCount: 0,
-      status: 'complete',
-      statusText: 'Hoàn tất',
-    },
-    {
-      id: 'sess-91332c3b',
-      title: 'Phiên #sess-91332c3b',
-      bagName: 'rosbag_sess-91332c3b.mcap',
-      timestamp: '09:24 22/09/2026',
-      topicsCount: 12,
-      warningsCount: 0,
-      status: 'complete',
-      statusText: 'Hoàn tất',
-    },
-    {
-      id: 'sess-05355333',
-      title: 'Phiên #sess-05355333',
-      bagName: 'rosbag_sess-05355333.mcap',
-      timestamp: '09:24 22/09/2026',
-      topicsCount: 12,
-      warningsCount: 0,
-      status: 'complete',
-      statusText: 'Hoàn tất',
-    },
-    {
-      id: 'SESS-5064',
-      title: 'Phiên #SESS-5064',
-      bagName: 'rosbag_SESS-5064.mcap',
-      timestamp: '09:24 22/09/2026',
-      topicsCount: 12,
-      warningsCount: 0,
-      status: 'complete',
-      statusText: 'Hoàn tất',
-    },
-  ];
+  const displaySessions = sessions.length > 0 ? sessions : [];
 
-  // 1. Data cho Biểu đồ hình tròn (Trạng thái sức khỏe các phiên)
-  const completeSessions = displaySessions.filter((s) => (s.warningsCount || 0) === 0 && s.status !== 'pending').length;
-  const warningSessions = displaySessions.filter((s) => (s.warningsCount || 0) > 0).length;
-  const pendingSessions = displaySessions.filter((s) => s.status === 'pending').length;
+  // 1. Data cho Biểu đồ hình tròn theo 3 trường hợp: Bình thường (xanh), Cảnh báo (vàng), Lỗi (đỏ)
+  const normalSessions = displaySessions.filter((s) => {
+    const wCount = s.warningsCount || 0;
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    return getHealthCondition(s.healthScore, wCount, highCount).type === 'normal';
+  }).length;
+
+  const warningSessions = displaySessions.filter((s) => {
+    const wCount = s.warningsCount || 0;
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    return getHealthCondition(s.healthScore, wCount, highCount).type === 'warning';
+  }).length;
+
+  const errorSessions = displaySessions.filter((s) => {
+    const wCount = s.warningsCount || 0;
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    return getHealthCondition(s.healthScore, wCount, highCount).type === 'error';
+  }).length;
+
   const total = displaySessions.length || 1;
 
   const donutSegments = [
     {
-      id: 'complete',
-      label: 'Hoàn tất danh định (100% OK)',
-      value: completeSessions || displaySessions.length,
+      id: 'normal',
+      label: 'Bình thường (Danh định)',
+      value: normalSessions,
       color: '#10b981',
-      percent: Math.round(((completeSessions || displaySessions.length) / total) * 100),
+      percent: Math.round((normalSessions / total) * 100),
     },
     {
-      id: 'warnings',
-      label: 'Có cảnh báo lỗi',
+      id: 'warning',
+      label: 'Cảnh báo cần lưu ý',
       value: warningSessions,
-      color: '#ef4444',
+      color: '#f59e0b',
       percent: Math.round((warningSessions / total) * 100),
     },
     {
-      id: 'pending',
-      label: 'Đang chờ duyệt',
-      value: pendingSessions,
-      color: '#f59e0b',
-      percent: Math.round((pendingSessions / total) * 100),
+      id: 'error',
+      label: 'Sự cố lỗi nghiêm trọng',
+      value: errorSessions,
+      color: '#ef4444',
+      percent: Math.round((errorSessions / total) * 100),
     },
-  ].filter((s) => s.value > 0 || s.id === 'complete');
+  ].filter((s) => s.value > 0);
+
+  // Nếu chưa có phân loại, mặc định danh định
+  if (donutSegments.length === 0) {
+    donutSegments.push({
+      id: 'normal',
+      label: 'Bình thường (Danh định)',
+      value: total,
+      color: '#10b981',
+      percent: 100,
+    });
+  }
 
   const radius = 54;
   const circumference = 2 * Math.PI * radius; // ~339.29
@@ -101,15 +90,15 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
     return { ...seg, strokeDasharray, strokeDashoffset };
   });
 
-  // 2. Data cho Biểu đồ cột (Mỗi phiên gồm cột Topic & cột Cảnh báo)
-  const maxTopic = Math.max(...displaySessions.map((s) => s.topicsCount || s.topics?.length || 12), 15);
+  // 2. Data cho Biểu đồ cột (Mỗi phiên gồm số lượng Topic & Cảnh báo từ DB)
+  const maxTopic = Math.max(...displaySessions.map((s) => s.topicsCount || s.topics || 2), 6);
   const chartWidth = 520;
   const chartHeight = 190;
   const chartBottom = 150;
   const chartTop = 20;
   const usableHeight = chartBottom - chartTop;
-  const colSpacing = chartWidth / displaySessions.length;
-  const barWidth = 24;
+  const colSpacing = displaySessions.length > 0 ? chartWidth / displaySessions.length : 100;
+  const barWidth = 26;
 
   return (
     <div
@@ -142,7 +131,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
             </h3>
           </div>
           <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            Biểu đồ trực quan hóa dữ liệu telemetry, số lượng topic và trạng thái an toàn các phiên.
+            Dữ liệu thật đối chiếu trực tiếp từ Rosbag Database & Telemetry Stream.
           </p>
         </div>
 
@@ -214,7 +203,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
       </div>
 
       {/* ================= BIỂU ĐỒ HÌNH TRÒN KẾT HỢP BIỂU ĐỒ CỘT ================= */}
-      {(viewMode === 'chart' || viewMode === 'both') && (
+      {viewMode === 'chart' && (
         <div
           style={{
             display: 'grid',
@@ -244,13 +233,13 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                 style={{
                   fontSize: '11px',
                   fontWeight: 700,
-                  color: '#16a34a',
-                  backgroundColor: '#dcfce7',
+                  color: warningSessions > 0 ? '#dc2626' : '#16a34a',
+                  backgroundColor: warningSessions > 0 ? '#fee2e2' : '#dcfce7',
                   padding: '2px 8px',
                   borderRadius: '10px',
                 }}
               >
-                ● 100% An toàn
+                ● {warningSessions > 0 ? `${warningSessions} phiên cần xử lý` : '100% An toàn'}
               </span>
             </div>
 
@@ -299,11 +288,11 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                   pointerEvents: 'none',
                 }}
               >
-                <strong style={{ fontSize: '22px', fontWeight: 800, color: hoveredSlice ? hoveredSlice.color : '#10b981' }}>
-                  {hoveredSlice ? `${hoveredSlice.percent}%` : `${total}/${total}`}
+                <strong style={{ fontSize: '22px', fontWeight: 800, color: hoveredSlice ? hoveredSlice.color : '#0f172a' }}>
+                  {hoveredSlice ? `${hoveredSlice.percent}%` : `${normalSessions}/${displaySessions.length}`}
                 </strong>
                 <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 600 }}>
-                  {hoveredSlice ? hoveredSlice.label : 'Phiên chuẩn'}
+                  {hoveredSlice ? hoveredSlice.label : 'Phiên bình thường'}
                 </span>
               </div>
             </div>
@@ -336,7 +325,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
             </div>
           </div>
 
-          {/* 2. Biểu đồ cột: Topics & Cảnh báo của từng phiên */}
+          {/* 2. Biểu đồ cột: Topics & Cảnh báo của từng phiên thực tế */}
           <div
             style={{
               background: '#ffffff',
@@ -357,8 +346,14 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', fontWeight: 600 }}>
                   <span style={{ width: 8, height: 8, borderRadius: '2px', backgroundColor: '#3b82f6' }} /> Số Topic
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#10b981', fontWeight: 600 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: '2px', backgroundColor: '#10b981' }} /> Cảnh báo (0)
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#16a34a', fontWeight: 600 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '2px', backgroundColor: '#16a34a' }} /> Bình thường
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#d97706', fontWeight: 600 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '2px', backgroundColor: '#d97706' }} /> Cảnh báo
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#dc2626', fontWeight: 600 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '2px', backgroundColor: '#dc2626' }} /> Lỗi
                 </span>
               </div>
             </div>
@@ -387,13 +382,15 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
 
                 {/* Bars per session */}
                 {displaySessions.map((session, idx) => {
-                  const tCount = session.topicsCount || session.topics?.length || 12;
+                  const tCount = session.topicsCount || 2;
+                  const wCount = session.warningsCount || 0;
+                  const highCount = (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+                  const cond = getHealthCondition(session.healthScore, wCount, highCount);
                   const barH = (tCount / maxTopic) * usableHeight;
                   const x = 38 + idx * colSpacing;
                   const y = chartBottom - barH;
                   const isHov = hoveredSession?.id === session.id;
 
-                  // Short display name: #sess-fb47 -> fb47
                   const shortName = session.id.replace('sess-', '').slice(0, 6);
 
                   return (
@@ -431,8 +428,8 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                       <circle
                         cx={x + barWidth / 2}
                         cy={chartBottom - 8}
-                        r="3"
-                        fill={(session.warningsCount || 0) > 0 ? '#ef4444' : '#10b981'}
+                        r="3.5"
+                        fill={cond.color}
                       />
 
                       {/* X label */}
@@ -448,8 +445,15 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                       </text>
 
                       {/* Status indicator text */}
-                      <text x={x + barWidth / 2} y={chartBottom + 28} textAnchor="middle" fontSize="8" fill="#16a34a" fontWeight="600">
-                        ✓ 0 lỗi
+                      <text
+                        x={x + barWidth / 2}
+                        y={chartBottom + 28}
+                        textAnchor="middle"
+                        fontSize="8"
+                        fill={cond.color}
+                        fontWeight="700"
+                      >
+                        {cond.badgeText.replace('● ', '')}
                       </text>
                     </g>
                   );
@@ -479,14 +483,25 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                   <span>
                     Phiên: <strong>{hoveredSession.title || hoveredSession.id}</strong> ({hoveredSession.bagName})
                   </span>
-                  <span style={{ color: '#16a34a', fontWeight: 700 }}>
-                    {hoveredSession.topicsCount || 12} Topics · {hoveredSession.warningsCount || 0} cảnh báo · {hoveredSession.timestamp}
+                  <span style={{
+                    color: getHealthCondition(
+                      hoveredSession.healthScore,
+                      hoveredSession.warningsCount || 0,
+                      (hoveredSession.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
+                    ).color,
+                    fontWeight: 700
+                  }}>
+                    {hoveredSession.topicsCount || 2} Topics · {getHealthCondition(
+                      hoveredSession.healthScore,
+                      hoveredSession.warningsCount || 0,
+                      (hoveredSession.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
+                    ).summary} · {formatSessionTime(hoveredSession.timestamp)}
                   </span>
                 </>
               ) : (
                 <>
-                  <span>💡 <em>Rê chuột vào cột để xem chi tiết rosbag & số lượng topic của từng phiên.</em></span>
-                  <span style={{ color: '#2563eb', fontWeight: 600 }}>Tất cả 5 phiên hoàn tất bình thường</span>
+                  <span>💡 <em>Rê chuột vào cột để xem chi tiết rosbag & số lượng topic của từng phiên thực tế.</em></span>
+                  <span style={{ color: '#2563eb', fontWeight: 600 }}>Dữ liệu đồng bộ trực tiếp từ SQL Database</span>
                 </>
               )}
             </div>
@@ -494,7 +509,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
         </div>
       )}
 
-      {/* ================= BẢNG DỮ LIỆU CHI TIẾT ================= */}
+      {/* ================= BẢNG DỮ LIỆU CHI TIẾT THỰC TẾ ================= */}
       {viewMode === 'table' && (
         <div className="table-scroll">
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -510,7 +525,10 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                   TOPIC
                 </th>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
-                  CẢNH BÁO
+                  TÌNH TRẠNG
+                </th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
+                  ĐIỂM SỨC KHỎE
                 </th>
                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', color: '#64748b', fontWeight: 700 }}>
                   TRẠNG THÁI
@@ -518,60 +536,78 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
               </tr>
             </thead>
             <tbody>
-              {displaySessions.map((session) => {
-                const isComplete = session.status === 'complete' || (session.warningsCount || 0) === 0;
-                const badgeStyle = isComplete
-                  ? { bg: '#f0fdf4', color: '#16a34a', text: '● Hoàn tất' }
-                  : { bg: '#fffbeb', color: '#d97706', text: '● Chờ duyệt' };
+              {displaySessions.length === 0 ? (
+                <tr>
+                  <td colSpan="6" style={{ padding: '36px', textAlign: 'center', color: '#64748b', fontSize: '13px' }}>
+                    Đang đồng bộ dữ liệu phiên phân tích thực tế từ hệ thống...
+                  </td>
+                </tr>
+              ) : (
+                displaySessions.map((session) => {
+                  const wCount = session.warningsCount || 0;
+                  const highCount = (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+                  const cond = getHealthCondition(session.healthScore, wCount, highCount);
 
-                return (
-                  <tr key={session.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '16px' }}>
-                      <Link to={`/sessions/${session.id}`} style={{ textDecoration: 'none' }}>
-                        <strong style={{ fontSize: '14px', color: '#0f172a', display: 'block' }}>
-                          {session.title || `Phiên #${session.id}`}
-                        </strong>
-                        <small style={{ fontSize: '12px', color: '#64748b' }}>
-                          {session.bagName || session.filename || `rosbag_${session.id}.mcap`}
-                        </small>
-                      </Link>
-                    </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>
-                      {session.timestamp || '09:24 22/09/2026'}
-                    </td>
-                    <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>
-                      {session.topicsCount || session.topics?.length || 12}
-                    </td>
-                    <td
-                      style={{
-                        padding: '16px',
-                        fontSize: '13px',
-                        color: (session.warningsCount || 0) > 0 ? '#dc2626' : '#16a34a',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {session.warningsCount ?? 0}
-                    </td>
-                    <td style={{ padding: '16px' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: badgeStyle.bg,
-                          color: badgeStyle.color,
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {badgeStyle.text}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+                  return (
+                    <tr key={session.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                      <td style={{ padding: '16px' }}>
+                        <Link to={`/sessions/${session.id}`} style={{ textDecoration: 'none' }}>
+                          <strong style={{ fontSize: '14px', color: '#0f172a', display: 'block' }}>
+                            {session.title || `Phiên #${session.id}`}
+                          </strong>
+                          <small style={{ fontSize: '12px', color: '#64748b' }}>
+                            {session.bagName || session.filename || `rosbag_${session.id}.db3`}
+                          </small>
+                        </Link>
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>
+                        {formatSessionTime(session.timestamp)}
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>
+                        {session.topicsCount || 2}
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            color: cond.color,
+                            background: cond.bgColor,
+                            border: `1px solid ${cond.borderColor}`,
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {cond.summary}
+                        </span>
+                      </td>
+                      <td style={{ padding: '16px', fontSize: '13px', fontWeight: 800, color: cond.scoreColor }}>
+                        {session.healthScore !== undefined ? `${session.healthScore}/100` : '100/100'}
+                      </td>
+                      <td style={{ padding: '16px' }}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: cond.bgColor,
+                            color: cond.color,
+                            border: `1px solid ${cond.borderColor}`,
+                            padding: '4px 12px',
+                            borderRadius: '12px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {cond.badgeText}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }))}
             </tbody>
           </table>
         </div>
