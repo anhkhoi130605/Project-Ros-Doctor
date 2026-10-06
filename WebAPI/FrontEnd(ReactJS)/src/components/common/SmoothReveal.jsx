@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Animate from 'react-smooth';
+import './SmoothReveal.css';
 
 function getReducedMotionPreference() {
   return typeof window !== 'undefined'
@@ -11,6 +11,8 @@ export default function SmoothReveal({
   begin = 0,
   duration = 380,
   distance = 10,
+  className = '',
+  style = {},
 }) {
   const [reduceMotion, setReduceMotion] = useState(getReducedMotionPreference);
 
@@ -22,17 +24,20 @@ export default function SmoothReveal({
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
-  if (reduceMotion) return children;
+  if (reduceMotion) {
+    return <>{children}</>;
+  }
+
+  const combinedStyle = {
+    animationDuration: `${duration}ms`,
+    animationDelay: `${begin}ms`,
+    '--smooth-reveal-distance': `${distance}px`,
+    ...style,
+  };
 
   return (
-    <Animate
-      from={{ opacity: 0, transform: `translate3d(0, ${distance}px, 0)` }}
-      to={{ opacity: 1, transform: 'translate3d(0, 0, 0)' }}
-      begin={begin}
-      duration={duration}
-      easing="ease-out"
-    >
+    <div className={`smooth-reveal ${className}`.trim()} style={combinedStyle}>
       {children}
-    </Animate>
+    </div>
   );
 }
