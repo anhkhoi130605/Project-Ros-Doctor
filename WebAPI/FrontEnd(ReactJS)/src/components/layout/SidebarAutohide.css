@@ -8,32 +8,32 @@
 }
 
 /* Custom modern slim scrollbar for sidebar */
-.app-shell > .sidebar {
+.sidebar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.app-shell > .sidebar::-webkit-scrollbar {
+.sidebar::-webkit-scrollbar {
   width: 5px;
 }
 
-.app-shell > .sidebar::-webkit-scrollbar-track {
+.sidebar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.app-shell > .sidebar::-webkit-scrollbar-thumb {
+.sidebar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.app-shell > .sidebar::-webkit-scrollbar-thumb:hover {
+.sidebar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* Desktop styles (>800px) */
 @media (min-width: 801px) {
   /* Sidebar base - default collapsed rail (64px) */
-  .app-shell > .sidebar {
+  .sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -58,9 +58,11 @@
   }
 
   /* Expanded state on hover or when pinned (256px) */
-  .app-shell > .sidebar:hover,
-  .app-shell.sidebar-is-hovered > .sidebar,
-  .app-shell.sidebar-pinned > .sidebar {
+  .sidebar:hover,
+  .sidebar.is-hovered,
+  .sidebar.is-pinned,
+  .app-shell.sidebar-is-hovered .sidebar,
+  .app-shell.sidebar-pinned .sidebar {
     width: var(--sidebar-full-width);
     padding: 24px 14px 18px;
     background: #ffffff;
@@ -69,35 +71,36 @@
   }
 
   /* Right content area: Push layout */
-  .app-shell > .workspace-main {
+  .workspace-main {
     margin-left: var(--sidebar-rail-width);
     will-change: margin-left;
     transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Automatically push right content when sidebar is hovered or pinned */
-  .app-shell > .sidebar:hover ~ .workspace-main,
-  .app-shell.sidebar-is-hovered > .workspace-main,
-  .app-shell.sidebar-pinned > .workspace-main {
+  .workspace-main.sidebar-expanded,
+  .app-shell.sidebar-is-hovered .workspace-main,
+  .app-shell.sidebar-pinned .workspace-main,
+  .app-shell:has(.sidebar:hover) .workspace-main {
     margin-left: var(--sidebar-full-width);
   }
 
   /* ========================================================================
      Collapsed state: hide labels and center icons
      ======================================================================== */
-  .app-shell .sidebar .sidebar-header-row {
+  .sidebar .sidebar-header-row {
     justify-content: center;
   }
 
-  .app-shell .sidebar .sidebar-pin-btn {
+  .sidebar .sidebar-pin-btn {
     display: none;
   }
 
-  .app-shell .sidebar .workspace-label {
+  .sidebar .workspace-label {
     display: none;
   }
 
-  .app-shell .sidebar .workspace-card {
+  .sidebar .workspace-card {
     padding: 6px 0;
     margin-bottom: 14px;
     justify-content: center;
@@ -105,62 +108,70 @@
     border-color: transparent;
   }
 
-  .app-shell .sidebar .workspace-card > span:last-child {
+  .sidebar .workspace-card-details {
     display: none;
   }
 
-  .app-shell .sidebar .nav-item {
+  .sidebar .nav-item {
     justify-content: center;
     padding: 0;
     gap: 0;
     height: 42px;
   }
 
-  .app-shell .sidebar .nav-item > span,
-  .app-shell .sidebar .nav-item .nav-chevron,
-  .app-shell .sidebar .nav-item .nav-badge,
-  .app-shell .sidebar .sub-nav-group {
+  .sidebar .nav-item-label,
+  .sidebar .nav-item .nav-chevron,
+  .sidebar .nav-item .nav-badge,
+  .sidebar .sub-nav-group {
     display: none;
   }
 
-  .app-shell .sidebar .sidebar-robot-banner {
+  .sidebar .sidebar-robot-banner {
     display: none;
   }
 
-  .app-shell .sidebar .sidebar-account-btn {
+  .sidebar .sidebar-account-btn {
     justify-content: center;
     padding: 6px 0;
     border-color: transparent;
     background: transparent;
   }
 
-  .app-shell .sidebar .sidebar-account-btn > div:last-of-type,
-  .app-shell .sidebar .sidebar-account-btn > svg {
+  .sidebar .sidebar-account-details,
+  .sidebar .sidebar-account-btn svg {
     display: none;
   }
 
   /* ========================================================================
      Expanded state: reveal labels, banners, submenus, and restore layout
      ======================================================================== */
-  .app-shell > .sidebar:hover .sidebar-header-row,
+  .sidebar:hover .sidebar-header-row,
+  .sidebar.is-hovered .sidebar-header-row,
+  .sidebar.is-pinned .sidebar-header-row,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-header-row,
   .app-shell.sidebar-pinned .sidebar .sidebar-header-row {
     justify-content: space-between;
   }
 
-  .app-shell > .sidebar:hover .sidebar-pin-btn,
+  .sidebar:hover .sidebar-pin-btn,
+  .sidebar.is-hovered .sidebar-pin-btn,
+  .sidebar.is-pinned .sidebar-pin-btn,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-pin-btn,
   .app-shell.sidebar-pinned .sidebar .sidebar-pin-btn {
     display: inline-flex;
   }
 
-  .app-shell > .sidebar:hover .workspace-label,
+  .sidebar:hover .workspace-label,
+  .sidebar.is-hovered .workspace-label,
+  .sidebar.is-pinned .workspace-label,
   .app-shell.sidebar-is-hovered .sidebar .workspace-label,
   .app-shell.sidebar-pinned .sidebar .workspace-label {
     display: block;
   }
 
-  .app-shell > .sidebar:hover .workspace-card,
+  .sidebar:hover .workspace-card,
+  .sidebar.is-hovered .workspace-card,
+  .sidebar.is-pinned .workspace-card,
   .app-shell.sidebar-is-hovered .sidebar .workspace-card,
   .app-shell.sidebar-pinned .sidebar .workspace-card {
     padding: 12px;
@@ -170,14 +181,18 @@
     border-color: #213550;
   }
 
-  .app-shell > .sidebar:hover .workspace-card > span:last-child,
-  .app-shell.sidebar-is-hovered .sidebar .workspace-card > span:last-child,
-  .app-shell.sidebar-pinned .sidebar .workspace-card > span:last-child {
+  .sidebar:hover .workspace-card-details,
+  .sidebar.is-hovered .workspace-card-details,
+  .sidebar.is-pinned .workspace-card-details,
+  .app-shell.sidebar-is-hovered .sidebar .workspace-card-details,
+  .app-shell.sidebar-pinned .sidebar .workspace-card-details {
     display: block;
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .app-shell > .sidebar:hover .nav-item,
+  .sidebar:hover .nav-item,
+  .sidebar.is-hovered .nav-item,
+  .sidebar.is-pinned .nav-item,
   .app-shell.sidebar-is-hovered .sidebar .nav-item,
   .app-shell.sidebar-pinned .sidebar .nav-item {
     justify-content: flex-start;
@@ -186,32 +201,44 @@
     height: 46px;
   }
 
-  .app-shell > .sidebar:hover .nav-item > span,
-  .app-shell > .sidebar:hover .nav-item .nav-chevron,
-  .app-shell > .sidebar:hover .nav-item .nav-badge,
-  .app-shell.sidebar-is-hovered .sidebar .nav-item > span,
+  .sidebar:hover .nav-item-label,
+  .sidebar:hover .nav-item .nav-chevron,
+  .sidebar:hover .nav-item .nav-badge,
+  .sidebar.is-hovered .nav-item-label,
+  .sidebar.is-hovered .nav-item .nav-chevron,
+  .sidebar.is-hovered .nav-item .nav-badge,
+  .sidebar.is-pinned .nav-item-label,
+  .sidebar.is-pinned .nav-item .nav-chevron,
+  .sidebar.is-pinned .nav-item .nav-badge,
+  .app-shell.sidebar-is-hovered .sidebar .nav-item-label,
   .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-chevron,
   .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-badge,
-  .app-shell.sidebar-pinned .sidebar .nav-item > span,
+  .app-shell.sidebar-pinned .sidebar .nav-item-label,
   .app-shell.sidebar-pinned .sidebar .nav-item .nav-chevron,
   .app-shell.sidebar-pinned .sidebar .nav-item .nav-badge {
     display: inline-block;
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .app-shell > .sidebar:hover .sub-nav-group.open,
+  .sidebar:hover .sub-nav-group.open,
+  .sidebar.is-hovered .sub-nav-group.open,
+  .sidebar.is-pinned .sub-nav-group.open,
   .app-shell.sidebar-is-hovered .sidebar .sub-nav-group.open,
   .app-shell.sidebar-pinned .sidebar .sub-nav-group.open {
     display: block;
   }
 
-  .app-shell > .sidebar:hover .sidebar-robot-banner,
+  .sidebar:hover .sidebar-robot-banner,
+  .sidebar.is-hovered .sidebar-robot-banner,
+  .sidebar.is-pinned .sidebar-robot-banner,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-robot-banner,
   .app-shell.sidebar-pinned .sidebar .sidebar-robot-banner {
     display: block;
   }
 
-  .app-shell > .sidebar:hover .sidebar-account-btn,
+  .sidebar:hover .sidebar-account-btn,
+  .sidebar.is-hovered .sidebar-account-btn,
+  .sidebar.is-pinned .sidebar-account-btn,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn,
   .app-shell.sidebar-pinned .sidebar .sidebar-account-btn {
     justify-content: flex-start;
@@ -220,24 +247,30 @@
     background: transparent;
   }
 
-  .app-shell > .sidebar:hover .sidebar-account-btn.menu-open,
+  .sidebar:hover .sidebar-account-btn.menu-open,
+  .sidebar.is-hovered .sidebar-account-btn.menu-open,
+  .sidebar.is-pinned .sidebar-account-btn.menu-open,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn.menu-open,
   .app-shell.sidebar-pinned .sidebar .sidebar-account-btn.menu-open {
     background: #f1f5f9;
   }
 
-  .app-shell > .sidebar:hover .sidebar-account-btn > div:last-of-type,
-  .app-shell > .sidebar:hover .sidebar-account-btn > svg,
-  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn > div:last-of-type,
-  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn > svg,
-  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn > div:last-of-type,
-  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn > svg {
+  .sidebar:hover .sidebar-account-details,
+  .sidebar:hover .sidebar-account-btn svg,
+  .sidebar.is-hovered .sidebar-account-details,
+  .sidebar.is-hovered .sidebar-account-btn svg,
+  .sidebar.is-pinned .sidebar-account-details,
+  .sidebar.is-pinned .sidebar-account-btn svg,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-details,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn svg,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-details,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn svg {
     display: block;
   }
 }
 
 /* Header row (Logo và Pin button) - không bị cắt chữ */
-.app-shell .sidebar .sidebar-header-row {
+.sidebar .sidebar-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -247,18 +280,18 @@
   padding-top: 2px;
 }
 
-.app-shell .sidebar .sidebar-header-row .brand-link {
+.sidebar .sidebar-header-row .brand-link {
   display: inline-flex;
   align-items: center;
   overflow: visible;
 }
 
-.app-shell .sidebar .sidebar-header-row .logo {
+.sidebar .sidebar-header-row .logo {
   overflow: visible;
   line-height: 1.25;
 }
 
-.app-shell .sidebar .sidebar-header-row .logo > span:last-child {
+.sidebar .sidebar-header-row .logo-text {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -266,7 +299,7 @@
   overflow: visible;
 }
 
-.app-shell .sidebar .sidebar-account-btn {
+.sidebar .sidebar-account-btn {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -280,7 +313,7 @@
   transition: all 0.15s ease;
 }
 
-.app-shell .sidebar .sidebar-pin-btn {
+.sidebar .sidebar-pin-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -295,13 +328,13 @@
   flex-shrink: 0;
 }
 
-.app-shell .sidebar .sidebar-pin-btn:hover {
+.sidebar .sidebar-pin-btn:hover {
   background: #f1f5f9;
   color: #0284c7;
   border-color: #cbd5e1;
 }
 
-.app-shell .sidebar .sidebar-pin-btn.active {
+.sidebar .sidebar-pin-btn.active {
   background: #e0f2fe;
   color: #0284c7;
   border-color: #7dd3fc;
@@ -320,7 +353,7 @@
 
 /* Mobile Adjustments (<=800px) */
 @media (max-width: 800px) {
-  .app-shell .sidebar .sidebar-pin-btn {
+  .sidebar .sidebar-pin-btn {
     display: none;
   }
 }

@@ -137,7 +137,7 @@ export default function AppLayout() {
       )}
 
       <aside
-        className={`sidebar ${mobileNavOpen ? 'open' : ''} ${isHovered ? 'is-hovered' : ''}`}
+        className={`sidebar ${mobileNavOpen ? 'open' : ''} ${isHovered ? 'is-hovered' : ''} ${isPinned ? 'is-pinned' : ''}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
         aria-label="Điều hướng ứng dụng"
@@ -174,7 +174,7 @@ export default function AppLayout() {
         <div className="workspace-label">KHÔNG GIAN LÀM VIỆC</div>
         <div className="workspace-card">
           <span className="workspace-avatar">R</span>
-          <span>
+          <span className="workspace-card-details">
             <strong>{state.profile?.workspace || 'Robotics Lab'}</strong>
             <small>RAV-13 / Nghiên cứu ROS2</small>
           </span>
@@ -212,7 +212,7 @@ export default function AppLayout() {
                     onClick={closeNavIfAuto}
                   >
                     <Icon name={icon} size={18} />
-                    <span>{label}</span>
+                    <span className="nav-item-label">{label}</span>
                     <Icon name="down" size={14} className="nav-chevron" />
                   </NavLink>
 
@@ -269,7 +269,7 @@ export default function AppLayout() {
                     onClick={closeNavIfAuto}
                   >
                     <Icon name={icon} size={18} />
-                    <span>{label}</span>
+                    <span className="nav-item-label">{label}</span>
                     <Icon name="down" size={14} className="nav-chevron" />
                   </NavLink>
 
@@ -319,7 +319,7 @@ export default function AppLayout() {
                 onClick={closeNavIfAuto}
               >
                 <Icon name={icon} size={18} />
-                <span>{label}</span>
+                <span className="nav-item-label">{label}</span>
                 {badgeCount !== undefined && (
                   <span
                     className="nav-badge"
@@ -348,7 +348,7 @@ export default function AppLayout() {
             onClick={closeNavIfAuto}
           >
             <Icon name="external-link" size={18} />
-            <span>Trang giới thiệu</span>
+            <span className="nav-item-label">Trang giới thiệu</span>
           </NavLink>
         </nav>
 
@@ -428,7 +428,7 @@ export default function AppLayout() {
             >
               {getUserInitials(state.profile?.name || state.role)}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="sidebar-account-details" style={{ flex: 1, minWidth: 0 }}>
               <strong
                 style={{
                   fontSize: 13,
@@ -537,7 +537,7 @@ export default function AppLayout() {
       </aside>
 
       <div
-        className="workspace-main"
+        className={`workspace-main ${isHovered || isPinned ? 'sidebar-expanded' : ''}`}
         onClick={() => {
           if (!isPinned && isHovered) {
             setIsHovered(false);

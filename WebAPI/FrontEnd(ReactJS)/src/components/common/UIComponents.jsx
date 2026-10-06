@@ -268,7 +268,7 @@ export function Logo({ compact = false }) {
         <Icon name="activity" size={23} />
       </span>
       {!compact && (
-        <span>
+        <span className="logo-text">
           CTRN <small>SHIFT N</small>
         </span>
       )}
