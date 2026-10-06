@@ -220,6 +220,22 @@ export function Icon({ name = 'activity', size = 19, className = '', ...props })
             <line x1="10" y1="14" x2="21" y2="3" />
           </>
         );
+      case 'pin':
+        return (
+          <>
+            <line x1="12" y1="17" x2="12" y2="22" />
+            <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.89A2 2 0 0 1 15 10.77V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5.77a2 2 0 0 1-1.11 1.79l-1.78.89A2 2 0 0 0 5 15.24Z" />
+          </>
+        );
+      case 'pin-off':
+        return (
+          <>
+            <line x1="2" y1="2" x2="22" y2="22" />
+            <line x1="12" y1="17" x2="12" y2="22" />
+            <path d="M9 9v1.77a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V17h12" />
+            <path d="M15 9.34V5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v1.34" />
+          </>
+        );
       default:
         return <path d="M22 12h-4l-3 9L9 3l-3 9H2" />;
     }

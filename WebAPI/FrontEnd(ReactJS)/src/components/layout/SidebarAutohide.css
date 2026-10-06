@@ -1,0 +1,306 @@
+/* ==========================================================================
+   Sidebar Mini-Rail (Collapsed Gray Bar) & Push Layout Interaction
+   ========================================================================== */
+
+:root {
+  --sidebar-rail-width: 64px;
+  --sidebar-full-width: 256px;
+}
+
+/* Custom modern slim scrollbar for sidebar */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Desktop styles (>800px) */
+@media (min-width: 801px) {
+  /* Sidebar base */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 50 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                background-color 0.22s ease,
+                border-color 0.22s ease,
+                box-shadow 0.28s ease !important;
+    will-change: width;
+    transform: none !important; /* Luôn hiển thị ở mép trái */
+    box-sizing: border-box !important;
+  }
+
+  /* 1. Trạng thái thu gọn: Thanh xám ngoài cùng (64px) */
+  .sidebar {
+    width: var(--sidebar-rail-width) !important;
+    padding: 24px 8px 18px !important;
+    background: #f1f5f9 !important; /* Màu xám nền thanh lịch */
+    border-right: 1px solid #cbd5e1 !important;
+    box-shadow: 2px 0 8px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  /* 2. Trạng thái mở rộng khi rê chuột hoặc đã ghim (256px) */
+  .sidebar:hover,
+  .app-shell.sidebar-is-hovered .sidebar,
+  .app-shell.sidebar-pinned .sidebar {
+    width: var(--sidebar-full-width) !important;
+    padding: 24px 14px 18px !important;
+    background: #ffffff !important;
+    border-right: 1px solid #e2e8f0 !important;
+    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.09) !important;
+  }
+
+  /* 3. Nội dung bên phải (Workspace Main): Tự động dịch chuyển lùi vào/ra */
+  .workspace-main {
+    margin-left: var(--sidebar-rail-width) !important;
+    transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    will-change: margin-left;
+  }
+
+  /* Khi thanh xám mở ra: nội dung tự động lùi vào sang 256px */
+  .sidebar:hover ~ .workspace-main,
+  .app-shell.sidebar-is-hovered .workspace-main,
+  .app-shell.sidebar-pinned .workspace-main {
+    margin-left: var(--sidebar-full-width) !important;
+  }
+
+  /* Elements inside sidebar: Default collapsed */
+  .sidebar-header-row {
+    justify-content: center !important;
+  }
+
+  .sidebar-pin-btn {
+    display: none !important;
+  }
+
+  .workspace-label {
+    display: none !important;
+  }
+
+  .workspace-card {
+    padding: 6px 0 !important;
+    margin-bottom: 14px !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border-color: transparent !important;
+  }
+
+  .workspace-card > span:last-child {
+    display: none !important;
+  }
+
+  .nav-item {
+    justify-content: center !important;
+    padding: 0 !important;
+    gap: 0 !important;
+    height: 42px !important;
+  }
+
+  .nav-item > span,
+  .nav-item .nav-chevron,
+  .nav-item span[style*="borderRadius"],
+  .sub-nav-group {
+    display: none !important;
+  }
+
+  .sidebar-robot-banner {
+    display: none !important;
+  }
+
+  .sidebar-account-btn {
+    justify-content: center !important;
+    padding: 6px 0 !important;
+    border-color: transparent !important;
+    background: transparent !important;
+  }
+
+  .sidebar-account-btn > div:last-of-type,
+  .sidebar-account-btn > svg {
+    display: none !important;
+  }
+
+  /* Elements inside sidebar: When hovered or pinned */
+  .sidebar:hover .sidebar-header-row,
+  .app-shell.sidebar-is-hovered .sidebar-header-row,
+  .app-shell.sidebar-pinned .sidebar-header-row {
+    justify-content: space-between !important;
+  }
+
+  .sidebar:hover .sidebar-pin-btn,
+  .app-shell.sidebar-is-hovered .sidebar-pin-btn,
+  .app-shell.sidebar-pinned .sidebar-pin-btn {
+    display: inline-flex !important;
+  }
+
+  .sidebar:hover .workspace-label,
+  .app-shell.sidebar-is-hovered .workspace-label,
+  .app-shell.sidebar-pinned .workspace-label {
+    display: block !important;
+  }
+
+  .sidebar:hover .workspace-card,
+  .app-shell.sidebar-is-hovered .workspace-card,
+  .app-shell.sidebar-pinned .workspace-card {
+    padding: 12px !important;
+    margin-bottom: 25px !important;
+    justify-content: flex-start !important;
+    background: #f3f6fa !important;
+    border-color: #213550 !important;
+  }
+
+  .sidebar:hover .workspace-card > span:last-child,
+  .app-shell.sidebar-is-hovered .workspace-card > span:last-child,
+  .app-shell.sidebar-pinned .workspace-card > span:last-child {
+    display: block !important;
+    animation: sidebarTextFadeIn 0.22s ease forwards;
+  }
+
+  .sidebar:hover .nav-item,
+  .app-shell.sidebar-is-hovered .nav-item,
+  .app-shell.sidebar-pinned .nav-item {
+    justify-content: flex-start !important;
+    padding: 0 13px !important;
+    gap: 14px !important;
+    height: 46px !important;
+  }
+
+  .sidebar:hover .nav-item > span,
+  .sidebar:hover .nav-item .nav-chevron,
+  .sidebar:hover .nav-item span[style*="borderRadius"],
+  .app-shell.sidebar-is-hovered .nav-item > span,
+  .app-shell.sidebar-is-hovered .nav-item .nav-chevron,
+  .app-shell.sidebar-is-hovered .nav-item span[style*="borderRadius"],
+  .app-shell.sidebar-pinned .nav-item > span,
+  .app-shell.sidebar-pinned .nav-item .nav-chevron,
+  .app-shell.sidebar-pinned .nav-item span[style*="borderRadius"] {
+    display: inline-block !important;
+    animation: sidebarTextFadeIn 0.22s ease forwards;
+  }
+
+  .sidebar:hover .sub-nav-group.open,
+  .app-shell.sidebar-is-hovered .sub-nav-group.open,
+  .app-shell.sidebar-pinned .sub-nav-group.open {
+    display: block !important;
+  }
+
+  .sidebar:hover .sidebar-robot-banner,
+  .app-shell.sidebar-is-hovered .sidebar-robot-banner,
+  .app-shell.sidebar-pinned .sidebar-robot-banner {
+    display: block !important;
+  }
+
+  .sidebar:hover .sidebar-account-btn,
+  .app-shell.sidebar-is-hovered .sidebar-account-btn,
+  .app-shell.sidebar-pinned .sidebar-account-btn {
+    justify-content: flex-start !important;
+    padding: 10px 12px !important;
+    border: 1px solid #cbd5e1 !important;
+    background: transparent !important;
+  }
+
+  .sidebar:hover .sidebar-account-btn > div:last-of-type,
+  .sidebar:hover .sidebar-account-btn > svg,
+  .app-shell.sidebar-is-hovered .sidebar-account-btn > div:last-of-type,
+  .app-shell.sidebar-is-hovered .sidebar-account-btn > svg,
+  .app-shell.sidebar-pinned .sidebar-account-btn > div:last-of-type,
+  .app-shell.sidebar-pinned .sidebar-account-btn > svg {
+    display: block !important;
+  }
+}
+
+/* Header row (Logo và Pin button) - Đảm bảo không bị che khuất chữ */
+.sidebar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  min-height: 44px;
+  overflow: visible !important;
+  padding-top: 2px;
+}
+
+.sidebar-header-row .brand-link {
+  display: inline-flex;
+  align-items: center;
+  overflow: visible !important;
+}
+
+.sidebar-header-row .logo {
+  overflow: visible !important;
+  line-height: 1.25 !important;
+}
+
+.sidebar-header-row .logo > span:last-child {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15 !important;
+  overflow: visible !important;
+}
+
+.sidebar-pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  flex-shrink: 0;
+}
+
+.sidebar-pin-btn:hover {
+  background: #f1f5f9;
+  color: #0284c7;
+  border-color: #cbd5e1;
+}
+
+.sidebar-pin-btn.active {
+  background: #e0f2fe;
+  color: #0284c7;
+  border-color: #7dd3fc;
+}
+
+@keyframes sidebarTextFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Mobile Adjustments (<=800px) */
+@media (max-width: 800px) {
+  .sidebar-pin-btn {
+    display: none !important;
+  }
+}
