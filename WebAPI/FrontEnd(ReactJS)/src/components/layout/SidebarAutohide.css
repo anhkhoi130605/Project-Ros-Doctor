@@ -1,5 +1,7 @@
 /* ==========================================================================
    Sidebar Mini-Rail (Collapsed Gray Bar) & Push Layout Interaction
+   Scoped under .app-shell to avoid style leakage, using flexible descendant
+   selectors without rigid child combinators (>) or modern :has() dependencies.
    ========================================================================== */
 
 :root {
@@ -7,33 +9,33 @@
   --sidebar-full-width: 256px;
 }
 
-/* Custom modern slim scrollbar for sidebar */
-.sidebar {
+/* Custom modern slim scrollbar scoped strictly to app-shell sidebar */
+.app-shell .sidebar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.sidebar::-webkit-scrollbar {
+.app-shell .sidebar::-webkit-scrollbar {
   width: 5px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.app-shell .sidebar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.app-shell .sidebar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
+.app-shell .sidebar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* Desktop styles (>800px) */
 @media (min-width: 801px) {
   /* Sidebar base - default collapsed rail (64px) */
-  .sidebar {
+  .app-shell .sidebar {
     position: fixed;
     top: 0;
     bottom: 0;
@@ -58,9 +60,9 @@
   }
 
   /* Expanded state on hover or when pinned (256px) */
-  .sidebar:hover,
-  .sidebar.is-hovered,
-  .sidebar.is-pinned,
+  .app-shell .sidebar:hover,
+  .app-shell .sidebar.is-hovered,
+  .app-shell .sidebar.is-pinned,
   .app-shell.sidebar-is-hovered .sidebar,
   .app-shell.sidebar-pinned .sidebar {
     width: var(--sidebar-full-width);
@@ -71,36 +73,35 @@
   }
 
   /* Right content area: Push layout */
-  .workspace-main {
+  .app-shell .workspace-main {
     margin-left: var(--sidebar-rail-width);
     will-change: margin-left;
     transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   /* Automatically push right content when sidebar is hovered or pinned */
-  .workspace-main.sidebar-expanded,
+  .app-shell .workspace-main.sidebar-expanded,
   .app-shell.sidebar-is-hovered .workspace-main,
-  .app-shell.sidebar-pinned .workspace-main,
-  .app-shell:has(.sidebar:hover) .workspace-main {
+  .app-shell.sidebar-pinned .workspace-main {
     margin-left: var(--sidebar-full-width);
   }
 
   /* ========================================================================
      Collapsed state: hide labels and center icons
      ======================================================================== */
-  .sidebar .sidebar-header-row {
+  .app-shell .sidebar .sidebar-header-row {
     justify-content: center;
   }
 
-  .sidebar .sidebar-pin-btn {
+  .app-shell .sidebar .sidebar-pin-btn {
     display: none;
   }
 
-  .sidebar .workspace-label {
+  .app-shell .sidebar .workspace-label {
     display: none;
   }
 
-  .sidebar .workspace-card {
+  .app-shell .sidebar .workspace-card {
     padding: 6px 0;
     margin-bottom: 14px;
     justify-content: center;
@@ -108,70 +109,70 @@
     border-color: transparent;
   }
 
-  .sidebar .workspace-card-details {
+  .app-shell .sidebar .workspace-card-details {
     display: none;
   }
 
-  .sidebar .nav-item {
+  .app-shell .sidebar .nav-item {
     justify-content: center;
     padding: 0;
     gap: 0;
     height: 42px;
   }
 
-  .sidebar .nav-item-label,
-  .sidebar .nav-item .nav-chevron,
-  .sidebar .nav-item .nav-badge,
-  .sidebar .sub-nav-group {
+  .app-shell .sidebar .nav-item-label,
+  .app-shell .sidebar .nav-item .nav-chevron,
+  .app-shell .sidebar .nav-item .nav-badge,
+  .app-shell .sidebar .sub-nav-group {
     display: none;
   }
 
-  .sidebar .sidebar-robot-banner {
+  .app-shell .sidebar .sidebar-robot-banner {
     display: none;
   }
 
-  .sidebar .sidebar-account-btn {
+  .app-shell .sidebar .sidebar-account-btn {
     justify-content: center;
     padding: 6px 0;
     border-color: transparent;
     background: transparent;
   }
 
-  .sidebar .sidebar-account-details,
-  .sidebar .sidebar-account-btn svg {
+  .app-shell .sidebar .sidebar-account-details,
+  .app-shell .sidebar .sidebar-account-btn svg {
     display: none;
   }
 
   /* ========================================================================
      Expanded state: reveal labels, banners, submenus, and restore layout
      ======================================================================== */
-  .sidebar:hover .sidebar-header-row,
-  .sidebar.is-hovered .sidebar-header-row,
-  .sidebar.is-pinned .sidebar-header-row,
+  .app-shell .sidebar:hover .sidebar-header-row,
+  .app-shell .sidebar.is-hovered .sidebar-header-row,
+  .app-shell .sidebar.is-pinned .sidebar-header-row,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-header-row,
   .app-shell.sidebar-pinned .sidebar .sidebar-header-row {
     justify-content: space-between;
   }
 
-  .sidebar:hover .sidebar-pin-btn,
-  .sidebar.is-hovered .sidebar-pin-btn,
-  .sidebar.is-pinned .sidebar-pin-btn,
+  .app-shell .sidebar:hover .sidebar-pin-btn,
+  .app-shell .sidebar.is-hovered .sidebar-pin-btn,
+  .app-shell .sidebar.is-pinned .sidebar-pin-btn,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-pin-btn,
   .app-shell.sidebar-pinned .sidebar .sidebar-pin-btn {
     display: inline-flex;
   }
 
-  .sidebar:hover .workspace-label,
-  .sidebar.is-hovered .workspace-label,
-  .sidebar.is-pinned .workspace-label,
+  .app-shell .sidebar:hover .workspace-label,
+  .app-shell .sidebar.is-hovered .workspace-label,
+  .app-shell .sidebar.is-pinned .workspace-label,
   .app-shell.sidebar-is-hovered .sidebar .workspace-label,
   .app-shell.sidebar-pinned .sidebar .workspace-label {
     display: block;
   }
 
-  .sidebar:hover .workspace-card,
-  .sidebar.is-hovered .workspace-card,
-  .sidebar.is-pinned .workspace-card,
+  .app-shell .sidebar:hover .workspace-card,
+  .app-shell .sidebar.is-hovered .workspace-card,
+  .app-shell .sidebar.is-pinned .workspace-card,
   .app-shell.sidebar-is-hovered .sidebar .workspace-card,
   .app-shell.sidebar-pinned .sidebar .workspace-card {
     padding: 12px;
@@ -181,18 +182,18 @@
     border-color: #213550;
   }
 
-  .sidebar:hover .workspace-card-details,
-  .sidebar.is-hovered .workspace-card-details,
-  .sidebar.is-pinned .workspace-card-details,
+  .app-shell .sidebar:hover .workspace-card-details,
+  .app-shell .sidebar.is-hovered .workspace-card-details,
+  .app-shell .sidebar.is-pinned .workspace-card-details,
   .app-shell.sidebar-is-hovered .sidebar .workspace-card-details,
   .app-shell.sidebar-pinned .sidebar .workspace-card-details {
     display: block;
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .sidebar:hover .nav-item,
-  .sidebar.is-hovered .nav-item,
-  .sidebar.is-pinned .nav-item,
+  .app-shell .sidebar:hover .nav-item,
+  .app-shell .sidebar.is-hovered .nav-item,
+  .app-shell .sidebar.is-pinned .nav-item,
   .app-shell.sidebar-is-hovered .sidebar .nav-item,
   .app-shell.sidebar-pinned .sidebar .nav-item {
     justify-content: flex-start;
@@ -201,15 +202,15 @@
     height: 46px;
   }
 
-  .sidebar:hover .nav-item-label,
-  .sidebar:hover .nav-item .nav-chevron,
-  .sidebar:hover .nav-item .nav-badge,
-  .sidebar.is-hovered .nav-item-label,
-  .sidebar.is-hovered .nav-item .nav-chevron,
-  .sidebar.is-hovered .nav-item .nav-badge,
-  .sidebar.is-pinned .nav-item-label,
-  .sidebar.is-pinned .nav-item .nav-chevron,
-  .sidebar.is-pinned .nav-item .nav-badge,
+  .app-shell .sidebar:hover .nav-item-label,
+  .app-shell .sidebar:hover .nav-item .nav-chevron,
+  .app-shell .sidebar:hover .nav-item .nav-badge,
+  .app-shell .sidebar.is-hovered .nav-item-label,
+  .app-shell .sidebar.is-hovered .nav-item .nav-chevron,
+  .app-shell .sidebar.is-hovered .nav-item .nav-badge,
+  .app-shell .sidebar.is-pinned .nav-item-label,
+  .app-shell .sidebar.is-pinned .nav-item .nav-chevron,
+  .app-shell .sidebar.is-pinned .nav-item .nav-badge,
   .app-shell.sidebar-is-hovered .sidebar .nav-item-label,
   .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-chevron,
   .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-badge,
@@ -220,25 +221,25 @@
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .sidebar:hover .sub-nav-group.open,
-  .sidebar.is-hovered .sub-nav-group.open,
-  .sidebar.is-pinned .sub-nav-group.open,
+  .app-shell .sidebar:hover .sub-nav-group.open,
+  .app-shell .sidebar.is-hovered .sub-nav-group.open,
+  .app-shell .sidebar.is-pinned .sub-nav-group.open,
   .app-shell.sidebar-is-hovered .sidebar .sub-nav-group.open,
   .app-shell.sidebar-pinned .sidebar .sub-nav-group.open {
     display: block;
   }
 
-  .sidebar:hover .sidebar-robot-banner,
-  .sidebar.is-hovered .sidebar-robot-banner,
-  .sidebar.is-pinned .sidebar-robot-banner,
+  .app-shell .sidebar:hover .sidebar-robot-banner,
+  .app-shell .sidebar.is-hovered .sidebar-robot-banner,
+  .app-shell .sidebar.is-pinned .sidebar-robot-banner,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-robot-banner,
   .app-shell.sidebar-pinned .sidebar .sidebar-robot-banner {
     display: block;
   }
 
-  .sidebar:hover .sidebar-account-btn,
-  .sidebar.is-hovered .sidebar-account-btn,
-  .sidebar.is-pinned .sidebar-account-btn,
+  .app-shell .sidebar:hover .sidebar-account-btn,
+  .app-shell .sidebar.is-hovered .sidebar-account-btn,
+  .app-shell .sidebar.is-pinned .sidebar-account-btn,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn,
   .app-shell.sidebar-pinned .sidebar .sidebar-account-btn {
     justify-content: flex-start;
@@ -247,20 +248,20 @@
     background: transparent;
   }
 
-  .sidebar:hover .sidebar-account-btn.menu-open,
-  .sidebar.is-hovered .sidebar-account-btn.menu-open,
-  .sidebar.is-pinned .sidebar-account-btn.menu-open,
+  .app-shell .sidebar:hover .sidebar-account-btn.menu-open,
+  .app-shell .sidebar.is-hovered .sidebar-account-btn.menu-open,
+  .app-shell .sidebar.is-pinned .sidebar-account-btn.menu-open,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn.menu-open,
   .app-shell.sidebar-pinned .sidebar .sidebar-account-btn.menu-open {
     background: #f1f5f9;
   }
 
-  .sidebar:hover .sidebar-account-details,
-  .sidebar:hover .sidebar-account-btn svg,
-  .sidebar.is-hovered .sidebar-account-details,
-  .sidebar.is-hovered .sidebar-account-btn svg,
-  .sidebar.is-pinned .sidebar-account-details,
-  .sidebar.is-pinned .sidebar-account-btn svg,
+  .app-shell .sidebar:hover .sidebar-account-details,
+  .app-shell .sidebar:hover .sidebar-account-btn svg,
+  .app-shell .sidebar.is-hovered .sidebar-account-details,
+  .app-shell .sidebar.is-hovered .sidebar-account-btn svg,
+  .app-shell .sidebar.is-pinned .sidebar-account-details,
+  .app-shell .sidebar.is-pinned .sidebar-account-btn svg,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-details,
   .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn svg,
   .app-shell.sidebar-pinned .sidebar .sidebar-account-details,
@@ -270,7 +271,7 @@
 }
 
 /* Header row (Logo và Pin button) - không bị cắt chữ */
-.sidebar .sidebar-header-row {
+.app-shell .sidebar .sidebar-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -280,18 +281,18 @@
   padding-top: 2px;
 }
 
-.sidebar .sidebar-header-row .brand-link {
+.app-shell .sidebar .sidebar-header-row .brand-link {
   display: inline-flex;
   align-items: center;
   overflow: visible;
 }
 
-.sidebar .sidebar-header-row .logo {
+.app-shell .sidebar .sidebar-header-row .logo {
   overflow: visible;
   line-height: 1.25;
 }
 
-.sidebar .sidebar-header-row .logo-text {
+.app-shell .sidebar .sidebar-header-row .logo-text {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -299,7 +300,7 @@
   overflow: visible;
 }
 
-.sidebar .sidebar-account-btn {
+.app-shell .sidebar .sidebar-account-btn {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -313,7 +314,7 @@
   transition: all 0.15s ease;
 }
 
-.sidebar .sidebar-pin-btn {
+.app-shell .sidebar .sidebar-pin-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -328,13 +329,13 @@
   flex-shrink: 0;
 }
 
-.sidebar .sidebar-pin-btn:hover {
+.app-shell .sidebar .sidebar-pin-btn:hover {
   background: #f1f5f9;
   color: #0284c7;
   border-color: #cbd5e1;
 }
 
-.sidebar .sidebar-pin-btn.active {
+.app-shell .sidebar .sidebar-pin-btn.active {
   background: #e0f2fe;
   color: #0284c7;
   border-color: #7dd3fc;
@@ -353,7 +354,7 @@
 
 /* Mobile Adjustments (<=800px) */
 @media (max-width: 800px) {
-  .sidebar .sidebar-pin-btn {
+  .app-shell .sidebar .sidebar-pin-btn {
     display: none;
   }
 }
