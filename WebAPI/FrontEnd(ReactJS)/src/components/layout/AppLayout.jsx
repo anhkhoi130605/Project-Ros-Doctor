@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../stored/appStore';
 import { Logo, Button, Badge, Icon } from '../common/UIComponents';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
+import './SidebarAutohide.css';
 
 function getUserInitials(name) {
   if (!name) return 'U';
@@ -22,6 +23,39 @@ export default function AppLayout() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  const [isPinned, setIsPinned] = useState(() => {
+    return localStorage.getItem('sidebar_pinned') === 'true';
+  });
+  const [isHovered, setIsHovered] = useState(false);
+  const leaveTimeoutRef = useRef(null);
+
+  const handleSidebarMouseEnter = () => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    setIsHovered(true);
+  };
+
+  const handleSidebarMouseLeave = () => {
+    if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
+    leaveTimeoutRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 220);
+  };
+
+  const togglePin = () => {
+    setIsPinned((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar_pinned', String(next));
+      return next;
+    });
+  };
+
+  const closeNavIfAuto = () => {
+    setMobileNavOpen(false);
+    if (!isPinned) {
+      setIsHovered(false);
+    }
+  };
 
   const handleLogout = () => {
     dispatch({ type: 'LOGOUT' });
@@ -84,7 +118,7 @@ export default function AppLayout() {
   const currentPageTitle = getPageTitle(location.pathname);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isPinned ? 'sidebar-pinned' : ''} ${isHovered ? 'sidebar-is-hovered' : ''}`}>
       {mobileNavOpen && (
         <button
           className="sidebar-backdrop"
@@ -93,18 +127,40 @@ export default function AppLayout() {
         />
       )}
 
-      <aside className={`sidebar ${mobileNavOpen ? 'open' : ''}`} aria-label="Điều hướng ứng dụng">
-        <NavLink to="/dashboard" className="brand-link" aria-label="CTRN SHIFT N, trang chủ">
-          <Logo />
-        </NavLink>
+      <aside
+        className={`sidebar ${mobileNavOpen ? 'open' : ''} ${isHovered ? 'is-hovered' : ''}`}
+        onMouseEnter={handleSidebarMouseEnter}
+        onMouseLeave={handleSidebarMouseLeave}
+        aria-label="Điều hướng ứng dụng"
+      >
+        <div className="sidebar-header-row">
+          <NavLink
+            to="/dashboard"
+            className="brand-link"
+            aria-label="CTRN SHIFT N, trang chủ"
+            onClick={closeNavIfAuto}
+          >
+            <Logo compact={!isHovered && !isPinned} />
+          </NavLink>
 
-        <button
-          className="mobile-close icon-button"
-          aria-label="Đóng menu"
-          onClick={() => setMobileNavOpen(false)}
-        >
-          <Icon name="close" />
-        </button>
+          <button
+            type="button"
+            className={`sidebar-pin-btn ${isPinned ? 'active' : ''}`}
+            onClick={togglePin}
+            title={isPinned ? 'Bỏ ghim (tự động ẩn khi rời chuột)' : 'Ghim thanh điều hướng cố định'}
+            aria-label={isPinned ? 'Bỏ ghim' : 'Ghim'}
+          >
+            <Icon name={isPinned ? 'pin' : 'pin-off'} size={15} />
+          </button>
+
+          <button
+            className="mobile-close icon-button"
+            aria-label="Đóng menu"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <Icon name="close" />
+          </button>
+        </div>
 
         <div className="workspace-label">KHÔNG GIAN LÀM VIỆC</div>
         <div className="workspace-card">
@@ -144,7 +200,7 @@ export default function AppLayout() {
                     className={({ isActive }) =>
                       `nav-item ${isActive && !isCurrentConfigPath ? 'active' : ''}`
                     }
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={closeNavIfAuto}
                   >
                     <Icon name={icon} size={18} />
                     <span>{label}</span>
@@ -155,7 +211,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/members"
                       className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/admin' ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="users" size={14} />
                       <span>Tài khoản & quyền</span>
@@ -163,7 +219,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/system-logs"
                       className={({ isActive }) => `sub-nav-item ${isActive ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="clock" size={14} />
                       <span>Nhật ký hệ thống</span>
@@ -171,7 +227,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/user-activity"
                       className={({ isActive }) => `sub-nav-item ${isActive ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="file-text" size={14} />
                       <span>Lịch sử người dùng</span>
@@ -179,7 +235,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/activity"
                       className={({ isActive }) => `sub-nav-item ${isActive ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="activity" size={14} />
                       <span>Hoạt động gần đây</span>
@@ -201,7 +257,7 @@ export default function AppLayout() {
                     className={({ isActive }) =>
                       `nav-item ${isActive || isCurrentSettingsPath ? 'active' : ''}`
                     }
-                    onClick={() => setMobileNavOpen(false)}
+                    onClick={closeNavIfAuto}
                   >
                     <Icon name={icon} size={18} />
                     <span>{label}</span>
@@ -212,7 +268,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/ai-config"
                       className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/settings/ai-config' ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="cpu" size={14} />
                       <span>Cấu hình AI</span>
@@ -220,7 +276,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/analysis-config"
                       className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/settings/analysis-config' ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="sliders" size={14} />
                       <span>Cấu hình phân tích</span>
@@ -228,7 +284,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/admin/cost"
                       className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/settings/cost' ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="trending-up" size={14} />
                       <span>Chi phí & hiệu suất</span>
@@ -236,7 +292,7 @@ export default function AppLayout() {
                     <NavLink
                       to="/settings"
                       className={({ isActive }) => `sub-nav-item ${isActive && location.pathname === '/settings' ? 'active' : ''}`}
-                      onClick={() => setMobileNavOpen(false)}
+                      onClick={closeNavIfAuto}
                     >
                       <Icon name="settings" size={14} />
                       <span>Cài đặt hệ thống</span>
@@ -251,7 +307,7 @@ export default function AppLayout() {
                 key={to}
                 to={to}
                 className={({ isActive }) => `nav-item ${isActive || isBagsActiveRoute || isAnalysisActiveRoute ? 'active' : ''}`}
-                onClick={() => setMobileNavOpen(false)}
+                onClick={closeNavIfAuto}
               >
                 <Icon name={icon} size={18} />
                 <span>{label}</span>
@@ -279,7 +335,7 @@ export default function AppLayout() {
           <NavLink
             to="/"
             className="nav-item"
-            onClick={() => setMobileNavOpen(false)}
+            onClick={closeNavIfAuto}
           >
             <Icon name="external-link" size={18} />
             <span>Trang giới thiệu</span>
@@ -288,6 +344,7 @@ export default function AppLayout() {
 
         {/* Sidebar Robot Preview Banner Card */}
         <div
+          className="sidebar-robot-banner"
           style={{
             marginTop: 'auto',
             marginBottom: '14px',
@@ -341,6 +398,7 @@ export default function AppLayout() {
         >
           <button
             type="button"
+            className="sidebar-account-btn"
             aria-label="Menu tài khoản"
             onClick={() => setUserMenuOpen(!userMenuOpen)}
             style={{
@@ -481,7 +539,14 @@ export default function AppLayout() {
         </div>
       </aside>
 
-      <div className="workspace-main">
+      <div
+        className="workspace-main"
+        onClick={() => {
+          if (!isPinned && isHovered) {
+            setIsHovered(false);
+          }
+        }}
+      >
         <header className="topbar">
           <button
             className="mobile-menu icon-button"
