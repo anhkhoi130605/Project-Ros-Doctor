@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../stored/appStore';
 import { Logo, Button, Badge, Icon } from '../common/UIComponents';
@@ -29,6 +29,15 @@ export default function AppLayout() {
   });
   const [isHovered, setIsHovered] = useState(false);
   const leaveTimeoutRef = useRef(null);
+
+  // Cleanup timeout on unmount to prevent memory leak and state update on unmounted component
+  useEffect(() => {
+    return () => {
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSidebarMouseEnter = () => {
     if (leaveTimeoutRef.current) clearTimeout(leaveTimeoutRef.current);
@@ -313,6 +322,7 @@ export default function AppLayout() {
                 <span>{label}</span>
                 {badgeCount !== undefined && (
                   <span
+                    className="nav-badge"
                     style={{
                       marginLeft: 'auto',
                       background: '#e0f2fe',
@@ -398,22 +408,9 @@ export default function AppLayout() {
         >
           <button
             type="button"
-            className="sidebar-account-btn"
+            className={`sidebar-account-btn ${userMenuOpen ? 'menu-open' : ''}`}
             aria-label="Menu tài khoản"
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '10px',
-              background: userMenuOpen ? '#f1f5f9' : 'transparent',
-              border: '1px solid #cbd5e1',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.15s ease',
-            }}
           >
             <div
               style={{
