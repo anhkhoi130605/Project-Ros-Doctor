@@ -8,259 +8,279 @@
 }
 
 /* Custom modern slim scrollbar for sidebar */
-.sidebar {
+.app-shell > .sidebar {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
 
-.sidebar::-webkit-scrollbar {
+.app-shell > .sidebar::-webkit-scrollbar {
   width: 5px;
 }
 
-.sidebar::-webkit-scrollbar-track {
+.app-shell > .sidebar::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar::-webkit-scrollbar-thumb {
+.app-shell > .sidebar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
+.app-shell > .sidebar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
 /* Desktop styles (>800px) */
 @media (min-width: 801px) {
-  /* Sidebar base */
-  .sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 0 !important;
-    z-index: 50 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
+  /* Sidebar base - default collapsed rail (64px) */
+  .app-shell > .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    width: var(--sidebar-rail-width);
+    padding: 24px 8px 18px;
+    background: #f1f5f9;
+    border-right: 1px solid #cbd5e1;
+    box-shadow: 2px 0 8px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+    transform: none;
+    will-change: width;
     transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
                 background-color 0.22s ease,
                 border-color 0.22s ease,
-                box-shadow 0.28s ease !important;
-    will-change: width;
-    transform: none !important; /* Luôn hiển thị ở mép trái */
-    box-sizing: border-box !important;
+                box-shadow 0.28s ease;
   }
 
-  /* 1. Trạng thái thu gọn: Thanh xám ngoài cùng (64px) */
-  .sidebar {
-    width: var(--sidebar-rail-width) !important;
-    padding: 24px 8px 18px !important;
-    background: #f1f5f9 !important; /* Màu xám nền thanh lịch */
-    border-right: 1px solid #cbd5e1 !important;
-    box-shadow: 2px 0 8px rgba(15, 23, 42, 0.04) !important;
+  /* Expanded state on hover or when pinned (256px) */
+  .app-shell > .sidebar:hover,
+  .app-shell.sidebar-is-hovered > .sidebar,
+  .app-shell.sidebar-pinned > .sidebar {
+    width: var(--sidebar-full-width);
+    padding: 24px 14px 18px;
+    background: #ffffff;
+    border-right: 1px solid #e2e8f0;
+    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.09);
   }
 
-  /* 2. Trạng thái mở rộng khi rê chuột hoặc đã ghim (256px) */
-  .sidebar:hover,
-  .app-shell.sidebar-is-hovered .sidebar,
-  .app-shell.sidebar-pinned .sidebar {
-    width: var(--sidebar-full-width) !important;
-    padding: 24px 14px 18px !important;
-    background: #ffffff !important;
-    border-right: 1px solid #e2e8f0 !important;
-    box-shadow: 8px 0 24px rgba(15, 23, 42, 0.09) !important;
-  }
-
-  /* 3. Nội dung bên phải (Workspace Main): Tự động dịch chuyển lùi vào/ra */
-  .workspace-main {
-    margin-left: var(--sidebar-rail-width) !important;
-    transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  /* Right content area: Push layout */
+  .app-shell > .workspace-main {
+    margin-left: var(--sidebar-rail-width);
     will-change: margin-left;
+    transition: margin-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Khi thanh xám mở ra: nội dung tự động lùi vào sang 256px */
-  .sidebar:hover ~ .workspace-main,
-  .app-shell.sidebar-is-hovered .workspace-main,
-  .app-shell.sidebar-pinned .workspace-main {
-    margin-left: var(--sidebar-full-width) !important;
+  /* Automatically push right content when sidebar is hovered or pinned */
+  .app-shell > .sidebar:hover ~ .workspace-main,
+  .app-shell.sidebar-is-hovered > .workspace-main,
+  .app-shell.sidebar-pinned > .workspace-main {
+    margin-left: var(--sidebar-full-width);
   }
 
-  /* Elements inside sidebar: Default collapsed */
-  .sidebar-header-row {
-    justify-content: center !important;
+  /* ========================================================================
+     Collapsed state: hide labels and center icons
+     ======================================================================== */
+  .app-shell .sidebar .sidebar-header-row {
+    justify-content: center;
   }
 
-  .sidebar-pin-btn {
-    display: none !important;
+  .app-shell .sidebar .sidebar-pin-btn {
+    display: none;
   }
 
-  .workspace-label {
-    display: none !important;
+  .app-shell .sidebar .workspace-label {
+    display: none;
   }
 
-  .workspace-card {
-    padding: 6px 0 !important;
-    margin-bottom: 14px !important;
-    justify-content: center !important;
-    background: transparent !important;
-    border-color: transparent !important;
+  .app-shell .sidebar .workspace-card {
+    padding: 6px 0;
+    margin-bottom: 14px;
+    justify-content: center;
+    background: transparent;
+    border-color: transparent;
   }
 
-  .workspace-card > span:last-child {
-    display: none !important;
+  .app-shell .sidebar .workspace-card > span:last-child {
+    display: none;
   }
 
-  .nav-item {
-    justify-content: center !important;
-    padding: 0 !important;
-    gap: 0 !important;
-    height: 42px !important;
+  .app-shell .sidebar .nav-item {
+    justify-content: center;
+    padding: 0;
+    gap: 0;
+    height: 42px;
   }
 
-  .nav-item > span,
-  .nav-item .nav-chevron,
-  .nav-item span[style*="borderRadius"],
-  .sub-nav-group {
-    display: none !important;
+  .app-shell .sidebar .nav-item > span,
+  .app-shell .sidebar .nav-item .nav-chevron,
+  .app-shell .sidebar .nav-item .nav-badge,
+  .app-shell .sidebar .sub-nav-group {
+    display: none;
   }
 
-  .sidebar-robot-banner {
-    display: none !important;
+  .app-shell .sidebar .sidebar-robot-banner {
+    display: none;
   }
 
-  .sidebar-account-btn {
-    justify-content: center !important;
-    padding: 6px 0 !important;
-    border-color: transparent !important;
-    background: transparent !important;
+  .app-shell .sidebar .sidebar-account-btn {
+    justify-content: center;
+    padding: 6px 0;
+    border-color: transparent;
+    background: transparent;
   }
 
-  .sidebar-account-btn > div:last-of-type,
-  .sidebar-account-btn > svg {
-    display: none !important;
+  .app-shell .sidebar .sidebar-account-btn > div:last-of-type,
+  .app-shell .sidebar .sidebar-account-btn > svg {
+    display: none;
   }
 
-  /* Elements inside sidebar: When hovered or pinned */
-  .sidebar:hover .sidebar-header-row,
-  .app-shell.sidebar-is-hovered .sidebar-header-row,
-  .app-shell.sidebar-pinned .sidebar-header-row {
-    justify-content: space-between !important;
+  /* ========================================================================
+     Expanded state: reveal labels, banners, submenus, and restore layout
+     ======================================================================== */
+  .app-shell > .sidebar:hover .sidebar-header-row,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-header-row,
+  .app-shell.sidebar-pinned .sidebar .sidebar-header-row {
+    justify-content: space-between;
   }
 
-  .sidebar:hover .sidebar-pin-btn,
-  .app-shell.sidebar-is-hovered .sidebar-pin-btn,
-  .app-shell.sidebar-pinned .sidebar-pin-btn {
-    display: inline-flex !important;
+  .app-shell > .sidebar:hover .sidebar-pin-btn,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-pin-btn,
+  .app-shell.sidebar-pinned .sidebar .sidebar-pin-btn {
+    display: inline-flex;
   }
 
-  .sidebar:hover .workspace-label,
-  .app-shell.sidebar-is-hovered .workspace-label,
-  .app-shell.sidebar-pinned .workspace-label {
-    display: block !important;
+  .app-shell > .sidebar:hover .workspace-label,
+  .app-shell.sidebar-is-hovered .sidebar .workspace-label,
+  .app-shell.sidebar-pinned .sidebar .workspace-label {
+    display: block;
   }
 
-  .sidebar:hover .workspace-card,
-  .app-shell.sidebar-is-hovered .workspace-card,
-  .app-shell.sidebar-pinned .workspace-card {
-    padding: 12px !important;
-    margin-bottom: 25px !important;
-    justify-content: flex-start !important;
-    background: #f3f6fa !important;
-    border-color: #213550 !important;
+  .app-shell > .sidebar:hover .workspace-card,
+  .app-shell.sidebar-is-hovered .sidebar .workspace-card,
+  .app-shell.sidebar-pinned .sidebar .workspace-card {
+    padding: 12px;
+    margin-bottom: 25px;
+    justify-content: flex-start;
+    background: #f3f6fa;
+    border-color: #213550;
   }
 
-  .sidebar:hover .workspace-card > span:last-child,
-  .app-shell.sidebar-is-hovered .workspace-card > span:last-child,
-  .app-shell.sidebar-pinned .workspace-card > span:last-child {
-    display: block !important;
+  .app-shell > .sidebar:hover .workspace-card > span:last-child,
+  .app-shell.sidebar-is-hovered .sidebar .workspace-card > span:last-child,
+  .app-shell.sidebar-pinned .sidebar .workspace-card > span:last-child {
+    display: block;
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .sidebar:hover .nav-item,
-  .app-shell.sidebar-is-hovered .nav-item,
-  .app-shell.sidebar-pinned .nav-item {
-    justify-content: flex-start !important;
-    padding: 0 13px !important;
-    gap: 14px !important;
-    height: 46px !important;
+  .app-shell > .sidebar:hover .nav-item,
+  .app-shell.sidebar-is-hovered .sidebar .nav-item,
+  .app-shell.sidebar-pinned .sidebar .nav-item {
+    justify-content: flex-start;
+    padding: 0 13px;
+    gap: 14px;
+    height: 46px;
   }
 
-  .sidebar:hover .nav-item > span,
-  .sidebar:hover .nav-item .nav-chevron,
-  .sidebar:hover .nav-item span[style*="borderRadius"],
-  .app-shell.sidebar-is-hovered .nav-item > span,
-  .app-shell.sidebar-is-hovered .nav-item .nav-chevron,
-  .app-shell.sidebar-is-hovered .nav-item span[style*="borderRadius"],
-  .app-shell.sidebar-pinned .nav-item > span,
-  .app-shell.sidebar-pinned .nav-item .nav-chevron,
-  .app-shell.sidebar-pinned .nav-item span[style*="borderRadius"] {
-    display: inline-block !important;
+  .app-shell > .sidebar:hover .nav-item > span,
+  .app-shell > .sidebar:hover .nav-item .nav-chevron,
+  .app-shell > .sidebar:hover .nav-item .nav-badge,
+  .app-shell.sidebar-is-hovered .sidebar .nav-item > span,
+  .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-chevron,
+  .app-shell.sidebar-is-hovered .sidebar .nav-item .nav-badge,
+  .app-shell.sidebar-pinned .sidebar .nav-item > span,
+  .app-shell.sidebar-pinned .sidebar .nav-item .nav-chevron,
+  .app-shell.sidebar-pinned .sidebar .nav-item .nav-badge {
+    display: inline-block;
     animation: sidebarTextFadeIn 0.22s ease forwards;
   }
 
-  .sidebar:hover .sub-nav-group.open,
-  .app-shell.sidebar-is-hovered .sub-nav-group.open,
-  .app-shell.sidebar-pinned .sub-nav-group.open {
-    display: block !important;
+  .app-shell > .sidebar:hover .sub-nav-group.open,
+  .app-shell.sidebar-is-hovered .sidebar .sub-nav-group.open,
+  .app-shell.sidebar-pinned .sidebar .sub-nav-group.open {
+    display: block;
   }
 
-  .sidebar:hover .sidebar-robot-banner,
-  .app-shell.sidebar-is-hovered .sidebar-robot-banner,
-  .app-shell.sidebar-pinned .sidebar-robot-banner {
-    display: block !important;
+  .app-shell > .sidebar:hover .sidebar-robot-banner,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-robot-banner,
+  .app-shell.sidebar-pinned .sidebar .sidebar-robot-banner {
+    display: block;
   }
 
-  .sidebar:hover .sidebar-account-btn,
-  .app-shell.sidebar-is-hovered .sidebar-account-btn,
-  .app-shell.sidebar-pinned .sidebar-account-btn {
-    justify-content: flex-start !important;
-    padding: 10px 12px !important;
-    border: 1px solid #cbd5e1 !important;
-    background: transparent !important;
+  .app-shell > .sidebar:hover .sidebar-account-btn,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn {
+    justify-content: flex-start;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    background: transparent;
   }
 
-  .sidebar:hover .sidebar-account-btn > div:last-of-type,
-  .sidebar:hover .sidebar-account-btn > svg,
-  .app-shell.sidebar-is-hovered .sidebar-account-btn > div:last-of-type,
-  .app-shell.sidebar-is-hovered .sidebar-account-btn > svg,
-  .app-shell.sidebar-pinned .sidebar-account-btn > div:last-of-type,
-  .app-shell.sidebar-pinned .sidebar-account-btn > svg {
-    display: block !important;
+  .app-shell > .sidebar:hover .sidebar-account-btn.menu-open,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn.menu-open,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn.menu-open {
+    background: #f1f5f9;
+  }
+
+  .app-shell > .sidebar:hover .sidebar-account-btn > div:last-of-type,
+  .app-shell > .sidebar:hover .sidebar-account-btn > svg,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn > div:last-of-type,
+  .app-shell.sidebar-is-hovered .sidebar .sidebar-account-btn > svg,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn > div:last-of-type,
+  .app-shell.sidebar-pinned .sidebar .sidebar-account-btn > svg {
+    display: block;
   }
 }
 
-/* Header row (Logo và Pin button) - Đảm bảo không bị che khuất chữ */
-.sidebar-header-row {
+/* Header row (Logo và Pin button) - không bị cắt chữ */
+.app-shell .sidebar .sidebar-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 22px;
   min-height: 44px;
-  overflow: visible !important;
+  overflow: visible;
   padding-top: 2px;
 }
 
-.sidebar-header-row .brand-link {
+.app-shell .sidebar .sidebar-header-row .brand-link {
   display: inline-flex;
   align-items: center;
-  overflow: visible !important;
+  overflow: visible;
 }
 
-.sidebar-header-row .logo {
-  overflow: visible !important;
-  line-height: 1.25 !important;
+.app-shell .sidebar .sidebar-header-row .logo {
+  overflow: visible;
+  line-height: 1.25;
 }
 
-.sidebar-header-row .logo > span:last-child {
+.app-shell .sidebar .sidebar-header-row .logo > span:last-child {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  line-height: 1.15 !important;
-  overflow: visible !important;
+  line-height: 1.15;
+  overflow: visible;
 }
 
-.sidebar-pin-btn {
+.app-shell .sidebar .sidebar-account-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.app-shell .sidebar .sidebar-pin-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -275,13 +295,13 @@
   flex-shrink: 0;
 }
 
-.sidebar-pin-btn:hover {
+.app-shell .sidebar .sidebar-pin-btn:hover {
   background: #f1f5f9;
   color: #0284c7;
   border-color: #cbd5e1;
 }
 
-.sidebar-pin-btn.active {
+.app-shell .sidebar .sidebar-pin-btn.active {
   background: #e0f2fe;
   color: #0284c7;
   border-color: #7dd3fc;
@@ -300,7 +320,7 @@
 
 /* Mobile Adjustments (<=800px) */
 @media (max-width: 800px) {
-  .sidebar-pin-btn {
-    display: none !important;
+  .app-shell .sidebar .sidebar-pin-btn {
+    display: none;
   }
 }
