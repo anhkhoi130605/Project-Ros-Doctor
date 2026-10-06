@@ -6,6 +6,7 @@ import { getGoogleLoginUrl } from '../api/authApi';
 import { Logo, Button, FormField, Notice } from '../../../components/common/UIComponents';
 import PearlScene from '../../../components/common/PearlScene';
 import { ROLE_NAMES } from '../../../domain/appTypes';
+import SmoothReveal from '../../../components/common/SmoothReveal';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -146,7 +147,8 @@ export default function LoginPage() {
         </section>
 
         <div className="login-form-wrap">
-          <form className="login-form card" onSubmit={handleSubmit} noValidate>
+          <SmoothReveal begin={80} duration={460} distance={12}>
+            <form className="login-form card" onSubmit={handleSubmit} noValidate>
             <span className="eyebrow">KHÔNG GIAN CHẨN ĐOÁN</span>
             <h2>Chào mừng trở lại.</h2>
             <p>Đăng nhập để tiếp tục công việc của bạn.</p>
@@ -232,7 +234,8 @@ export default function LoginPage() {
             </small>
 
 
-          </form>
+            </form>
+          </SmoothReveal>
         </div>
       </div>
 

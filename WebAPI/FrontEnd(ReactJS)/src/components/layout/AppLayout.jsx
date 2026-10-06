@@ -4,6 +4,7 @@ import { useApp } from '../../stored/appStore';
 import { Logo, Button, Badge, Icon } from '../common/UIComponents';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
+import SmoothReveal from '../common/SmoothReveal';
 
 function getUserInitials(name) {
   if (!name) return 'U';
@@ -531,7 +532,11 @@ export default function AppLayout() {
         </header>
 
         <main id="main-content" className="page-content" tabIndex={-1}>
-          <Outlet />
+          <SmoothReveal key={location.pathname} duration={320} distance={8}>
+            <div className="route-transition">
+              <Outlet />
+            </div>
+          </SmoothReveal>
         </main>
 
         <footer className="app-footer">

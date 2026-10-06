@@ -5,6 +5,7 @@ import { useApp } from '../../../stored/appStore';
 import { getGoogleRegisterUrl } from '../api/authApi';
 import { Logo, Button, FormField, Notice, Icon } from '../../../components/common/UIComponents';
 import PearlScene from '../../../components/common/PearlScene';
+import SmoothReveal from '../../../components/common/SmoothReveal';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -150,7 +151,8 @@ export default function RegisterPage() {
               </Button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit}>
+            <SmoothReveal begin={80} duration={460} distance={12}>
+              <form onSubmit={handleSubmit}>
               <span className="section-kicker">TẠO HỒ SƠ MỚI</span>
               <h2>Đăng ký tham gia.</h2>
 
@@ -280,7 +282,8 @@ export default function RegisterPage() {
               <p className="ctrn-auth-bottom">
                 Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
               </p>
-            </form>
+              </form>
+            </SmoothReveal>
           )}
         </section>
       </main>

@@ -1,0 +1,321 @@
+.session-detail {
+  gap: 0 !important;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title {
+  isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  min-height: 132px;
+  margin-bottom: 16px !important;
+  padding: 24px 26px;
+  border: 1px solid #dbe5ef;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% 20%, rgba(23, 108, 221, 0.09), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, #f6f9fc 100%);
+  box-shadow:
+    0 1px 2px rgba(15, 39, 64, 0.03),
+    0 10px 30px rgba(20, 52, 82, 0.06);
+  gap: 20px;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #176cdd, #38bdf8);
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: -74px;
+  right: -52px;
+  width: 190px;
+  height: 190px;
+  border: 1px solid rgba(23, 108, 221, 0.1);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 24px rgba(23, 108, 221, 0.025),
+    0 0 0 48px rgba(23, 108, 221, 0.018);
+  pointer-events: none;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title > * {
+  position: relative;
+  z-index: 1;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title > :not(:first-child) {
+  flex: 0 0 auto;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title h1 {
+  max-width: 1050px;
+  margin: 0 0 9px !important;
+  color: #0b2740 !important;
+  font-size: clamp(22px, 2vw, 30px) !important;
+  font-weight: 800 !important;
+  line-height: 1.25;
+  letter-spacing: -0.035em;
+  overflow-wrap: anywhere;
+}
+
+:is(
+  .session-detail,
+  .session-overview-page,
+  .session-topics-page,
+  .session-issues-page,
+  .session-tf-page,
+  .session-sync-page,
+  .session-agent-page
+) > .page-title p {
+  display: inline-flex;
+  max-width: 100%;
+  margin: 0 !important;
+  padding: 6px 10px;
+  border: 1px solid #e0e8f0;
+  border-radius: 8px;
+  color: #62778b !important;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 11px !important;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.session-navigation-tabs,
+.session-detail > .tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px !important;
+  max-width: 100%;
+  margin: 0 0 24px !important;
+  padding: 6px !important;
+  overflow-x: auto;
+  border: 1px solid #dbe5ef !important;
+  border-radius: 14px;
+  background: #eef3f8;
+  box-shadow: inset 0 1px 2px rgba(20, 52, 82, 0.035);
+  scrollbar-width: thin;
+  scrollbar-color: #b9c9d9 transparent;
+}
+
+.session-navigation-tabs::-webkit-scrollbar,
+.session-detail > .tabs::-webkit-scrollbar {
+  height: 5px;
+}
+
+.session-navigation-tabs::-webkit-scrollbar-thumb,
+.session-detail > .tabs::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #b9c9d9;
+}
+
+.session-navigation-tabs > a,
+.session-detail > .tabs > a {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 40px;
+  padding: 9px 15px !important;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: #60758a;
+  background: transparent;
+  font-size: 11px !important;
+  font-weight: 650;
+  line-height: 1.25;
+  transition:
+    transform 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.session-navigation-tabs > a::after,
+.session-detail > .tabs > a::after {
+  display: none !important;
+}
+
+.session-navigation-tabs > a.active,
+.session-detail > .tabs > a.active {
+  color: #155ebc;
+  border-color: #c5d9ef;
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgba(15, 39, 64, 0.04),
+    0 5px 14px rgba(23, 108, 221, 0.1);
+}
+
+.session-navigation-tabs .tab-pill,
+.session-detail > .tabs .tab-mini {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  min-height: 20px;
+  padding: 2px 6px;
+  border: 1px solid #cde1f7;
+  border-radius: 999px;
+  color: #176cdd !important;
+  background: #eaf3ff !important;
+  font-size: 9px;
+  font-weight: 800 !important;
+  line-height: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .session-navigation-tabs > a:hover,
+  .session-detail > .tabs > a:hover {
+    color: #244e72;
+    border-color: #d4e0eb;
+    background: rgba(255, 255, 255, 0.72);
+    transform: translateY(-1px);
+  }
+
+  .session-navigation-tabs > a.active:hover,
+  .session-detail > .tabs > a.active:hover {
+    color: #155ebc;
+    border-color: #aac8e8;
+    background: #ffffff;
+  }
+}
+
+@media (max-width: 720px) {
+  :is(
+    .session-detail,
+    .session-overview-page,
+    .session-topics-page,
+    .session-issues-page,
+    .session-tf-page,
+    .session-sync-page,
+    .session-agent-page
+  ) > .page-title {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+    padding: 19px 18px;
+    border-radius: 14px;
+  }
+
+  :is(
+    .session-detail,
+    .session-overview-page,
+    .session-topics-page,
+    .session-issues-page,
+    .session-tf-page,
+    .session-sync-page,
+    .session-agent-page
+  ) > .page-title > :not(:first-child) {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  :is(
+    .session-detail,
+    .session-overview-page,
+    .session-topics-page,
+    .session-issues-page,
+    .session-tf-page,
+    .session-sync-page,
+    .session-agent-page
+  ) > .page-title h1 {
+    font-size: 21px !important;
+  }
+
+  .session-navigation-tabs,
+  .session-detail > .tabs {
+    padding: 4px !important;
+    border-radius: 12px;
+  }
+
+  .session-navigation-tabs > a,
+  .session-detail > .tabs > a {
+    min-height: 38px;
+    padding: 8px 12px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .session-navigation-tabs > a,
+  .session-detail > .tabs > a {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+:root[data-motion='off'] .session-navigation-tabs > a,
+:root[data-motion='off'] .session-detail > .tabs > a {
+  transition: none;
+  transform: none !important;
+}

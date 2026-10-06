@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card } from '../../../components/common/UIComponents';
 import { sendChatMessageApi, streamChatMessageApi, getBagsApi } from '../../../service';
+import robotPearlImg from '../../../assets/robot-pearl.png';
 
 const SEVERITY_COLORS = {
   critical: { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' },
@@ -200,59 +201,58 @@ export default function ChatPage() {
 
   return (
     <div className="chat-page-container">
-      <style>{`
-        @keyframes blinkCursor {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
-        }
-        .streaming-cursor {
-          display: inline-block;
-          width: 8px;
-          height: 15px;
-          background-color: #2563eb;
-          margin-left: 4px;
-          vertical-align: middle;
-          border-radius: 2px;
-          animation: blinkCursor 0.8s infinite;
-        }
-      `}</style>
       <PageHeader
         title="Trợ lý AI chẩn đoán ROS2 Agent"
         subtitle="Hỏi đáp về bằng chứng, nguyên nhân sự cố, đối chiếu playbook và telemetry rosbag."
       />
 
+      <section className="chat-agent-hero" aria-label="Trạng thái trợ lý AI chẩn đoán">
+        <div className="chat-agent-hero__grid" aria-hidden="true" />
+        <div className="chat-agent-hero__copy">
+          <div className="chat-agent-hero__eyebrow">
+            <span className="chat-agent-hero__pulse" />
+            PEARL AI · DIAGNOSTIC CORE ONLINE
+          </div>
+          <h2>Biến telemetry ROS2 thành câu trả lời có căn cứ.</h2>
+          <p>
+            Phân tích rosbag, đối chiếu playbook và truy vết nguyên nhân gốc trong cùng một không gian hội thoại.
+          </p>
+          <div className="chat-agent-hero__signals" aria-label="Năng lực của trợ lý">
+            <span><strong>31</strong> Playbooks</span>
+            <span><strong>RAG</strong> Grounded</span>
+            <span><strong>LIVE</strong> Telemetry</span>
+          </div>
+        </div>
+
+        <div className="chat-robot-stage" aria-hidden="true">
+          <div className="chat-robot-orbit chat-robot-orbit--outer" />
+          <div className="chat-robot-orbit chat-robot-orbit--inner" />
+          <span className="chat-robot-particle chat-robot-particle--one" />
+          <span className="chat-robot-particle chat-robot-particle--two" />
+          <span className="chat-robot-particle chat-robot-particle--three" />
+          <div className="chat-robot-halo" />
+          <div className="chat-robot-scan" />
+          <img className="chat-robot-image" src={robotPearlImg} alt="" />
+          <div className="chat-robot-shadow" />
+          <div className="chat-robot-chip">
+            <span /> Neural link stable
+          </div>
+        </div>
+      </section>
+
       <Card className="chat-card-panel">
         {/* Context Selector Bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '8px',
-            padding: '10px 16px',
-            backgroundColor: '#f8fafc',
-            borderBottom: '1px solid #e2e8f0',
-            borderRadius: '8px 8px 0 0',
-            fontSize: '13px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 600, color: '#1e293b' }}>🎯 Ngữ cảnh Rosbag:</span>
+        <div className="chat-context-bar">
+          <div className="chat-context-main">
+            <span className="chat-context-label">
+              <span className="chat-context-icon" aria-hidden="true">◎</span>
+              Ngữ cảnh Rosbag
+            </span>
             <select
               value={selectedBagId}
               onChange={handleBagChange}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                backgroundColor: '#ffffff',
-                fontSize: '13px',
-                outline: 'none',
-                color: '#0f172a',
-                cursor: 'pointer',
-                maxWidth: '380px',
-              }}
+              className="chat-context-select"
+              aria-label="Chọn Rosbag làm ngữ cảnh chẩn đoán"
             >
               {bags.length === 0 ? (
                 <option value="">(Chưa có Rosbag nào tải lên Backend)</option>
@@ -266,55 +266,42 @@ export default function ChatPage() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="chat-context-session">
             {selectedSessionId ? (
-              <span
-                style={{
-                  padding: '3px 10px',
-                  borderRadius: '12px',
-                  backgroundColor: '#dbeafe',
-                  color: '#1e40af',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                }}
-              >
-                🔗 Phiên: {selectedSessionId}
+              <span className="chat-session-pill">
+                <span className="chat-session-pill__dot" aria-hidden="true" />
+                Phiên: {selectedSessionId}
               </span>
             ) : (
-              <span style={{ fontSize: '12px', color: '#64748b' }}>
+              <span className="chat-context-fallback">
                 (Tự động đối chiếu telemetry mới nhất)
               </span>
             )}
           </div>
         </div>
 
-        <div className="chat-messages-area" style={{ maxHeight: '640px', overflowY: 'auto', padding: '16px' }}>
+        <div className="chat-messages-area" aria-live="polite">
           {messages.map((m) => (
-            <div key={m.id} className={`chat-bubble-row ${m.sender}`} style={{ marginBottom: '20px' }}>
-              <div className="bubble-avatar" style={{ fontSize: '20px', marginRight: '8px' }}>
-                {m.sender === 'agent' ? '🤖' : '👤'}
+            <div key={m.id} className={`chat-bubble-row ${m.sender}`}>
+              <div className="bubble-avatar" aria-hidden="true">
+                {m.sender === 'agent' ? (
+                  <img src={robotPearlImg} alt="" />
+                ) : (
+                  <span>U</span>
+                )}
               </div>
               <div
-                className="bubble-content"
-                style={{
-                  maxWidth: '88%',
-                  backgroundColor: m.sender === 'agent' ? (m.isError ? '#fee2e2' : '#f8fafc') : '#2563eb',
-                  color: m.sender === 'agent' ? (m.isError ? '#991b1b' : '#0f172a') : '#ffffff',
-                  padding: '14px 18px',
-                  borderRadius: '12px',
-                  border: m.sender === 'agent' ? '1px solid #e2e8f0' : 'none',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                }}
+                className={`bubble-content${m.isError ? ' is-error' : ''}`}
               >
                 {/* Text summary / explanation with live streaming cursor */}
-                <div className="bubble-text" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', fontSize: '14px' }}>
+                <div className="bubble-text">
                   {m.text ? (
                     <>
                       {m.text}
                       {m.isStreaming && <span className="streaming-cursor" />}
                     </>
                   ) : m.isStreaming ? (
-                    <span style={{ color: '#64748b', fontStyle: 'italic' }}>
+                    <span className="chat-streaming-copy">
                       ⏳ Đang đối chiếu Telemetry Rosbag, truy xuất Playbook và suy luận RCA...
                       <span className="streaming-cursor" />
                     </span>
@@ -524,21 +511,13 @@ export default function ChatPage() {
           ))}
 
           {isLoading && !messages.some((m) => m.isStreaming) && (
-            <div className="chat-bubble-row agent" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center' }}>
-              <div className="bubble-avatar" style={{ fontSize: '20px', marginRight: '8px' }}>
-                🤖
+            <div className="chat-bubble-row agent is-loading">
+              <div className="bubble-avatar" aria-hidden="true">
+                <img src={robotPearlImg} alt="" />
               </div>
-              <div
-                className="bubble-content"
-                style={{
-                  backgroundColor: '#f1f5f9',
-                  color: '#475569',
-                  padding: '10px 16px',
-                  borderRadius: '12px',
-                  fontSize: '13px',
-                }}
-              >
-                ⏳ <em>Đang đối chiếu Telemetry Rosbag, truy xuất Playbook và suy luận RCA...</em>
+              <div className="bubble-content">
+                <span className="chat-thinking-dots" aria-hidden="true"><i /><i /><i /></span>
+                <em>Đang đối chiếu Telemetry Rosbag, truy xuất Playbook và suy luận RCA...</em>
               </div>
             </div>
           )}
@@ -546,38 +525,26 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSendMessage} className="chat-input-bar" style={{ display: 'flex', gap: '8px', padding: '12px' }}>
-          <input
-            type="text"
-            className="chat-input"
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: '8px',
-              border: '1px solid #cbd5e1',
-              fontSize: '14px',
-              outline: 'none',
-            }}
-            placeholder="Nhập câu hỏi chẩn đoán (ví dụ: Chẩn đoán rosbag bag-123 hoặc Tại sao TF map->odom bị rớt?)..."
-            value={inputText}
-            disabled={isLoading}
-            onChange={(e) => setInputText(e.target.value)}
-          />
+        <form onSubmit={handleSendMessage} className="chat-input-bar">
+          <div className="chat-input-shell">
+            <span className="chat-input-orbit" aria-hidden="true">⌁</span>
+            <input
+              type="text"
+              className="chat-input"
+              placeholder="Nhập câu hỏi chẩn đoán (ví dụ: Chẩn đoán rosbag bag-123 hoặc Tại sao TF map->odom bị rớt?)..."
+              value={inputText}
+              disabled={isLoading}
+              onChange={(e) => setInputText(e.target.value)}
+            />
+            <span className="chat-input-hint">AI grounded response</span>
+          </div>
           <button
             type="submit"
-            className="primary-button"
+            className="primary-button chat-send-button"
             disabled={isLoading || !inputText.trim()}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              backgroundColor: isLoading || !inputText.trim() ? '#94a3b8' : '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              fontWeight: 500,
-              cursor: isLoading || !inputText.trim() ? 'not-allowed' : 'pointer',
-            }}
           >
-            {isLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}
+            <span>{isLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}</span>
+            <span className="chat-send-button__icon" aria-hidden="true">↗</span>
           </button>
         </form>
       </Card>

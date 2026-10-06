@@ -1,0 +1,261 @@
+.page-content .stat.card {
+  --stat-accent: #0ea5e9;
+  --stat-soft: #f0f9ff;
+  --stat-shadow: rgba(14, 165, 233, 0.16);
+
+  isolation: isolate;
+  min-height: 132px;
+  padding: 20px 22px 18px;
+  overflow: hidden;
+  border: 1px solid #dfe7ef;
+  border-top: 3px solid var(--stat-accent);
+  border-radius: 16px;
+  background: linear-gradient(145deg, #ffffff 0%, var(--stat-soft) 155%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 24px rgba(15, 23, 42, 0.045);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.page-content .stat.card::before {
+  content: '';
+  position: absolute;
+  top: -46px;
+  right: -34px;
+  left: auto;
+  width: 108px;
+  height: 108px;
+  border-radius: 50%;
+  background: var(--stat-soft);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.page-content .stat.card::after {
+  content: '';
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  width: 34px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--stat-accent);
+  opacity: 0.28;
+  transition: width 180ms ease, opacity 180ms ease;
+  pointer-events: none;
+}
+
+.page-content .stat.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.page-content .stat.card.cyan {
+  --stat-accent: #0891b2;
+  --stat-soft: #ecfeff;
+  --stat-shadow: rgba(8, 145, 178, 0.18);
+}
+
+.page-content .stat.card.green {
+  --stat-accent: #16a34a;
+  --stat-soft: #f0fdf4;
+  --stat-shadow: rgba(22, 163, 74, 0.17);
+}
+
+.page-content .stat.card.orange {
+  --stat-accent: #d97706;
+  --stat-soft: #fffbeb;
+  --stat-shadow: rgba(217, 119, 6, 0.17);
+}
+
+.page-content .stat.card.blue {
+  --stat-accent: #2563eb;
+  --stat-soft: #eff6ff;
+  --stat-shadow: rgba(37, 99, 235, 0.17);
+}
+
+.page-content .stat.card.red {
+  --stat-accent: #dc2626;
+  --stat-soft: #fef2f2;
+  --stat-shadow: rgba(220, 38, 38, 0.16);
+}
+
+.page-content .stat.card .stat-label {
+  margin-bottom: 10px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.015em;
+}
+
+.page-content .stat.card .stat-icon {
+  position: absolute;
+  top: 17px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  color: var(--stat-accent);
+  border: 1px solid color-mix(in srgb, var(--stat-accent) 18%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--stat-soft) 88%, #ffffff);
+  box-shadow: 0 5px 14px var(--stat-shadow);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.page-content .stat.card .stat-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.page-content .stat.card > strong {
+  color: #0f172a;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.045em;
+}
+
+.page-content .stat.card > small {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 10px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.page-content .stat.card > small::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--stat-accent);
+  box-shadow: 0 0 0 3px var(--stat-soft);
+}
+
+.page-content .stat.card .spark {
+  position: absolute;
+  color: var(--stat-accent);
+  opacity: 0.42;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.page-content .analysis-summary-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 24px;
+}
+
+.page-content .analysis-summary-card {
+  min-height: 136px;
+}
+
+.page-content .analysis-summary-card > strong {
+  margin-top: 2px;
+}
+
+.page-content .analysis-summary-card > small {
+  max-width: calc(100% - 34px);
+}
+
+/* Score tiles on the benchmark page use a lighter stat-card structure. */
+.page-content .ctrn-evaluation > div {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #dfe7ef;
+  border-top: 3px solid #2563eb;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #ffffff 0%, #eff6ff 165%);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 8px 24px rgba(15, 23, 42, 0.045);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Dashboard-style KPI tiles that are reused by feature pages. */
+.page-content .mini-widget {
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .page-content .stat.card:hover {
+    transform: translateY(-5px);
+    border-color: var(--stat-accent);
+    box-shadow:
+      0 2px 5px rgba(15, 23, 42, 0.04),
+      0 16px 36px var(--stat-shadow);
+  }
+
+  .page-content .stat.card:hover .stat-icon {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 20px var(--stat-shadow);
+  }
+
+  .page-content .stat.card:hover .spark {
+    opacity: 0.7;
+    transform: translateY(-1px);
+  }
+
+  .page-content .stat.card:hover::after {
+    width: 48px;
+    opacity: 0.58;
+  }
+
+  .page-content .ctrn-evaluation > div:hover,
+  .page-content .mini-widget:hover {
+    transform: translateY(-5px);
+    border-color: #93b4dc;
+    box-shadow:
+      0 2px 5px rgba(15, 23, 42, 0.04),
+      0 16px 36px rgba(37, 99, 235, 0.13);
+  }
+}
+
+@media (max-width: 640px) {
+  .page-content .stat.card {
+    min-height: 120px;
+    padding: 18px 19px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content .stat.card,
+  .page-content .stat.card::after,
+  .page-content .stat.card .stat-icon,
+  .page-content .stat.card .spark,
+  .page-content .ctrn-evaluation > div,
+  .page-content .mini-widget {
+    transition: none;
+  }
+
+  .page-content .stat.card:hover,
+  .page-content .ctrn-evaluation > div:hover,
+  .page-content .mini-widget:hover {
+    transform: none;
+  }
+}
+
+:root[data-motion='off'] .page-content .stat.card,
+:root[data-motion='off'] .page-content .stat.card::after,
+:root[data-motion='off'] .page-content .stat.card .stat-icon,
+:root[data-motion='off'] .page-content .stat.card .spark,
+:root[data-motion='off'] .page-content .ctrn-evaluation > div,
+:root[data-motion='off'] .page-content .mini-widget {
+  transition: none;
+}
+
+:root[data-motion='off'] .page-content .stat.card:hover,
+:root[data-motion='off'] .page-content .ctrn-evaluation > div:hover,
+:root[data-motion='off'] .page-content .mini-widget:hover {
+  transform: none;
+}

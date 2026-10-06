@@ -270,6 +270,7 @@ export function Button({
   loading = false,
   ...props
 }) {
+  const iconClassName = icon ? `icon-${icon}` : '';
   const content = (
     <>
       {icon && <Icon name={loading ? 'loader' : icon} className={loading ? 'spin' : ''} />}
@@ -279,14 +280,14 @@ export function Button({
 
   if (to) {
     return (
-      <Link to={to} className={`button ${variant} ${className}`} {...props}>
+      <Link to={to} className={`button ${variant} ${iconClassName} ${className}`} {...props}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button type="button" className={`button ${variant} ${className}`} disabled={props.disabled || loading} {...props}>
+    <button type="button" className={`button ${variant} ${iconClassName} ${className}`} disabled={props.disabled || loading} {...props}>
       {content}
     </button>
   );

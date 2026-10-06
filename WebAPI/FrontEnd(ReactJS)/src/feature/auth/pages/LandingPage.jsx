@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Logo, Button, Icon } from '../../../components/common/UIComponents';
 import PearlScene from '../../../components/common/PearlScene';
+import SmoothReveal from '../../../components/common/SmoothReveal';
 
 export default function LandingPage() {
   return (
@@ -22,7 +23,8 @@ export default function LandingPage() {
 
       <main>
         <section className="ctrn-hero">
-          <div className="ctrn-hero-copy">
+          <SmoothReveal duration={520} distance={14}>
+            <div className="ctrn-hero-copy">
             <span className="section-kicker">RAV-13 / ROS2 DIAGNOSTICS</span>
             <h1>
               Hiểu tín hiệu.<br />
@@ -45,7 +47,8 @@ export default function LandingPage() {
               <span>01 / PHÂN TÍCH LOG GHI SẴN</span>
               <span>02 / KẾT LUẬN CÓ BẰNG CHỨNG</span>
             </div>
-          </div>
+            </div>
+          </SmoothReveal>
 
           <PearlScene />
         </section>

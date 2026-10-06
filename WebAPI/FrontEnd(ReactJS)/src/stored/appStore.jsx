@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { DEFAULT_SETTINGS, ROLES } from '../domain/appTypes';
+import SmoothReveal from '../components/common/SmoothReveal';
 
 const STORAGE_KEY = 'ros2-doctor-frontend:v1';
 const AppContext = createContext(null);
@@ -521,12 +522,14 @@ export function AppProvider({ children }) {
       {children}
       <div className="toast-region" aria-live="polite">
         {toast && (
-          <div className={`toast ${toast.tone}`}>
+          <SmoothReveal duration={240} distance={-8}>
+            <div className={`toast ${toast.tone}`}>
             <span>{toast.message}</span>
             <button type="button" aria-label="Đóng thông báo" onClick={() => setToast(null)}>
               ×
             </button>
-          </div>
+            </div>
+          </SmoothReveal>
         )}
       </div>
     </AppContext.Provider>

@@ -18,7 +18,7 @@ export default function SessionNavigationTabs({ sessionId, activeTab, notify }) 
   };
 
   return (
-    <nav className="tabs" aria-label="Điều hướng phiên phân tích">
+    <nav className="tabs session-navigation-tabs" aria-label="Điều hướng phiên phân tích">
       {SESSION_TABS.map((tab) => (
         <Link
           key={tab.id}
