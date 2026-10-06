@@ -1,0 +1,228 @@
+.page-content .table-scroll {
+  position: relative;
+  max-width: 100%;
+  border: 1px solid #dce5ee;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(24, 57, 87, 0.055);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #b9c8d7 transparent;
+}
+
+.page-content .table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.page-content .table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.page-content .table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #b9c8d7;
+}
+
+.page-content .table-scroll:focus-visible {
+  outline: 3px solid rgba(23, 108, 221, 0.2);
+  outline-offset: 3px;
+}
+
+.page-content .table-scroll table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: auto;
+}
+
+.page-content .table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 14px 16px;
+  border-bottom: 1px solid #dce5ee;
+  color: #61778c;
+  background: linear-gradient(180deg, #f8fafc 0%, #f3f6f9 100%);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: 0.055em;
+  line-height: 1.35;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.page-content .table-scroll thead th:first-child {
+  border-top-left-radius: 11px;
+}
+
+.page-content .table-scroll thead th:last-child {
+  border-top-right-radius: 11px;
+}
+
+.page-content .table-scroll tbody td {
+  padding: 16px;
+  border-bottom: 1px solid #e7edf3;
+  color: #29445d;
+  background: transparent;
+  font-size: 11px;
+  line-height: 1.55;
+  vertical-align: middle;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.page-content .table-scroll tbody tr:nth-child(even) {
+  background: #fbfcfe;
+}
+
+.page-content .table-scroll tbody tr:hover {
+  background: #f3f8fe;
+}
+
+.page-content .table-scroll tbody tr:hover td {
+  color: #17344e;
+}
+
+.page-content .table-scroll tbody tr:hover td:first-child {
+  box-shadow: inset 3px 0 0 #2a78d5;
+}
+
+.page-content .table-scroll tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.page-content .table-title-link {
+  display: inline-grid;
+  gap: 3px;
+  max-width: 100%;
+  color: #173e61;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.page-content .table-title-link strong {
+  color: #0b3153;
+  font-size: 11px;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+  transition: color 160ms ease;
+}
+
+.page-content .table-title-link small {
+  color: #74879a;
+  font-size: 9px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.page-content .table-title-link:hover strong {
+  color: #176cdd;
+}
+
+.page-content .table-title-link:focus-visible {
+  border-radius: 5px;
+  outline: 3px solid rgba(23, 108, 221, 0.2);
+  outline-offset: 3px;
+}
+
+.page-content .table-scroll .badge {
+  min-height: 24px;
+  padding: 4px 9px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.38);
+}
+
+.page-content .table-scroll .badge i {
+  width: 5px;
+  height: 5px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7);
+}
+
+.page-content .table-scroll .badge.green {
+  color: #14745d;
+  background: #eefaf5;
+  border-color: #c3e8db;
+}
+
+.page-content .table-scroll .badge.orange {
+  color: #9a6116;
+  background: #fff8eb;
+  border-color: #f1d7aa;
+}
+
+.page-content .table-scroll .badge.red {
+  color: #b42e49;
+  background: #fff3f5;
+  border-color: #f2c8d0;
+}
+
+.page-content .table-scroll .badge.blue,
+.page-content .table-scroll .badge.cyan {
+  color: #1c62ad;
+  background: #f0f7ff;
+  border-color: #c7dcf4;
+}
+
+.page-content .table-scroll .badge.muted {
+  color: #66788a;
+  background: #f5f7f9;
+  border-color: #dce3e9;
+}
+
+.page-content .table-empty {
+  height: 150px;
+  padding: 46px 20px;
+  color: #72869a;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(23, 108, 221, 0.045), transparent 42%),
+    #fff;
+  font-size: 12px;
+  text-align: center;
+}
+
+.page-content .pagination-container {
+  margin-top: 12px;
+  border: 1px solid #dce5ee;
+  border-radius: 11px !important;
+  box-shadow: 0 5px 16px rgba(24, 57, 87, 0.045);
+}
+
+@media (max-width: 760px) {
+  .page-content .table-scroll {
+    margin-inline: 0;
+    border-radius: 10px;
+  }
+
+  .page-content .table-scroll table {
+    min-width: 680px;
+  }
+
+  .page-content .table-scroll thead th {
+    padding: 12px 13px;
+    font-size: 8px;
+  }
+
+  .page-content .table-scroll tbody td {
+    padding: 14px 13px;
+    font-size: 10px;
+  }
+
+  .page-content .pagination-container {
+    align-items: flex-start !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content .table-scroll tbody td,
+  .page-content .table-title-link strong {
+    transition: none;
+  }
+}

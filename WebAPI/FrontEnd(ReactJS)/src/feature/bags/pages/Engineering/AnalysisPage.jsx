@@ -83,38 +83,42 @@ export default function AnalysisPage() {
       </PageHeader>
 
       {/* Top summary stats: 3 trạng thái chuẩn */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', padding: '18px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '12px', color: '#64748b', display: 'block' }}>Tổng phiên phân tích</span>
-          <strong style={{ fontSize: '24px', color: '#0f172a', fontWeight: 800 }}>{sessions.length}</strong>
-          <small style={{ display: 'block', color: '#64748b', marginTop: '4px', fontSize: '11px' }}>Dữ liệu thực tế từ Database</small>
+      <div className="stats-grid analysis-summary-grid">
+        <div className="card stat cyan analysis-summary-card">
+          <span className="stat-label">Tổng phiên phân tích</span>
+          <span className="stat-icon" aria-hidden="true"><Icon name="activity" /></span>
+          <strong>{sessions.length}</strong>
+          <small>Dữ liệu thực tế từ Database</small>
         </div>
 
         {/* 1. Bình thường: Xanh lá */}
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '18px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '12px', color: '#166534', display: 'block', fontWeight: 600 }}>Bình thường (Danh định)</span>
-          <strong style={{ fontSize: '24px', color: '#16a34a', fontWeight: 800 }}>
+        <div className="card stat green analysis-summary-card">
+          <span className="stat-label">Bình thường (Danh định)</span>
+          <span className="stat-icon" aria-hidden="true"><Icon name="check" /></span>
+          <strong>
             {normalCount}
           </strong>
-          <small style={{ display: 'block', color: '#15803d', marginTop: '4px', fontSize: '11px' }}>● 100 điểm, không có sự cố</small>
+          <small>100 điểm, không có sự cố</small>
         </div>
 
         {/* 2. Cảnh báo: Vàng */}
-        <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '18px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '12px', color: '#92400e', display: 'block', fontWeight: 600 }}>Cảnh báo cần theo dõi</span>
-          <strong style={{ fontSize: '24px', color: '#d97706', fontWeight: 800 }}>
+        <div className="card stat orange analysis-summary-card">
+          <span className="stat-label">Cảnh báo cần theo dõi</span>
+          <span className="stat-icon" aria-hidden="true"><Icon name="warning" /></span>
+          <strong>
             {warningCount}
           </strong>
-          <small style={{ display: 'block', color: '#b45309', marginTop: '4px', fontSize: '11px' }}>⚠️ Cảnh báo mức nhẹ / trung bình</small>
+          <small>Cảnh báo mức nhẹ / trung bình</small>
         </div>
 
         {/* 3. Lỗi: Đỏ */}
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '18px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <span style={{ fontSize: '12px', color: '#991b1b', display: 'block', fontWeight: 600 }}>Sự cố lỗi nghiêm trọng</span>
-          <strong style={{ fontSize: '24px', color: '#dc2626', fontWeight: 800 }}>
+        <div className="card stat red analysis-summary-card">
+          <span className="stat-label">Sự cố lỗi nghiêm trọng</span>
+          <span className="stat-icon" aria-hidden="true"><Icon name="alert" /></span>
+          <strong>
             {errorCount}
           </strong>
-          <small style={{ display: 'block', color: '#b91c1c', marginTop: '4px', fontSize: '11px' }}>❌ Cần đối chiếu & khắc phục ngay</small>
+          <small>Cần đối chiếu & khắc phục ngay</small>
         </div>
       </div>
 
