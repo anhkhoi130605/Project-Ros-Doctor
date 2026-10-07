@@ -59,5 +59,7 @@ YÊU CẦU BẮT BUỘC ĐỐI VỚI CHUYÊN GIA AI AGENT (GROUNDING & ACCURACY)
    - Cung cấp hành động kỹ thuật chuẩn mực phù hợp trực tiếp với nguyên nhân gốc (ví dụ: triển khai Chrony/PTP IEEE 1588 và hardware PPS line cho clock drift; nâng cấp MultiThreadedExecutor + QoS cho frequency drop; Mahalanobis gating cho TF jump...).
 5. XUẤT ĐỊNH DẠNG JSON DiagnosticReport chuẩn mực.`;
 
-  return await sendChatMessageApi(promptMessage);
+  const sessionId = session?.id != null ? String(session.id) : null;
+  const bagId = session?.bagId != null ? String(session.bagId) : sessionId;
+  return await sendChatMessageApi(promptMessage, sessionId, bagId);
 }
