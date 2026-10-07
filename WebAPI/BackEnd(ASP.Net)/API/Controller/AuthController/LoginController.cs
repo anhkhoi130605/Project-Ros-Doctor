@@ -11,11 +11,13 @@ using API.Middlewares.Extentions;
 using Domain.Enums;
 
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controller;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth-limiter")]
 public class LoginController : ControllerBase
 {
 	private readonly IMediator _mediator;

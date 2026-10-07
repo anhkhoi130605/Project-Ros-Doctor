@@ -10,6 +10,8 @@ using Application.Features.Rosbags.Queries;
 using Application.Interfaces.Rosbag;
 using Domain.Common;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -55,6 +57,7 @@ namespace API.Controller.Rosbags
 		/// <summary>
 		/// Background Job Upload: Lưu file tạm an toàn và đưa vào hàng đợi phân tích nền
 		/// </summary>
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpPost("upload")]
 		[Consumes("multipart/form-data")]
 		[RequestFormLimits(MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024)] // Giới hạn 2 GB thay vì 10 GB
@@ -86,7 +89,8 @@ namespace API.Controller.Rosbags
 				Stage = "Đã nhận tệp và đưa vào hàng đợi xử lý nền"
 			};
 
-			var tempFilePath = Path.Combine(tempDir, $"{job.JobId}_{file.FileName}");
+			var safeFileName = Path.GetFileName(file.FileName);
+			var tempFilePath = Path.Combine(tempDir, $"{job.JobId}_{safeFileName}");
 			await using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
 			{
 				await file.CopyToAsync(fs, cancellationToken);
@@ -95,7 +99,8 @@ namespace API.Controller.Rosbags
 
 			if (yamlFile != null && yamlFile.Length > 0)
 			{
-				var yamlTemp = Path.Combine(tempDir, $"{job.JobId}_{yamlFile.FileName}");
+				var safeYamlName = Path.GetFileName(yamlFile.FileName);
+				var yamlTemp = Path.Combine(tempDir, $"{job.JobId}_{safeYamlName}");
 				await using (var yfs = new FileStream(yamlTemp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, useAsync: true))
 				{
 					await yamlFile.CopyToAsync(yfs, cancellationToken);
@@ -153,6 +158,7 @@ namespace API.Controller.Rosbags
 		/// <summary>
 		/// Upload trực tiếp file .db3 và tùy chọn metadata.yaml (hoặc file .zip) và nạp/phân tích ngay lập tức
 		/// </summary>
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpPost("upload-and-inspect")]
 		[Consumes("multipart/form-data")]
 		[RequestFormLimits(MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024)]
@@ -214,6 +220,7 @@ namespace API.Controller.Rosbags
 			return Ok(result);
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpPost]
 		public async Task<IActionResult> CreateBag([FromBody] CreateRosbagRequestDto request, CancellationToken cancellationToken)
 		{
@@ -222,6 +229,7 @@ namespace API.Controller.Rosbags
 			return Created($"/api/bags/{result.Id}", result);
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpDelete("{id}")]
 		public async Task<IActionResult> DeleteBag(string id, CancellationToken cancellationToken)
 		{

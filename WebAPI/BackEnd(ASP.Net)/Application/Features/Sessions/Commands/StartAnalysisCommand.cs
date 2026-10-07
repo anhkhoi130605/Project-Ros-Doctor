@@ -33,11 +33,27 @@ namespace Application.Features.Sessions.Commands
 			var sessionId = "ses-" + Guid.NewGuid().ToString("N")[..8];
 			var bag = await _unitOfWork.Rosbags.GetByIdAsync(command.Request.BagId, cancellationToken);
 
+			string? validEngineerId = null;
+			if (!string.IsNullOrWhiteSpace(command.UserId) && command.UserId != "usr-guest")
+			{
+				var existingUser = await _unitOfWork.User.GetByIdAsync(command.UserId, cancellationToken);
+				if (existingUser != null)
+				{
+					validEngineerId = existingUser.Id;
+				}
+			}
+
+			if (validEngineerId == null)
+			{
+				var defaultEng = (await _unitOfWork.User.GetAllAsync(u => u.RoleId != null, null, cancellationToken)).FirstOrDefault();
+				validEngineerId = defaultEng?.Id;
+			}
+
 			var session = new AnalysisSession
 			{
 				Id = sessionId,
 				RosbagId = command.Request.BagId,
-				EngineerId = command.UserId,
+				EngineerId = validEngineerId,
 				Status = SessionStatus.Complete,
 				HealthScore = 86,
 				ExecutionTimeSec = 24,

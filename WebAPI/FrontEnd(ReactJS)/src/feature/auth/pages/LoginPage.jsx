@@ -17,8 +17,8 @@ export default function LoginPage() {
   const { isSubmitting, status, login } = useAuth();
   const { state, dispatch, notify } = useApp();
 
-  const [email, setEmail] = useState(searchParams.get('email') || 'engineer@ros2doctor.local');
-  const [password, setPassword] = useState('demo123');
+  const [email, setEmail] = useState(searchParams.get('email') || 'kpham6488@gmail.com');
+  const [password, setPassword] = useState('123456');
   const [error, setError] = useState(searchParams.get('error') || '');
 
   const handleSubmit = async (e) => {
@@ -26,7 +26,7 @@ export default function LoginPage() {
     setError('');
 
     try {
-      // 1. Attempt API login first
+      // 1. Attempt API login with real backend
       const loginResult = await login({ email, password });
       if (loginResult && loginResult.success) {
         const userRole = loginResult.role || (email.toLowerCase().includes('admin') ? 'Admin' : 'Engineering');
@@ -47,23 +47,19 @@ export default function LoginPage() {
         const roleDisplay = ROLE_NAMES[userRole] || userRole;
         notify(t('auth:login.systemSuccess', { role: roleDisplay }), 'success');
 
-        if (userRole.toLowerCase() === 'admin') {
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        // Đi vào trang tổng quan hệ thống (/dashboard)
+        navigate('/dashboard', { replace: true });
         return;
       }
     } catch (err) {
-      console.warn('API Login attempt error, falling back to demo check:', err);
+      console.warn('API Login attempt error:', err);
     }
 
-    // 2. Demo fallback check
-    const demoUser = (state.users || []).find(
-      (u) => u.email.toLowerCase() === email.toLowerCase()
-    );
-
-    if (password === 'demo123') {
+    // 2. Demo fallback (CHỈ cho phép trong môi trường Development cục bộ)
+    if (import.meta.env.DEV && password === '123456') {
+      const demoUser = (state.users || []).find(
+        (u) => u.email.toLowerCase() === email.toLowerCase()
+      );
       const role = demoUser?.role || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('user') ? 'User' : 'Engineering');
       const name = demoUser?.name || (role === 'Admin' ? 'Quản trị viên' : role === 'User' ? 'Người dùng' : 'Kỹ sư Robotics');
       
@@ -75,18 +71,13 @@ export default function LoginPage() {
         userName: name,
       });
 
-      localStorage.setItem('accessToken', 'demo-token-' + role);
       localStorage.setItem('userRole', role);
       localStorage.setItem('userEmail', email);
 
       const roleDisplay = ROLE_NAMES[role] || role;
       notify(t('auth:login.success', { role: roleDisplay }), 'success');
 
-      if (role.toLowerCase() === 'admin') {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
+      navigate('/dashboard', { replace: true });
     } else {
       setError(t('auth:login.invalidCredentials'));
     }

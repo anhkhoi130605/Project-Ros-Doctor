@@ -132,12 +132,13 @@ namespace Infrastructure.Services.Rosbag
 			string? yamlFileName = null,
 			CancellationToken cancellationToken = default)
 		{
+			var safeFileName = Path.GetFileName(fileName);
 			var tempFolder = Path.Combine(Path.GetTempPath(), "rosbags_upload", Guid.NewGuid().ToString("N")[..8]);
 			Directory.CreateDirectory(tempFolder);
 
-			if (fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+			if (safeFileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
 			{
-				var zipFilePath = Path.Combine(tempFolder, fileName);
+				var zipFilePath = Path.Combine(tempFolder, safeFileName);
 				await using (var outputStream = File.Create(zipFilePath))
 				{
 					await fileStream.CopyToAsync(outputStream, cancellationToken);
@@ -150,7 +151,7 @@ namespace Infrastructure.Services.Rosbag
 				}
 			}
 
-			var tempFilePath = Path.Combine(tempFolder, fileName);
+			var tempFilePath = Path.Combine(tempFolder, safeFileName);
 			await using (var outputStream = File.Create(tempFilePath))
 			{
 				await fileStream.CopyToAsync(outputStream, cancellationToken);
@@ -158,7 +159,8 @@ namespace Infrastructure.Services.Rosbag
 
 			if (yamlStream != null)
 			{
-				var yamlPath = Path.Combine(tempFolder, string.IsNullOrWhiteSpace(yamlFileName) ? "metadata.yaml" : yamlFileName);
+				var safeYamlName = !string.IsNullOrWhiteSpace(yamlFileName) ? Path.GetFileName(yamlFileName) : "metadata.yaml";
+				var yamlPath = Path.Combine(tempFolder, safeYamlName);
 				await using var outputYaml = File.Create(yamlPath);
 				await yamlStream.CopyToAsync(outputYaml, cancellationToken);
 			}

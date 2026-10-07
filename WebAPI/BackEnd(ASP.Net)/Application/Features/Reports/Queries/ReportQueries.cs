@@ -108,13 +108,30 @@ namespace Application.Features.Reports.Commands
 		{
 			var reportId = "RPT-" + Guid.NewGuid().ToString("N")[..6].ToUpper();
 
+			// Ensure ReviewerId is either a valid user in DB or null to satisfy FK constraint
+			string? validReviewerId = null;
+			if (!string.IsNullOrWhiteSpace(command.ReviewerId) && command.ReviewerId != "usr-reviewer")
+			{
+				var existingUser = await _unitOfWork.User.GetByIdAsync(command.ReviewerId, cancellationToken);
+				if (existingUser != null)
+				{
+					validReviewerId = existingUser.Id;
+				}
+			}
+
+			if (validReviewerId == null)
+			{
+				var defaultAdmin = (await _unitOfWork.User.GetAllAsync(u => u.RoleId != null, null, cancellationToken)).FirstOrDefault();
+				validReviewerId = defaultAdmin?.Id;
+			}
+
 			var report = new Report
 			{
 				Id = reportId,
 				SessionId = command.Request.SessionId,
 				Title = command.Request.Title,
 				Status = ReportStatus.Approved,
-				ReviewerId = command.ReviewerId,
+				ReviewerId = validReviewerId,
 				ApprovedConclusionCount = 3,
 				CreatedAt = DateTime.UtcNow,
 				PublishedAt = DateTime.UtcNow
@@ -128,7 +145,7 @@ namespace Application.Features.Reports.Commands
 				ReportId = reportId,
 				SessionId = command.Request.SessionId,
 				Title = report.Title,
-				ReviewerId = command.ReviewerId,
+				ReviewerId = validReviewerId,
 				SnapshotAt = DateTime.UtcNow
 			};
 			await _reportSnapshotRepo.CreateSnapshotAsync(snapshot, cancellationToken);
