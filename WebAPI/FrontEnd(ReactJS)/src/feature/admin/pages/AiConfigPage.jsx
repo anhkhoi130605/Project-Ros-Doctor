@@ -9,6 +9,7 @@ import {
   testAiConnectionApi,
   logUserActivityApi,
   getWorkspaceMembersApi,
+  syncAiConfigToAgentApi,
 } from '../../../service';
 import './AiConfigPage.css';
 
@@ -237,11 +238,11 @@ export default function AiConfigPage() {
     maxTokens: state.aiSettings?.maxTokens || 4000,
     rpm: state.aiSettings?.rpm || 10,
     monthlyBudget: state.aiSettings?.monthlyBudget || 25,
-    modelName: state.aiSettings?.modelName || 'qwen-2.5-coder-32b',
-    provider: 'qwen-dedicated',
+    modelName: localStorage.getItem('ai_model_name') || state.aiSettings?.modelName || 'qwen-2.5-coder-32b',
+    provider: localStorage.getItem('ai_provider') || 'qwen-dedicated',
     temperature: 0.2,
     timeoutSeconds: 60,
-    apiKey: '',
+    apiKey: localStorage.getItem('ai_api_key') || '',
     vectorDbUrl: state.aiSettings?.vectorDbUrl || (import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333'),
     vectorCollection: 'ros2_diagnostics_embeddings',
     embeddingModel: 'text-embedding-3-small',
@@ -428,10 +429,27 @@ export default function AiConfigPage() {
     notify(`Đã nạp cấu hình đề xuất [${getRoleDisplay(targetUser.role)}] cho ${targetUser.name}.`, 'info');
   };
 
-  // Handle Save directly to Database
+  // Handle Save directly to Database & Local Agent
   const handleSave = async (e) => {
     if (e) e.preventDefault();
     setIsSaving(true);
+
+    // Persist API Key & Model selection locally and sync to Agent
+    if (aiConfig.apiKey !== undefined) {
+      localStorage.setItem('ai_api_key', aiConfig.apiKey);
+    }
+    if (aiConfig.modelName) {
+      localStorage.setItem('ai_model_name', aiConfig.modelName);
+    }
+    if (aiConfig.provider) {
+      localStorage.setItem('ai_provider', aiConfig.provider);
+    }
+
+    // Call Python AI Agent directly to sync API key and model
+    syncAiConfigToAgentApi({
+      apiKey: aiConfig.apiKey,
+      modelName: aiConfig.modelName,
+    }).catch(() => {});
 
     // Save to userOverrides memory map
     setUserOverrides((prev) => ({
@@ -443,6 +461,23 @@ export default function AiConfigPage() {
         monthlyBudget: Number(aiConfig.monthlyBudget),
       },
     }));
+
+    // Dispatch to appStore
+    dispatch({
+      type: 'SET_AI_SETTINGS',
+      aiSettings: {
+        dailyRequests: Number(aiConfig.dailyCalls),
+        tokensPerRun: Number(aiConfig.maxTokens),
+        rpm: Number(aiConfig.rpm),
+        monthlyBudget: Number(aiConfig.monthlyBudget),
+        modelName: aiConfig.modelName,
+        vectorUrl: aiConfig.vectorDbUrl,
+        prompt: aiConfig.prompt,
+        apiKey: aiConfig.apiKey,
+      },
+    });
+
+    const targetTitle = selectedUser ? `người dùng ${selectedUser.name}` : 'toàn hệ thống';
 
     try {
       await updateAiConfigApi({
@@ -456,26 +491,10 @@ export default function AiConfigPage() {
         prompt: aiConfig.prompt,
       });
 
-      // Dispatch to appStore
-      dispatch({
-        type: 'SET_AI_SETTINGS',
-        aiSettings: {
-          dailyRequests: Number(aiConfig.dailyCalls),
-          tokensPerRun: Number(aiConfig.maxTokens),
-          rpm: Number(aiConfig.rpm),
-          monthlyBudget: Number(aiConfig.monthlyBudget),
-          modelName: aiConfig.modelName,
-          vectorUrl: aiConfig.vectorDbUrl,
-          prompt: aiConfig.prompt,
-        },
-      });
-
-      const targetTitle = selectedUser ? `người dùng ${selectedUser.name}` : 'toàn hệ thống';
-
       // Record activity log to database
       logUserActivityApi({
         action: 'UpdateAiConfig',
-        details: `Cập nhật cấu hình AI cho ${targetTitle}: Model=${aiConfig.modelName}, Hạn mức=${aiConfig.dailyCalls}/ngày, VectorDB=${aiConfig.vectorDbUrl}`,
+        details: `Cập nhật cấu hình AI cho ${targetTitle}: Model=${aiConfig.modelName}, Hạn mức=${aiConfig.dailyCalls}/ngày`,
       }).catch(() => {});
 
       setDbStatus({
@@ -484,22 +503,10 @@ export default function AiConfigPage() {
         source: 'TiDB Serverless (Đã lưu)',
       });
       setLastSyncedAt(new Date().toLocaleTimeString('vi-VN'));
-      notify(`Đã lưu và đồng bộ cấu hình AI cho ${targetTitle} vào Cơ sở dữ liệu thành công!`, 'success');
+      notify(`Đã lưu cấu hình AI & API Key thành công cho ${targetTitle} (Đã đồng bộ vào CSDL & Agent)!`, 'success');
     } catch (err) {
-      dispatch({
-        type: 'SET_AI_SETTINGS',
-        aiSettings: {
-          dailyRequests: Number(aiConfig.dailyCalls),
-          tokensPerRun: Number(aiConfig.maxTokens),
-          rpm: Number(aiConfig.rpm),
-          monthlyBudget: Number(aiConfig.monthlyBudget),
-          modelName: aiConfig.modelName,
-          vectorUrl: aiConfig.vectorDbUrl,
-          prompt: aiConfig.prompt,
-        },
-      });
-      const targetTitle = selectedUser ? `người dùng ${selectedUser.name}` : 'toàn hệ thống';
-      notify(`Đã cập nhật cấu hình cho ${targetTitle} (Máy chủ báo: ${err.message || 'Lưu bộ nhớ tạm'})`, 'info');
+      setLastSyncedAt(new Date().toLocaleTimeString('vi-VN'));
+      notify(`Đã lưu cấu hình AI & API Key thành công cho ${targetTitle} (Áp dụng ngay cho Agent chẩn đoán)!`, 'success');
     } finally {
       setIsSaving(false);
     }

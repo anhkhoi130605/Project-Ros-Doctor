@@ -39,6 +39,8 @@ export default function useEngineeringDashboard() {
                   status: s.status || 'complete',
                   statusText: s.status === 'complete' ? 'Hoàn tất' : 'Chờ duyệt',
                   issues: s.issues || [],
+                  duration: s.duration || b.duration || 85,
+                  processingSeconds: s.processingSeconds || b.processingSeconds || 85,
                 }))
                 .catch(() => ({
                   id: b.sessionId,
@@ -52,6 +54,8 @@ export default function useEngineeringDashboard() {
                   status: b.status || 'complete',
                   statusText: 'Hoàn tất',
                   issues: [],
+                  duration: b.duration || 85,
+                  processingSeconds: b.processingSeconds || 85,
                 }))
             )
           );

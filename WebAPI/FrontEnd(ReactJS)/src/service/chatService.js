@@ -1,6 +1,27 @@
 const AI_AGENT_URL = import.meta.env.VITE_AI_AGENT_URL || '/ai-agent';
 
 /**
+ * Đồng bộ cấu hình API Key và Model trực tiếp sang Python AI Agent.
+ */
+export async function syncAiConfigToAgentApi(config) {
+  try {
+    const res = await fetch(`${AI_AGENT_URL}/api/v1/ai-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: config.apiKey,
+        model: config.modelName,
+        base_url: config.baseUrl,
+      }),
+    });
+    return res.json();
+  } catch (err) {
+    console.warn('[AI Agent] Failed to sync config:', err);
+    return null;
+  }
+}
+
+/**
  * Gửi tin nhắn hỏi đáp chẩn đoán sự cố ROS2 tới Python AI Agent (LangGraph + RAG).
  * @param {string} message - Câu hỏi hoặc truy vấn của kỹ sư
  * @returns {Promise<{response: string, analysis: string}>}
@@ -9,6 +30,15 @@ export async function sendChatMessageApi(message, sessionId = null, bagId = null
   const payload = { message };
   if (sessionId) payload.session_id = sessionId;
   if (bagId) payload.bag_id = bagId;
+
+  const storedApiKey = localStorage.getItem('ai_api_key');
+  if (storedApiKey && storedApiKey.trim()) {
+    payload.api_key = storedApiKey.trim();
+  }
+  const storedModel = localStorage.getItem('ai_model_name');
+  if (storedModel && storedModel.trim()) {
+    payload.model = storedModel.trim();
+  }
 
   const response = await fetch(`${AI_AGENT_URL}/api/v1/chat`, {
     method: 'POST',
@@ -47,6 +77,15 @@ export async function streamChatMessageApi(message, sessionId = null, bagId = nu
   const payload = { message };
   if (sessionId) payload.session_id = sessionId;
   if (bagId) payload.bag_id = bagId;
+
+  const storedApiKey = localStorage.getItem('ai_api_key');
+  if (storedApiKey && storedApiKey.trim()) {
+    payload.api_key = storedApiKey.trim();
+  }
+  const storedModel = localStorage.getItem('ai_model_name');
+  if (storedModel && storedModel.trim()) {
+    payload.model = storedModel.trim();
+  }
 
   try {
     const response = await fetch(`${AI_AGENT_URL}/api/v1/chat/stream`, {

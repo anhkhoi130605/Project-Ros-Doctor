@@ -176,7 +176,10 @@ async def respond_node(state: AgentState) -> dict[str, Any]:
 
     # Gọi mô hình LLM để suy luận động
     try:
-        result = await get_llm().ainvoke(prompt)
+        client_api_key = state.get("api_key")
+        client_model = state.get("model")
+        llm = get_llm(model=client_model, api_key=client_api_key)
+        result = await llm.ainvoke(prompt)
         raw_response = result.content if isinstance(result.content, str) else str(result.content)
     except Exception as llm_err:
         return {

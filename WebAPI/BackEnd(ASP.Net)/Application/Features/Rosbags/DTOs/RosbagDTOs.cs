@@ -15,6 +15,7 @@ namespace Application.Features.Rosbags.DTOs
 		public string Status { get; set; } = "ready";
 		public string? Date { get; set; }
 		public string? SessionId { get; set; }
+		public int ProcessingSeconds { get; set; }
 		public string? UserId { get; set; }
 	}
 

@@ -77,7 +77,7 @@ namespace Application.Features.Admin.AiConfig.Queries
 			var totalCost = logs.Sum(l => l.CostUsd);
 			var avgLatency = logs.Average(l => l.LatencyMs);
 
-			var recent = logs.OrderByDescending(l => l.CreatedAt).Take(20).Select(l => new AiUsageItemDto
+			var recent = logs.OrderByDescending(l => l.CreatedAt).Take(200).Select(l => new AiUsageItemDto
 			{
 				Id = l.Id,
 				SessionId = l.SessionId,

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from src.agents.graph import agent
@@ -31,6 +32,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
             "query": request.message,
             "session_id": request.session_id,
             "bag_id": request.bag_id,
+            "api_key": request.api_key,
+            "model": request.model,
         }
         result = await agent.ainvoke(input_state)
         response_text = result.get("response", "")
@@ -70,6 +73,8 @@ async def chat_stream(request: ChatRequest):
                 "query": request.message,
                 "session_id": request.session_id,
                 "bag_id": request.bag_id,
+                "api_key": request.api_key,
+                "model": request.model,
             }
             result = await agent.ainvoke(input_state)
             full_response = result.get("response", "")
@@ -203,3 +208,30 @@ async def list_carla_bags():
                     }
                 )
     return {"total": len(bags), "bags": bags}
+
+
+class UpdateAiConfigPayload(BaseModel):
+    api_key: str | None = None
+    model: str | None = None
+    base_url: str | None = None
+
+
+@router.post("/ai-config")
+async def update_ai_config(payload: UpdateAiConfigPayload):
+    """Cập nhật cấu hình mô hình AI và API key trực tiếp cho Agent chẩn đoán."""
+    from src.config import get_settings, update_env_setting
+
+    if payload.api_key and payload.api_key.strip():
+        update_env_setting("OPENAI_API_KEY", payload.api_key.strip())
+    if payload.model and payload.model.strip():
+        update_env_setting("MODEL_NAME", payload.model.strip())
+    if payload.base_url and payload.base_url.strip():
+        update_env_setting("OPENAI_BASE_URL", payload.base_url.strip())
+
+    settings = get_settings()
+    return {
+        "success": True,
+        "model": settings.model_name,
+        "has_api_key": bool(settings.openai_api_key),
+        "message": "Đã đồng bộ cấu hình AI thành công vào hệ thống Agent.",
+    }
