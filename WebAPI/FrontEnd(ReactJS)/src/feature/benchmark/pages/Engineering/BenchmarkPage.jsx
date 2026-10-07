@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../../stored/appStore';
 import { PageHeader, Card, Badge, Icon } from '../../../../components/common/UIComponents';
 import LabeledCaseDialog from './components/LabeledCaseDialog';
@@ -11,6 +12,7 @@ import {
 
 export default function EngineeringBenchmarkPage() {
   const { notify } = useApp();
+  const { i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Mode: 'results' (Màn E23) or 'dataset' (Màn E21)
@@ -25,6 +27,10 @@ export default function EngineeringBenchmarkPage() {
   // State for dataset & test cases (E21 / E22)
   const [datasetName, setDatasetName] = useState('RAV-13 / Lỗi đã biết');
   const [testCases, setTestCases] = useState(INITIAL_TEST_CASES);
+  const language = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0];
+  const localizedDatasetName = datasetName === 'RAV-13 / Lỗi đã biết' || datasetName === 'RAV-13 / Known issues'
+    ? language === 'en' ? 'RAV-13 / Known issues' : 'RAV-13 / Lỗi đã biết'
+    : datasetName;
 
   // State for Modal Dialog (E22)
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -48,7 +54,7 @@ export default function EngineeringBenchmarkPage() {
 
   // Handle Save Dataset in E21
   const handleSaveDataset = () => {
-    notify(`Đã lưu bộ dữ liệu "${datasetName}" với ${testCases.length} trường hợp.`, 'success');
+    notify(`Đã lưu bộ dữ liệu "${localizedDatasetName}" với ${testCases.length} trường hợp.`, 'success');
   };
 
   // Handle Add New Case (Opens E22)
@@ -110,7 +116,7 @@ export default function EngineeringBenchmarkPage() {
           {/* Header matching Figma E23 1 */}
           <PageHeader
             title="Kết quả benchmark"
-            subtitle={`${datasetName} · ${testCases.length} trường hợp có nhãn`}
+            subtitle={`${localizedDatasetName} · ${testCases.length} trường hợp có nhãn`}
           >
             <button
               type="button"
@@ -330,7 +336,7 @@ export default function EngineeringBenchmarkPage() {
               <span>Tên bộ dữ liệu</span>
               <input
                 type="text"
-                value={datasetName}
+                value={localizedDatasetName}
                 onChange={(e) => setDatasetName(e.target.value)}
               />
             </label>

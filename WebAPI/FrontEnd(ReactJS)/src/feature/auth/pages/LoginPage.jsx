@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hook/useAuth';
 import { useApp } from '../../../stored/appStore';
 import { getGoogleLoginUrl } from '../api/authApi';
 import { Logo, Button, FormField, Notice } from '../../../components/common/UIComponents';
+import LanguageSwitcher from '../../../components/common/LanguageSwitcher';
 import PearlScene from '../../../components/common/PearlScene';
 import { ROLE_NAMES } from '../../../domain/appTypes';
 import SmoothReveal from '../../../components/common/SmoothReveal';
 
 export default function LoginPage() {
+  const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isSubmitting, status, login } = useAuth();
@@ -42,7 +45,7 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', email);
 
         const roleDisplay = ROLE_NAMES[userRole] || userRole;
-        notify(`Đăng nhập hệ thống thành công với vai trò ${roleDisplay}!`, 'success');
+        notify(t('auth:login.systemSuccess', { role: roleDisplay }), 'success');
 
         if (userRole.toLowerCase() === 'admin') {
           navigate('/admin', { replace: true });
@@ -77,7 +80,7 @@ export default function LoginPage() {
       localStorage.setItem('userEmail', email);
 
       const roleDisplay = ROLE_NAMES[role] || role;
-      notify(`Đăng nhập thành công với vai trò ${roleDisplay}!`, 'success');
+      notify(t('auth:login.success', { role: roleDisplay }), 'success');
 
       if (role.toLowerCase() === 'admin') {
         navigate('/admin', { replace: true });
@@ -85,7 +88,7 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true });
       }
     } else {
-      setError('Email hoặc mật khẩu chưa đúng. Với bản thử nghiệm, hãy dùng mật khẩu demo123.');
+      setError(t('auth:login.invalidCredentials'));
     }
   };
 
@@ -98,13 +101,14 @@ export default function LoginPage() {
   return (
     <div className="editorial-login">
       <header>
-        <Link to="/" aria-label="CTRN SHIFT N, trang chủ">
+        <Link to="/" aria-label={t('common:aria.home')}>
           <Logo />
         </Link>
-        <nav aria-label="Lựa chọn phương thức">
-          <span>Chưa có tài khoản?</span>
+        <nav aria-label={t('auth:login.methodNavigation')}>
+          <LanguageSwitcher />
+          <span>{t('auth:login.noAccount')}</span>
           <Link to="/register" className="text-link">
-            Đăng ký
+            {t('auth:login.register')}
           </Link>
         </nav>
       </header>
@@ -123,10 +127,10 @@ export default function LoginPage() {
           <div className="hero-content" style={{ position: 'relative', zIndex: 3, maxWidth: '440px' }}>
             <span className="eyebrow">RAV-13 / ROBOTICS INTELLIGENCE</span>
             <h1>
-              Hiểu dữ liệu.<br />
-              <em>Giải mã robot.</em>
+              {t('auth:login.heroTitleLine1')}<br />
+              <em>{t('auth:login.heroTitleLine2')}</em>
             </h1>
-            <p>Hệ thống hỗ trợ chẩn đoán sự cố ROS2 tự động. AI đề xuất, kỹ sư quyết định.</p>
+            <p>{t('auth:login.heroDescription')}</p>
           </div>
 
           <div
@@ -149,9 +153,9 @@ export default function LoginPage() {
         <div className="login-form-wrap">
           <SmoothReveal begin={80} duration={460} distance={12}>
             <form className="login-form card" onSubmit={handleSubmit} noValidate>
-            <span className="eyebrow">KHÔNG GIAN CHẨN ĐOÁN</span>
-            <h2>Chào mừng trở lại.</h2>
-            <p>Đăng nhập để tiếp tục công việc của bạn.</p>
+            <span className="eyebrow">{t('auth:login.kicker')}</span>
+            <h2>{t('auth:login.welcome')}</h2>
+            <p>{t('auth:login.description')}</p>
 
             {(error || status.message) && (
               <Notice tone={error || status.type === 'error' ? 'orange' : 'green'} icon={error || status.type === 'error' ? 'alert' : 'check'}>
@@ -159,7 +163,7 @@ export default function LoginPage() {
               </Notice>
             )}
 
-            <FormField label="Email">
+            <FormField label={t('auth:login.email')}>
               <input
                 type="email"
                 required
@@ -170,7 +174,7 @@ export default function LoginPage() {
               />
             </FormField>
 
-            <FormField label="Mật khẩu">
+            <FormField label={t('auth:login.password')}>
               <input
                 type="password"
                 required
@@ -182,11 +186,11 @@ export default function LoginPage() {
             </FormField>
 
             <Button type="submit" variant="primary" loading={isSubmitting} icon="arrow">
-              Đăng nhập
+              {t('auth:login.submit')}
             </Button>
 
             <div style={{ textAlign: 'center', margin: '20px 0 16px', color: '#94a3b8', fontSize: '12px' }}>
-              hoặc
+              {t('auth:login.or')}
             </div>
 
             <button
@@ -226,11 +230,11 @@ export default function LoginPage() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              <span>Đăng nhập bằng Google</span>
+              <span>{t('auth:login.google')}</span>
             </button>
 
             <small className="demo-login-note" style={{ display: 'block', marginTop: '16px', color: '#64748b' }}>
-              Bản preview sử dụng mật khẩu mẫu <strong>demo123</strong>.
+              {t('auth:login.previewNote')} <strong>demo123</strong>.
             </small>
 
 
@@ -241,7 +245,7 @@ export default function LoginPage() {
 
       <footer className="login-footer">
         <span>© 2026 CTRN SHIFT N / RAV-13</span>
-        <span>Hệ thống chẩn đoán lỗi ROS2 tự động</span>
+        <span>{t('auth:login.footer')}</span>
       </footer>
     </div>
   );

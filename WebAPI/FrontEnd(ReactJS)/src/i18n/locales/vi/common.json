@@ -1,0 +1,77 @@
+{
+  "language": "Ngôn ngữ",
+  "languages": {
+    "vi": "Tiếng Việt",
+    "en": "Tiếng Anh"
+  },
+  "actions": {
+    "close": "Đóng",
+    "logout": "Đăng xuất",
+    "profile": "Thông tin cá nhân"
+  },
+  "aria": {
+    "closeMenu": "Đóng menu",
+    "closeNavigation": "Đóng menu điều hướng",
+    "openNavigation": "Mở menu điều hướng",
+    "applicationNavigation": "Điều hướng ứng dụng",
+    "accountMenu": "Menu tài khoản",
+    "home": "CTRN SHIFT N, trang chủ"
+  },
+  "pin": {
+    "pin": "Ghim",
+    "unpin": "Bỏ ghim",
+    "pinTitle": "Ghim thanh điều hướng cố định",
+    "unpinTitle": "Bỏ ghim (tự động ẩn khi rời chuột)"
+  },
+  "roles": {
+    "label": "Vai trò:",
+    "verifiedHint": "Vai trò được xác thực từ phiên đăng nhập an toàn",
+    "admin": "👑 Quản trị viên",
+    "user": "👁️ Người xem",
+    "engineering": "🛠️ Kỹ sư Robotics"
+  },
+  "profile": {
+    "title": "Thông tin cá nhân",
+    "fullName": "Họ & Tên",
+    "email": "Email",
+    "role": "Vai trò / Phân quyền",
+    "workspace": "Không gian làm việc",
+    "accountStatus": "Trạng thái tài khoản",
+    "online": "● Đang hoạt động (Online)",
+    "aiLimit": "Giới hạn AI Requests",
+    "requestsPerDay": "{{count}} requests / ngày"
+  },
+  "workspace": {
+    "research": "RAV-13 / Nghiên cứu ROS2"
+  },
+  "system": {
+    "loadingPage": "Đang tải trang...",
+    "logoutSuccess": "Đã đăng xuất khỏi hệ thống.",
+    "offlineDiagnosis": "CHẨN ĐOÁN NGOẠI TUYẾN",
+    "humanDecision": "AI đề xuất · Kỹ sư quyết định"
+  },
+  "pagination": {
+    "summary": "Hiển thị {{start}} – {{end}} trong tổng số {{total}} mục",
+    "pageSize": "Số mục:",
+    "perPage": "{{count}} / trang",
+    "first": "Trang đầu",
+    "previous": "Trước",
+    "next": "Sau",
+    "last": "Trang cuối"
+  },
+  "statuses": {
+    "pending": "Chờ duyệt",
+    "approved": "Đã duyệt",
+    "partial": "Duyệt một phần",
+    "changes": "Cần chỉnh sửa",
+    "rejected": "Bị bác bỏ",
+    "complete": "Hoàn tất",
+    "ready": "Sẵn sàng",
+    "invalid": "Không hợp lệ",
+    "outdated": "Cần cập nhật",
+    "processing": "Đang xử lý",
+    "draft": "Bản nháp",
+    "high": "Mức cao",
+    "medium": "Mức trung bình"
+  }
+}

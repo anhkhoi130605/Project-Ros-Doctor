@@ -1,10 +1,13 @@
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../stored/appStore';
 import AppLayout from '../components/layout/AppLayout';
 
 // Lightweight fallback spinner while lazy chunk loads
 function PageLoadingFallback() {
+  const { t } = useTranslation('common');
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
@@ -18,7 +21,7 @@ function PageLoadingFallback() {
             animation: 'spin 0.8s linear infinite',
           }}
         />
-        <span style={{ fontSize: '13px', color: '#64748b' }}>Đang tải trang...</span>
+        <span style={{ fontSize: '13px', color: '#64748b' }}>{t('system.loadingPage')}</span>
       </div>
     </div>
   );
