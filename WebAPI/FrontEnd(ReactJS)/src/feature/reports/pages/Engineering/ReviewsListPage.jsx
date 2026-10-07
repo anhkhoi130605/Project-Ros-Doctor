@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../../../stored/appStore';
 import { PageHeader, Badge, Card, DataTable, Icon } from '../../../../components/common/UIComponents';
-import { getReviewsApi } from '../../../../service';
+import { getReviewsApi, mapReviewsResponse } from '../../../../service';
 
 export default function EngineeringReviewsListPage() {
   const { state, dispatch, notify } = useApp();
   const [statusFilter, setStatusFilter] = useState('pending');
+  const [selectedSessionId, setSelectedSessionId] = useState('all');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -15,19 +16,7 @@ export default function EngineeringReviewsListPage() {
     setError(null);
     try {
       const res = await getReviewsApi();
-      const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
-      if (Array.isArray(rawList)) {
-        const mapped = rawList.map((r) => ({
-          ...r,
-          review: {
-            status: r.status || 'pending',
-            note: r.note || '',
-            by: r.reviewedBy || null,
-            at: r.reviewedAt || null,
-          },
-        }));
-        dispatch({ type: 'SET_REVIEWS', findings: mapped });
-      }
+      dispatch({ type: 'SET_REVIEWS', findings: mapReviewsResponse(res) });
     } catch (err) {
       console.error('Lỗi khi tải kết luận từ database:', err);
       setError('Không thể tải dữ liệu từ database. Vui lòng kiểm tra kết nối API.');
@@ -41,8 +30,26 @@ export default function EngineeringReviewsListPage() {
     fetchReviews();
   }, [fetchReviews]);
 
+  // Extract unique sessions that contain findings for filtering
+  const sessionOptions = React.useMemo(() => {
+    const map = new Map();
+    (state.findings || []).forEach((f) => {
+      const sId = f.sessionId || 'unknown';
+      if (!map.has(sId)) {
+        const bag = (state.bags || []).find((b) => b.id === sId || b.sessionId === sId);
+        const sess = (state.sessions || []).find((s) => s.id === sId || s.bagId === sId);
+        const name = bag?.name || sess?.name || (sId !== 'unknown' ? `Phiên #${sId}` : 'Mặc định');
+        map.set(sId, { id: sId, name, count: 0 });
+      }
+      map.get(sId).count += 1;
+    });
+    return Array.from(map.values());
+  }, [state.findings, state.bags, state.sessions]);
+
   const filteredFindings = (state.findings || []).filter((f) => {
-    return statusFilter === 'all' || f.review?.status === statusFilter;
+    const matchStatus = statusFilter === 'all' || (f.review?.status || f.status || 'pending') === statusFilter;
+    const matchSession = selectedSessionId === 'all' || (f.sessionId || 'unknown') === selectedSessionId;
+    return matchStatus && matchSession;
   });
 
   return (
@@ -89,9 +96,37 @@ export default function EngineeringReviewsListPage() {
             </button>
           </div>
 
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#16a34a', fontWeight: 500 }}>
-            <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
-            <span>Live DB: MySQL + MongoDB Atlas ({(state.findings || []).length} mục)</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            {sessionOptions.length > 0 && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Lọc theo Rosbag:</span>
+                <select
+                  value={selectedSessionId}
+                  onChange={(e) => setSelectedSessionId(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12px',
+                    color: '#1e293b',
+                    background: '#ffffff',
+                    maxWidth: '260px',
+                  }}
+                  aria-label="Lọc theo phiên Rosbag"
+                >
+                  <option value="all">Tất cả phiên ({(state.findings || []).length})</option>
+                  {sessionOptions.map((opt) => (
+                    <option key={opt.id} value={opt.id}>
+                      {opt.name} ({opt.count})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#16a34a', fontWeight: 500 }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
+              <span>Live DB: MySQL + MongoDB Atlas ({(state.findings || []).length} mục)</span>
+            </div>
           </div>
         </div>
 
@@ -119,6 +154,35 @@ export default function EngineeringReviewsListPage() {
                   <small>{f.title}</small>
                 </Link>
               ),
+            },
+            {
+              key: 'sessionId',
+              label: 'PHIÊN ROSBAG',
+              render: (f) => {
+                const bag = (state.bags || []).find((b) => b.id === f.sessionId || b.sessionId === f.sessionId);
+                const sess = (state.sessions || []).find((s) => s.id === f.sessionId || s.bagId === f.sessionId);
+                const displayName = bag?.name || sess?.name || (f.sessionId ? `#${f.sessionId}` : 'Mặc định');
+                return (
+                  <span
+                    style={{
+                      fontFamily: 'ui-monospace, Consolas, monospace',
+                      fontSize: '11px',
+                      background: '#f1f5f9',
+                      padding: '2px 8px',
+                      borderRadius: '4px',
+                      color: '#334155',
+                      maxWidth: '180px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      display: 'inline-block',
+                    }}
+                    title={displayName}
+                  >
+                    {displayName}
+                  </span>
+                );
+              },
             },
             { key: 'topic', label: 'TOPIC' },
             {

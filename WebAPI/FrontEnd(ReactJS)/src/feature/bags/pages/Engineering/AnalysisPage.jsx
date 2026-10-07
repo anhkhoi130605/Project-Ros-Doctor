@@ -36,25 +36,29 @@ export default function AnalysisPage() {
 
   const normalCount = sessions.filter((s) => {
     const wCount = s.warningsCount ?? (s.issues || []).length;
-    const cond = getHealthCondition(s.healthScore, wCount);
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    const cond = getHealthCondition(s.healthScore, wCount, highCount, s.issues);
     return cond.type === 'normal';
   }).length;
 
   const warningCount = sessions.filter((s) => {
     const wCount = s.warningsCount ?? (s.issues || []).length;
-    const cond = getHealthCondition(s.healthScore, wCount);
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    const cond = getHealthCondition(s.healthScore, wCount, highCount, s.issues);
     return cond.type === 'warning';
   }).length;
 
   const errorCount = sessions.filter((s) => {
     const wCount = s.warningsCount ?? (s.issues || []).length;
-    const cond = getHealthCondition(s.healthScore, wCount);
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    const cond = getHealthCondition(s.healthScore, wCount, highCount, s.issues);
     return cond.type === 'error';
   }).length;
 
   const filteredSessions = sessions.filter((s) => {
     const wCount = s.warningsCount ?? (s.issues || []).length;
-    const cond = getHealthCondition(s.healthScore, wCount);
+    const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+    const cond = getHealthCondition(s.healthScore, wCount, highCount, s.issues);
     if (activeFilter === 'normal') return cond.type === 'normal';
     if (activeFilter === 'warning') return cond.type === 'warning';
     if (activeFilter === 'error') return cond.type === 'error';
@@ -217,7 +221,7 @@ export default function AnalysisPage() {
                 pagedSessions.map((s) => {
                   const wCount = s.warningsCount ?? (s.issues || []).length;
                   const highCount = (s.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
-                  const cond = getHealthCondition(s.healthScore, wCount, highCount);
+                  const cond = getHealthCondition(s.healthScore, wCount, highCount, s.issues);
 
                   return (
                     <tr key={s.id}>
@@ -253,7 +257,7 @@ export default function AnalysisPage() {
                       </td>
                       <td>
                         <span style={{ fontWeight: 800, color: cond.scoreColor, fontSize: '13px' }}>
-                          {s.healthScore !== undefined ? `${s.healthScore}/100` : '100/100'}
+                          {`${cond.effectiveScore}/100`}
                         </span>
                       </td>
                       <td>

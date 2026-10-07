@@ -5,7 +5,8 @@
   },
   "items": {
     "dashboard": "Tổng quan",
-    "bags": "Rosbag",
+    "bags": "Bản ghi",
+    "rosbagGroup": "RosBag",
     "sharedBags": "Rosbag được chia sẻ",
     "analysis": "Phân tích",
     "chat": "Chat Agent",

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../../stored/appStore';
-import { PageHeader, Card, Icon } from '../../../components/common/UIComponents';
+import { PageHeader, Icon } from '../../../components/common/UIComponents';
 import { getAiUsageApi } from '../../../service';
+import './CostPerformancePage.css';
 
 export default function CostPerformancePage() {
   const { state } = useApp();
@@ -16,12 +17,41 @@ export default function CostPerformancePage() {
       .catch(() => {});
   }, []);
 
-  // Filter sessions from store
-  const allSessions = state.sessions || [
-    { id: '024', name: 'AGV-Lab', processingSeconds: 24 },
-    { id: '023', name: 'Warehouse', processingSeconds: 19 },
-  ];
+  // Deduplicate and sanitize sessions from store to prevent duplicate rows & UI overflow
+  const allSessions = useMemo(() => {
+    const rawSessions = (state.sessions && state.sessions.length > 0)
+      ? state.sessions
+      : [
+          { id: '024', name: 'AGV-Lab', processingSeconds: 24, duration: 24 },
+          { id: '023', name: 'Warehouse', processingSeconds: 19, duration: 19 },
+        ];
 
+    const seen = new Set();
+    const result = [];
+
+    for (const s of rawSessions) {
+      const nameStr = (s.name || s.id || '').trim();
+      // Normalize name to deduplicate sessions with varying spaces/underscores
+      const normKey = nameStr.toLowerCase().replace(/[\s_-]+/g, '_');
+      if (!normKey || seen.has(normKey)) continue;
+      seen.add(normKey);
+
+      // Clean display name (strip extension like .db3/.mcap if present)
+      const cleanDisplayName = nameStr.replace(/\.[^/.]+$/, '');
+
+      // Processing seconds: use session.processingSeconds, fallback to duration if available
+      const procSec = s.processingSeconds || (s.duration && s.duration > 0 ? Math.min(Math.round(s.duration), 60) : 0);
+
+      result.push({
+        ...s,
+        displayName: cleanDisplayName,
+        processingSeconds: procSec,
+      });
+    }
+    return result;
+  }, [state.sessions]);
+
+  // Filter sessions based on select toolbar
   const filteredSessions = useMemo(() => {
     if (filterSessionId === 'all') return allSessions;
     return allSessions.filter((s) => s.id === filterSessionId);
@@ -30,6 +60,29 @@ export default function CostPerformancePage() {
   const totalProcessingSeconds = useMemo(() => {
     return filteredSessions.reduce((acc, cur) => acc + (cur.processingSeconds || 0), 0);
   }, [filteredSessions]);
+
+  // Dynamic scale limit for visual bars (at least 30s)
+  const maxProcessingSeconds = useMemo(() => {
+    const maxVal = Math.max(...allSessions.map((s) => s.processingSeconds || 0), 0);
+    return Math.max(maxVal, 30);
+  }, [allSessions]);
+
+  // Map AI Usage logs by sessionId if available from backend
+  const sessionMetricsMap = useMemo(() => {
+    const map = {};
+    if (aiUsage?.recentLogs && Array.isArray(aiUsage.recentLogs)) {
+      for (const log of aiUsage.recentLogs) {
+        if (log.sessionId) {
+          map[log.sessionId] = {
+            tokens: (log.promptTokens || 0) + (log.completionTokens || 0),
+            cost: log.costUsd || 0,
+            model: log.modelName,
+          };
+        }
+      }
+    }
+    return map;
+  }, [aiUsage]);
 
   return (
     <div className="cost-performance-page">
@@ -118,12 +171,12 @@ export default function CostPerformancePage() {
             value={filterSessionId}
             onChange={(e) => setFilterSessionId(e.target.value)}
             aria-label="Lọc phiên chi phí"
-            style={{ maxWidth: '240px' }}
+            style={{ maxWidth: '280px' }}
           >
-            <option value="all">Tất cả phiên</option>
+            <option value="all">Tất cả phiên ({allSessions.length})</option>
             {allSessions.map((s) => (
               <option key={s.id} value={s.id}>
-                Phiên #{s.id} ({s.name})
+                {s.displayName}
               </option>
             ))}
           </select>
@@ -140,42 +193,121 @@ export default function CostPerformancePage() {
           <table>
             <thead>
               <tr>
-                <th scope="col">PHIÊN</th>
-                <th scope="col">THỜI GIAN MẪU</th>
-                <th scope="col">TOKEN</th>
-                <th scope="col">CHI PHÍ</th>
+                <th scope="col" style={{ width: '40%' }}>PHIÊN</th>
+                <th scope="col" style={{ width: '25%' }}>THỜI GIAN MẪU</th>
+                <th scope="col" style={{ width: '18%' }}>TOKEN</th>
+                <th scope="col" style={{ width: '17%' }}>CHI PHÍ</th>
               </tr>
             </thead>
             <tbody>
-              {filteredSessions.map((session) => (
-                <tr key={session.id}>
-                  <td><strong>{session.name}</strong></td>
-                  <td>{session.processingSeconds || 0} giây</td>
-                  <td>Chưa đo</td>
-                  <td>Chưa đo</td>
+              {filteredSessions.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="table-empty">
+                    Không tìm thấy phiên phân tích nào.
+                  </td>
                 </tr>
-              ))}
+              ) : (
+                filteredSessions.map((session) => {
+                  const val = session.processingSeconds || 0;
+                  const percent = maxProcessingSeconds > 0
+                    ? Math.min(100, Math.round((val / maxProcessingSeconds) * 100))
+                    : 0;
+                  const logMetric = sessionMetricsMap[session.id] || sessionMetricsMap[session.bagId];
+
+                  return (
+                    <tr key={session.id}>
+                      <td>
+                        <div className="session-cell-wrapper">
+                          <strong className="session-cell-title" title={session.displayName}>
+                            {session.displayName}
+                          </strong>
+                          <div className="session-cell-meta">
+                            <span className="session-badge-id">ID: #{session.id}</span>
+                            {session.duration ? <span>{Math.round(session.duration)}s log</span> : null}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="time-metric-cell">
+                          <span className="time-metric-value">{val} giây</span>
+                          <div className="time-metric-bar">
+                            <div
+                              className="time-metric-fill"
+                              style={{ width: `${val === 0 ? 0 : Math.max(percent, 8)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        {logMetric ? (
+                          <span className="status-pill blue">
+                            {logMetric.tokens.toLocaleString()} tokens
+                          </span>
+                        ) : (
+                          <span className="status-pill muted">Chưa đo</span>
+                        )}
+                      </td>
+                      <td>
+                        {logMetric ? (
+                          <span className="status-pill green">
+                            ${Number(logMetric.cost).toFixed(4)}
+                          </span>
+                        ) : (
+                          <span className="status-pill muted">Chưa đo</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Visual Usage Bars matching Figma E24 1 `.usage-bars` */}
-        <div className="usage-bars">
-          {filteredSessions.map((session) => {
-            const val = session.processingSeconds || 0;
-            return (
-              <div key={session.id}>
-                <span>{session.name}</span>
-                <meter
-                  min="0"
-                  max="60"
-                  value={val}
-                  aria-label={`${session.name} ${val} giây`}
-                ></meter>
-                <span>{val} giây</span>
-              </div>
-            );
-          })}
+        {/* Visual Usage Bars matching Figma E24 1 `.usage-bars` with polished layout */}
+        <div className="usage-bars-section">
+          <div className="usage-bars-header">
+            <div className="usage-bars-title">
+              <Icon name="bar-chart-2" size={16} />
+              <span>Phân bổ thời gian thực thi theo phiên</span>
+            </div>
+            <span className="usage-bars-scale">Tối đa: {maxProcessingSeconds}s</span>
+          </div>
+
+          <div className="usage-bars">
+            {filteredSessions.map((session) => {
+              const val = session.processingSeconds || 0;
+              const percent = maxProcessingSeconds > 0
+                ? Math.min(100, Math.round((val / maxProcessingSeconds) * 100))
+                : 0;
+
+              return (
+                <div key={session.id} className="usage-bar-row">
+                  <div className="usage-bar-label" title={session.displayName}>
+                    <span className="usage-bar-dot" />
+                    <strong>{session.displayName}</strong>
+                  </div>
+                  <div
+                    className="usage-bar-track"
+                    role="progressbar"
+                    aria-valuenow={val}
+                    aria-valuemin={0}
+                    aria-valuemax={maxProcessingSeconds}
+                    aria-label={`${session.displayName} ${val} giây`}
+                  >
+                    <div
+                      className={`usage-bar-fill ${val === 0 ? 'is-zero' : ''}`}
+                      style={{ width: `${val === 0 ? 0 : Math.max(percent, 4)}%` }}
+                    />
+                  </div>
+                  <div className="usage-bar-value">
+                    <span>{val}</span>
+                    <small>giây</small>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

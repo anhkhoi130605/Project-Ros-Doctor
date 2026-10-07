@@ -2,12 +2,16 @@ using Application.Features.SystemLog.Commands;
 using Application.Features.SystemLog.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
 namespace API.Controller.SystemLog
 {
     [ApiController]
     [Route("api/system-logs")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public class SystemLogController : ControllerBase
     {
         private readonly IMediator _mediator;

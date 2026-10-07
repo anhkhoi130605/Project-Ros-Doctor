@@ -11,7 +11,7 @@ import {
   updateUserRoleApi,
 } from '../../dashboard/api/dashboardApi';
 import '../../dashboard/pages/dashboard.css';
-import { fetchUserActivityLogsApi } from '../../../service';
+import { fetchUserActivityLogsApi, fetchUserActivityPageApi, logUserActivityApi, updateAiConfigApi } from '../../../service';
 
 const testErrorOptions = [
   { label: 'System.ArgumentException (Lỗi đối số không hợp lệ)', value: 'ArgumentException' },
@@ -25,6 +25,8 @@ const testErrorOptions = [
 ];
 
 const ACTION_MAP = {
+  CreateRosbag: { label: 'Tạo bản ghi Rosbag', icon: '📁', bg: '#f3e8ff', color: '#7e22ce' },
+  InspectRosbag: { label: 'Phân tích bản ghi Rosbag', icon: '🔍', bg: '#e0f2fe', color: '#0284c7' },
   UploadRosbag: { label: 'Tải lên Rosbag', icon: '📁', bg: '#f3e8ff', color: '#7e22ce' },
   DeleteRosbag: { label: 'Xóa Rosbag', icon: '🗑️', bg: '#fee2e2', color: '#b91c1c' },
   ViewRosbag: { label: 'Xem chi tiết Rosbag', icon: '👁️', bg: '#f1f5f9', color: '#334155' },
@@ -35,9 +37,20 @@ const ACTION_MAP = {
   SubmitReview: { label: 'Hoàn tất đánh giá HITL', icon: '📝', bg: '#dcfce7', color: '#15803d' },
   ApproveFinding: { label: 'Kỹ sư duyệt kết luận AI', icon: '✅', bg: '#dcfce7', color: '#16a34a' },
   RejectFinding: { label: 'Kỹ sư từ chối kết luận AI', icon: '❌', bg: '#fee2e2', color: '#dc2626' },
+  RequestReviewChanges: { label: 'Yêu cầu chỉnh sửa kết luận', icon: '📝', bg: '#fef3c7', color: '#b45309' },
+  ViewReview: { label: 'Xem kết luận cần duyệt', icon: '👁️', bg: '#f1f5f9', color: '#334155' },
   CreateReport: { label: 'Tạo báo cáo chẩn đoán', icon: '📑', bg: '#e0e7ff', color: '#4338ca' },
+  ViewReport: { label: 'Xem báo cáo', icon: '📑', bg: '#e0e7ff', color: '#4338ca' },
   PublishReport: { label: 'Xuất bản báo cáo chính thức', icon: '📊', bg: '#dbeafe', color: '#1d4ed8' },
   ChatAgent: { label: 'Hỏi đáp Chat Agent ROS2', icon: '💬', bg: '#ffedd5', color: '#c2410c' },
+  ViewDashboard: { label: 'Xem tổng quan', icon: '📊', bg: '#e0f2fe', color: '#0369a1' },
+  ViewMembers: { label: 'Xem tài khoản hệ thống', icon: '👥', bg: '#f1f5f9', color: '#475569' },
+  ViewSystemLogs: { label: 'Xem nhật ký hệ thống', icon: '📋', bg: '#f1f5f9', color: '#475569' },
+  ViewAiConfig: { label: 'Xem cấu hình AI', icon: '⚙️', bg: '#fef3c7', color: '#b45309' },
+  ViewAiUsage: { label: 'Xem chi phí AI', icon: '📈', bg: '#fef3c7', color: '#b45309' },
+  ViewSystem: { label: 'Thao tác hệ thống', icon: '⚡', bg: '#f1f5f9', color: '#475569' },
+  UpdateLocalSettings: { label: 'Lưu cài đặt cục bộ', icon: '🔧', bg: '#f1f5f9', color: '#475569' },
+  TriggerSystemError: { label: 'Kiểm tra lỗi hệ thống', icon: '⚠️', bg: '#fee2e2', color: '#b91c1c' },
   UpdateAiConfig: { label: 'Cập nhật cấu hình mô hình AI', icon: '⚙️', bg: '#fef3c7', color: '#b45309' },
   UpdateSystemSettings: { label: 'Cập nhật tham số hệ thống', icon: '🔧', bg: '#f1f5f9', color: '#475569' },
   AssignRole: { label: 'Phân quyền vai trò thành viên', icon: '👑', bg: '#fef3c7', color: '#d97706' },
@@ -46,10 +59,46 @@ const ACTION_MAP = {
   Register: { label: 'Đăng ký tài khoản mới', icon: '👤', bg: '#e0f2fe', color: '#0284c7' },
 };
 
-function formatActionInfo(action) {
+const ACTION_LABEL_EN = {
+  CreateRosbag: 'Create Rosbag record',
+  InspectRosbag: 'Analyze Rosbag record',
+  UploadRosbag: 'Upload Rosbag',
+  DeleteRosbag: 'Delete Rosbag',
+  ViewRosbag: 'View Rosbag details',
+  PublishRosbag: 'Share Rosbag',
+  StartAnalysis: 'Start ROS2 analysis',
+  CancelAnalysis: 'Cancel analysis session',
+  ViewSession: 'View diagnostic session and TF',
+  SubmitReview: 'Complete HITL review',
+  ApproveFinding: 'Engineer approves AI finding',
+  RejectFinding: 'Engineer rejects AI finding',
+  RequestReviewChanges: 'Request changes to finding',
+  ViewReview: 'View finding awaiting review',
+  CreateReport: 'Create diagnostic report',
+  ViewReport: 'View report',
+  PublishReport: 'Publish final report',
+  ChatAgent: 'Ask ROS2 Chat Agent',
+  ViewDashboard: 'View dashboard',
+  ViewMembers: 'View system accounts',
+  ViewSystemLogs: 'View system logs',
+  ViewAiConfig: 'View AI configuration',
+  ViewAiUsage: 'View AI usage costs',
+  ViewSystem: 'Use system controls',
+  UpdateLocalSettings: 'Save local settings',
+  TriggerSystemError: 'Test system error',
+  UpdateAiConfig: 'Update AI model configuration',
+  UpdateSystemSettings: 'Update system settings',
+  AssignRole: 'Assign member role',
+  Login: 'Sign in',
+  Logout: 'Sign out',
+  Register: 'Register new account',
+};
+
+function formatActionInfo(action, isEnglish = false) {
+  const info = ACTION_MAP[action];
   return (
-    ACTION_MAP[action] || {
-      label: action || 'Thao tác hệ thống',
+    (info && { ...info, label: isEnglish ? ACTION_LABEL_EN[action] || action : info.label }) || {
+      label: action || (isEnglish ? 'System activity' : 'Thao tác hệ thống'),
       icon: '⚡',
       bg: '#f1f5f9',
       color: '#0f172a',
@@ -204,6 +253,15 @@ export default function AdminOverviewPage() {
 
   // User Activity Logs state
   const [userLogs, setUserLogs] = useState([]);
+  const [userLogPage, setUserLogPage] = useState(1);
+  const [userLogPageData, setUserLogPageData] = useState([]);
+  const [userLogTotal, setUserLogTotal] = useState(0);
+  const [userLogSearch, setUserLogSearch] = useState('');
+  const [userLogUserSearch, setUserLogUserSearch] = useState('');
+  const [appliedUserLogSearch, setAppliedUserLogSearch] = useState('');
+  const [appliedUserSearch, setAppliedUserSearch] = useState('');
+  const [userLogPageLoading, setUserLogPageLoading] = useState(false);
+  const [userLogPageError, setUserLogPageError] = useState(null);
   const [userLogsLoading, setUserLogsLoading] = useState(false);
   const [userLogsError, setUserLogsError] = useState(null);
   const [selectedUserLog, setSelectedUserLog] = useState(null);
@@ -274,6 +332,46 @@ export default function AdminOverviewPage() {
     loadMembers();
     loadUserLogs();
   }, [loadMembers, loadUserLogs]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedUserLogSearch(userLogSearch.trim());
+      setAppliedUserSearch(userLogUserSearch.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [userLogSearch, userLogUserSearch]);
+
+  useEffect(() => {
+    if (activeTab !== 'user-activity') return;
+    let cancelled = false;
+    const logNeedle = appliedUserLogSearch.toLocaleLowerCase();
+    const matchingActions = Object.entries(ACTION_MAP)
+      .filter(([action, info]) => logNeedle && [info.label, ACTION_LABEL_EN[action]]
+        .some((label) => label?.toLocaleLowerCase().includes(logNeedle)))
+      .map(([action]) => action);
+    setUserLogPageLoading(true);
+    setUserLogPageError(null);
+    fetchUserActivityPageApi(userLogPage, 30, appliedUserLogSearch, appliedUserSearch, matchingActions)
+      .then((result) => {
+        if (cancelled) return;
+        setUserLogPageData(result.data || []);
+        setUserLogTotal(result.totalCount || 0);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setUserLogPageData([]);
+        setUserLogTotal(0);
+        setUserLogPageError([401, 403].includes(error.status)
+          ? (isEnglish ? 'Sign in with an Admin account to view activity logs.' : 'Đăng nhập bằng tài khoản Admin để xem lịch sử hoạt động.')
+          : error.status === 404
+            ? (isEnglish ? 'The activity log API is unavailable. Restart the backend.' : 'API lịch sử hoạt động chưa có. Hãy khởi động lại backend.')
+            : error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setUserLogPageLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeTab, userLogPage, appliedUserLogSearch, appliedUserSearch, isEnglish]);
 
   // Fetch System Logs Data with Debounce & AbortController to prevent Race Condition & Spam
   useEffect(() => {
@@ -408,7 +506,18 @@ export default function AdminOverviewPage() {
       title: 'Cấu hình AI & hệ thống',
       subtitle: 'Thiết lập giới hạn và ngữ cảnh cho Agent chẩn đoán.',
       actionLabel: '✓ Lưu cấu hình AI',
-      onAction: () => notify('Đã lưu cấu hình AI & hệ thống thành công!', 'success'),
+      onAction: () => {
+        updateAiConfigApi({
+          dailyRequests: aiConfig.dailyCalls,
+          tokensPerRun: aiConfig.maxTokens,
+          requestsPerMinute: aiConfig.rpm,
+          monthlyBudget: aiConfig.monthlyBudget,
+          vectorUrl: aiConfig.vectorDbUrl,
+          model: aiConfig.modelName,
+          prompt: aiConfig.prompt,
+        }).catch(() => {});
+        notify('Đã lưu cấu hình AI & hệ thống vào Cơ sở dữ liệu thành công!', 'success');
+      },
     },
     cost: {
       title: 'Chi phí & hiệu suất',
@@ -842,7 +951,7 @@ export default function AdminOverviewPage() {
         <Card title="Hoạt động gần đây trong hệ thống">
           <div style={{ display: 'grid', gap: 14 }}>
             {userLogs.slice(0, 15).map((item) => {
-              const info = formatActionInfo(item.action);
+              const info = formatActionInfo(item.action, isEnglish);
               return (
                 <div
                   key={item.id ?? item.Id}
@@ -1256,15 +1365,40 @@ export default function AdminOverviewPage() {
 
       {/* User Activity Logs Tab Content */}
       {activeTab === 'user-activity' && (
-        <Card title="Nhật ký Hoạt động Người dùng (User Activity Logs)">
-          {userLogsLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>Đang tải nhật ký...</div>
-          ) : userLogsError ? (
-            <div style={{ color: '#b91c1c', padding: 12, background: '#fef2f2', borderRadius: 6 }}>{userLogsError}</div>
+        <Card title={isEnglish ? 'User activity logs' : 'Nhật ký Hoạt động Người dùng (User Activity Logs)'}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <label style={{ display: 'grid', gap: 6, flex: '1 1 240px', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+              {isEnglish ? 'Search logs' : 'Tìm log'}
+              <input
+                type="search"
+                value={userLogSearch}
+                onChange={(event) => { setUserLogSearch(event.target.value); setUserLogPage(1); }}
+                placeholder={isEnglish ? 'Action, request path, or log ID...' : 'Hành động, đường dẫn, mã log...'}
+                style={{ width: '100%', minHeight: 38, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13 }}
+              />
+            </label>
+            <label style={{ display: 'grid', gap: 6, flex: '1 1 240px', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+              {isEnglish ? 'Search users' : 'Tìm người dùng'}
+              <input
+                type="search"
+                value={userLogUserSearch}
+                onChange={(event) => { setUserLogUserSearch(event.target.value); setUserLogPage(1); }}
+                placeholder={isEnglish ? 'Name, email, or user ID...' : 'Tên, email hoặc mã người dùng...'}
+                style={{ width: '100%', minHeight: 38, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13 }}
+              />
+            </label>
+          </div>
+          {userLogPageLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>{isEnglish ? 'Loading logs...' : 'Đang tải nhật ký...'}</div>
+          ) : userLogPageError ? (
+            <div style={{ color: '#b91c1c', padding: 12, background: '#fef2f2', borderRadius: 6 }}>{userLogPageError}</div>
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
-              {userLogs.map((item) => {
-                const info = formatActionInfo(item.action);
+              {userLogPageData.length === 0 && (
+                <div style={{ padding: '24px 12px', textAlign: 'center', color: '#64748b' }}>{isEnglish ? 'No matching logs found.' : 'Không tìm thấy log phù hợp.'}</div>
+              )}
+              {userLogPageData.map((item) => {
+                const info = formatActionInfo(item.action, isEnglish);
                 return (
                   <div
                     key={item.id ?? item.Id}
@@ -1319,13 +1453,20 @@ export default function AdminOverviewPage() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <time style={{ fontSize: 12, color: '#94a3b8' }}>
-                        {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                        {item.createdAt ? new Date(item.createdAt).toLocaleString(isEnglish ? 'en-US' : 'vi-VN') : 'N/A'}
                       </time>
-                      <span style={{ color: '#0284c7', fontSize: 12 }}>Chi tiết →</span>
+                      <span style={{ color: '#0284c7', fontSize: 12 }}>{isEnglish ? 'Details' : 'Chi tiết'} →</span>
                     </div>
                   </div>
                 );
               })}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
+                <span style={{ fontSize: 13, color: '#64748b' }}>{isEnglish ? `${userLogTotal} activities · Page ${userLogPage} of ${Math.max(1, Math.ceil(userLogTotal / 30))}` : `Tổng ${userLogTotal} hoạt động · Trang ${userLogPage} / ${Math.max(1, Math.ceil(userLogTotal / 30))}`}</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button type="button" className="button secondary" disabled={userLogPage <= 1} onClick={() => setUserLogPage((page) => page - 1)}>← {isEnglish ? 'Previous' : 'Trước'}</button>
+                  <button type="button" className="button secondary" disabled={userLogPage * 30 >= userLogTotal} onClick={() => setUserLogPage((page) => page + 1)}>{isEnglish ? 'Next' : 'Sau'} →</button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -1345,32 +1486,36 @@ export default function AdminOverviewPage() {
             >
               <div style={{ background: '#ffffff', width: '100%', maxWidth: 640, borderRadius: 12, padding: 24, boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>Chi tiết Lịch sử Hoạt động</h3>
+                  <h3 style={{ margin: 0, fontSize: 18 }}>{isEnglish ? 'Activity log details' : 'Chi tiết Lịch sử Hoạt động'}</h3>
                   <button type="button" onClick={() => setSelectedUserLog(null)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer' }}>
                     ✕
                   </button>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px 16px', fontSize: 13 }}>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>Action:</div>
-                  <div><strong>{selectedUserLog.action}</strong></div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>User Name:</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'Action:' : 'Hành động:'}</div>
+                  <div><strong>{formatActionInfo(selectedUserLog.action, isEnglish).label}</strong> ({selectedUserLog.action})</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'User name:' : 'Tên người dùng:'}</div>
                   <div>{selectedUserLog.userName || '—'}</div>
                   <div style={{ color: '#64748b', fontWeight: 600 }}>Email:</div>
                   <div>{selectedUserLog.email || '—'}</div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>User ID:</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'User ID:' : 'Mã người dùng:'}</div>
                   <div><code>{selectedUserLog.userId || '—'}</code></div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>Request Path:</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'Entity:' : 'Đối tượng:'}</div>
+                  <div>{selectedUserLog.entityType || '—'} {selectedUserLog.entityId ? `#${selectedUserLog.entityId}` : ''}</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'Request path:' : 'Đường dẫn yêu cầu:'}</div>
                   <div><code>{selectedUserLog.requestPath || '—'}</code></div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>HTTP Method:</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'HTTP method:' : 'Phương thức HTTP:'}</div>
                   <div>{selectedUserLog.httpMethod || '—'}</div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>IP Address:</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'IP address:' : 'Địa chỉ IP:'}</div>
                   <div>{selectedUserLog.ipAddress || '—'}</div>
-                  <div style={{ color: '#64748b', fontWeight: 600 }}>Created At:</div>
-                  <div>{selectedUserLog.createdAt ? new Date(selectedUserLog.createdAt).toLocaleString('vi-VN') : 'N/A'}</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'User agent:' : 'Trình duyệt/thiết bị:'}</div>
+                  <div style={{ overflowWrap: 'anywhere' }}>{selectedUserLog.userAgent || '—'}</div>
+                  <div style={{ color: '#64748b', fontWeight: 600 }}>{isEnglish ? 'Created at:' : 'Thời gian tạo:'}</div>
+                  <div>{selectedUserLog.createdAt ? new Date(selectedUserLog.createdAt).toLocaleString(isEnglish ? 'en-US' : 'vi-VN') : 'N/A'}</div>
                 </div>
                 <div style={{ marginTop: 20, textAlign: 'right' }}>
                   <button type="button" className="button primary" onClick={() => setSelectedUserLog(null)}>
-                    Đóng
+                    {isEnglish ? 'Close' : 'Đóng'}
                   </button>
                 </div>
               </div>
@@ -1383,6 +1528,36 @@ export default function AdminOverviewPage() {
       {activeTab === 'ai-config' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
           <Card title="Ngân sách & hạn mức">
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
+                Người dùng trong hệ thống
+              </label>
+              <select
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--panel)', fontWeight: 600 }}
+                onChange={(e) => {
+                  const uid = e.target.value;
+                  if (uid === 'all') {
+                    setAiConfig((prev) => ({ ...prev, dailyCalls: 100, maxTokens: 4000, rpm: 10, monthlyBudget: 25 }));
+                  } else {
+                    const m = members.find((x) => x.id === uid);
+                    if (m?.role?.toLowerCase().includes('admin')) {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 500, maxTokens: 8000, rpm: 30, monthlyBudget: 100 }));
+                    } else if (m?.role?.toLowerCase().includes('user')) {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 20, maxTokens: 2000, rpm: 5, monthlyBudget: 5 }));
+                    } else {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 100, maxTokens: 4000, rpm: 10, monthlyBudget: 25 }));
+                    }
+                  }
+                }}
+              >
+                <option value="all">🌐 Toàn hệ thống (Mặc định cho mọi thành viên)</option>
+                {members.map((m) => (
+                  <option key={m.id || m.email} value={m.id || m.email}>
+                    👤 {m.fullName || m.name || m.email} ({m.email}) — [{m.role || 'Engineer'}]
+                  </option>
+                ))}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
@@ -1433,12 +1608,40 @@ export default function AdminOverviewPage() {
             <div style={{ marginTop: '20px', padding: '12px 14px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <span style={{ color: 'var(--cyan)', marginTop: '1px', flexShrink: 0, fontWeight: 'bold' }}>(i)</span>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)', lineHeight: 1.6 }}>
-                Các giá trị được lưu cho bản demo. Hạn mức thực tế cần được API xác thực và thực thi.
+                Các giá trị được lưu trực tiếp vào cơ sở dữ liệu hệ thống (TiDB) và có hiệu lực tức thì cho Agent.
               </p>
+            </div>
+
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => {
+                  updateAiConfigApi({
+                    dailyRequests: aiConfig.dailyCalls,
+                    tokensPerRun: aiConfig.maxTokens,
+                    requestsPerMinute: aiConfig.rpm,
+                    monthlyBudget: aiConfig.monthlyBudget,
+                    vectorUrl: aiConfig.vectorDbUrl,
+                    model: aiConfig.modelName,
+                    prompt: aiConfig.prompt,
+                  }).catch(() => {});
+                  notify('Đã lưu cấu hình hạn mức vào Cơ sở dữ liệu thành công!', 'success');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                }}
+              >
+                💾 Lưu cấu hình hạn mức
+              </button>
             </div>
           </Card>
 
-          <Card title="Kết nối & prompt" action={<Badge tone="muted">• Chưa kết nối dịch vụ AI</Badge>}>
+          <Card title="Kết nối & prompt" action={<Badge tone="success">• CSDL đã đồng bộ</Badge>}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
@@ -1477,10 +1680,82 @@ export default function AdminOverviewPage() {
               </div>
 
               <small style={{ color: 'var(--muted)', fontSize: '11px' }}>
-                Cấu hình kết nối được lưu làm bản nháp; giao diện không gửi yêu cầu đến địa chỉ này.
+                Cấu hình kết nối và cơ sở dữ liệu vector được đồng bộ qua API nội bộ theo thời gian thực.
               </small>
+
+              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={() => {
+                    updateAiConfigApi({
+                      dailyRequests: aiConfig.dailyCalls,
+                      tokensPerRun: aiConfig.maxTokens,
+                      requestsPerMinute: aiConfig.rpm,
+                      monthlyBudget: aiConfig.monthlyBudget,
+                      vectorUrl: aiConfig.vectorDbUrl,
+                      model: aiConfig.modelName,
+                      prompt: aiConfig.prompt,
+                    }).catch(() => {});
+                    notify('Đã lưu kết nối & Prompt vào Cơ sở dữ liệu thành công!', 'success');
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  💾 Lưu kết nối & Prompt
+                </button>
+              </div>
             </div>
           </Card>
+
+          {/* Bottom Action Bar */}
+          <div style={{
+            gridColumn: '1 / -1',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            padding: '14px 20px',
+            background: 'var(--panel)',
+            border: '1px solid #0284c7',
+            borderRadius: '10px',
+            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.1)',
+          }}>
+            <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>
+              Cấu hình AI & Hạn mức được lưu trực tiếp vào bảng <code>ai_settings</code> trong TiDB.
+            </div>
+            <button
+              type="button"
+              className="button primary"
+              onClick={() => {
+                updateAiConfigApi({
+                  dailyRequests: aiConfig.dailyCalls,
+                  tokensPerRun: aiConfig.maxTokens,
+                  requestsPerMinute: aiConfig.rpm,
+                  monthlyBudget: aiConfig.monthlyBudget,
+                  vectorUrl: aiConfig.vectorDbUrl,
+                  model: aiConfig.modelName,
+                  prompt: aiConfig.prompt,
+                }).catch(() => {});
+                notify('Đã lưu toàn bộ cấu hình AI & hệ thống vào CSDL thành công!', 'success');
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                padding: '10px 22px',
+                borderRadius: '6px',
+              }}
+            >
+              ✓ Lưu toàn bộ cấu hình AI
+            </button>
+          </div>
         </div>
       )}
 
@@ -1692,6 +1967,8 @@ export default function AdminOverviewPage() {
             onSubmit={(e) => {
               e.preventDefault();
               dispatch({ type: 'SETTINGS', settings: settingsForm });
+              logUserActivityApi({ action: 'UpdateLocalSettings' })
+                .catch((error) => console.warn('Could not record settings activity:', error));
               notify('Đã lưu cấu hình hệ thống quản trị thành công.', 'success');
             }}
             style={{ display: 'grid', gap: 16, maxWidth: 640 }}

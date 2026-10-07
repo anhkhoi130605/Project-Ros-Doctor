@@ -12,6 +12,8 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 {
 	[Route("api/[controller]")]
 	[ApiController]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+	[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 	public class AdminController : BaseController
 	{
 		private readonly IMediator _mediator;
@@ -21,7 +23,6 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 			_mediator = mediator;
 		}
 
-		[AllowAnonymous]
 		[HttpGet("members")]
 		public async Task<IActionResult> GetMembers()
 		{

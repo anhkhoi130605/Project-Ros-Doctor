@@ -1,0 +1,252 @@
+/* CostPerformancePage.css — Modern High-Tech Cost & Performance Theme */
+.cost-performance-page {
+  width: 100%;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Session Cell in Table */
+.session-cell-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 380px;
+}
+
+.session-cell-title {
+  font-weight: 650;
+  color: #1e293b;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-cell-meta {
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.session-badge-id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+/* Time Metric Cell */
+.time-metric-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 140px;
+}
+
+.time-metric-value {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 12px;
+  white-space: nowrap;
+  min-width: 48px;
+}
+
+.time-metric-bar {
+  flex: 1;
+  max-width: 90px;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.time-metric-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Status & Metric Pills */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 9px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.status-pill.muted {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.status-pill.blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.status-pill.green {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+/* Usage Bars Section Polishing — Overrides and fixes prototype.css layout */
+.usage-bars-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.usage-bars-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.usage-bars-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.usage-bars-title svg {
+  color: #0284c7;
+}
+
+.usage-bars-scale {
+  font-size: 11px;
+  color: #64748b;
+  background: #f8fafc;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Force .usage-bars container to flex-column */
+.cost-performance-page .usage-bars {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Usage Bar Row — Eliminates text overlap with fixed width labels & flex layout */
+.cost-performance-page .usage-bars > div,
+.usage-bar-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 10px 14px !important;
+  border-radius: 9px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03) !important;
+  transition: all 0.18s ease !important;
+}
+
+.cost-performance-page .usage-bars > div:hover,
+.usage-bar-row:hover {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* Label on the left: wide enough with ellipsis */
+.usage-bar-label {
+  width: 260px !important;
+  min-width: 220px !important;
+  max-width: 320px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+.usage-bar-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0284c7;
+  flex-shrink: 0;
+}
+
+.usage-bar-label strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+/* Progress Track in the center: takes all available width */
+.usage-bar-track {
+  flex: 1 !important;
+  min-width: 140px !important;
+  height: 10px !important;
+  background: #f1f5f9 !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.usage-bar-fill {
+  height: 100% !important;
+  background: linear-gradient(90deg, #0284c7, #38bdf8) !important;
+  border-radius: 999px !important;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.usage-bar-fill.is-zero {
+  background: transparent !important;
+}
+
+/* Value on the right */
+.usage-bar-value {
+  width: 85px !important;
+  min-width: 85px !important;
+  text-align: right !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+  color: #334155 !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+.usage-bar-value small {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: normal;
+  margin-left: 2px;
+}

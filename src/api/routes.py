@@ -16,6 +16,7 @@ from src.models.schemas import (
     ChatRequest,
     ChatResponse,
 )
+from src.services.agent_trace_service import get_agent_trace_service
 from src.services.benchmark_dataset_service import get_benchmark_dataset_service
 from src.services.carla_rosbag_service import CarlaRosbagRecorder
 
@@ -24,7 +25,7 @@ router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
-    """Chat với AI agent (Non-streaming)."""
+    """Chat với AI agent (Non-streaming) và tự động lưu vết chẩn đoán xuống MongoDB."""
     try:
         input_state = {
             "query": request.message,
@@ -32,10 +33,29 @@ async def chat(request: ChatRequest) -> ChatResponse:
             "bag_id": request.bag_id,
         }
         result = await agent.ainvoke(input_state)
+        response_text = result.get("response", "")
+        analysis_text = result.get("analysis", "")
+        report_data = result.get("report")
+
+        # Tự động lưu vết chẩn đoán vào collection agent_execution_traces trong MongoDB
+        try:
+            trace_service = get_agent_trace_service()
+            await run_in_threadpool(
+                trace_service.save_trace,
+                session_id=request.session_id,
+                bag_id=request.bag_id,
+                raw_prompt=request.message,
+                response=response_text,
+                analysis=analysis_text,
+                report=report_data,
+            )
+        except Exception as save_err:
+            print(f"[MongoDB] Cảnh báo không thể lưu agent trace: {save_err}")
+
         return ChatResponse(
-            response=result.get("response", ""),
-            analysis=result.get("analysis", ""),
-            report=result.get("report"),
+            response=response_text,
+            analysis=analysis_text,
+            report=report_data,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -43,7 +63,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
 @router.post("/chat/stream")
 async def chat_stream(request: ChatRequest):
-    """Stream chat response token-by-token using Server-Sent Events (SSE)."""
+    """Stream chat response token-by-token using Server-Sent Events (SSE) và lưu vết xuống MongoDB."""
     async def event_generator():
         try:
             input_state = {
@@ -71,6 +91,21 @@ async def chat_stream(request: ChatRequest):
                 yield f"data: {data}\n\n"
                 await asyncio.sleep(0.008)  # 8ms per burst = ~250 từ/phút cực nhanh và mượt mà
 
+            # Tự động lưu vết chẩn đoán vào MongoDB
+            try:
+                trace_service = get_agent_trace_service()
+                await run_in_threadpool(
+                    trace_service.save_trace,
+                    session_id=request.session_id,
+                    bag_id=request.bag_id,
+                    raw_prompt=request.message,
+                    response=full_response,
+                    analysis=analysis,
+                    report=report,
+                )
+            except Exception as save_err:
+                print(f"[MongoDB] Cảnh báo không thể lưu agent trace: {save_err}")
+
             # Final completion event with analysis and structured report
             final_data = json.dumps({
                 "token": "",
@@ -93,6 +128,16 @@ async def chat_stream(request: ChatRequest):
             "X-Accel-Buffering": "no",
         },
     )
+
+
+@router.get("/traces")
+async def list_agent_traces(
+    session_id: str | None = Query(default=None),
+    limit: int = Query(default=20, ge=1, le=100),
+):
+    """Lấy danh sách các vết thực thi và báo cáo chẩn đoán của Agent đã lưu trong MongoDB."""
+    service = get_agent_trace_service()
+    return await run_in_threadpool(service.list_traces, session_id=session_id, limit=limit)
 
 
 @router.get("/status")

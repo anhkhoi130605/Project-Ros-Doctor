@@ -145,10 +145,50 @@ export const STATUS_MAP = {
  * 2. Cảnh báo: Vàng (#d97706) - Điểm 60-89 hoặc có cảnh báo nhẹ
  * 3. Lỗi: Đỏ (#dc2626) - Điểm < 60 hoặc có lỗi nghiêm trọng (high severity > 0)
  */
-export function getHealthCondition(healthScore, warningsCount = 0, highSeverityCount = 0) {
-  const score = Number.isFinite(Number(healthScore)) ? Number(healthScore) : 100;
-  const count = Number(warningsCount) || 0;
-  const highCount = Number(highSeverityCount) || 0;
+export function computeEffectiveHealthScore(healthScore, warningsCount = 0, highSeverityCount = 0, issues = []) {
+  const issuesList = Array.isArray(issues) ? issues : [];
+  const highCount = Number(highSeverityCount) || issuesList.filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+  const count = Number(warningsCount) || issuesList.length;
+
+  if (count === 0 && highCount === 0) {
+    return Number.isFinite(Number(healthScore)) ? Number(healthScore) : 100;
+  }
+
+  // If session already has an explicitly degraded score (< 100) and no issues array to recompute from, keep it
+  let rawScore = Number.isFinite(Number(healthScore)) ? Number(healthScore) : 100;
+  if (rawScore < 100 && issuesList.length === 0) {
+    return rawScore;
+  }
+
+  // Calculate penalties like backend RosbagInspectorService
+  let calculatedScore = 100;
+  if (issuesList.length > 0) {
+    for (const a of issuesList) {
+      const sev = String(a.severity || '').toUpperCase();
+      const penalty = sev === 'CRITICAL' ? 25 : sev === 'HIGH' ? 15 : sev === 'MEDIUM' ? 8 : 4;
+      calculatedScore -= penalty;
+    }
+  } else {
+    calculatedScore -= highCount * 20 + Math.max(0, count - highCount) * 8;
+  }
+
+  calculatedScore = Math.max(0, Math.min(100, calculatedScore));
+
+  // If rawScore was already lower, take the lower one
+  return Math.min(rawScore, calculatedScore);
+}
+
+/**
+ * Phân loại tình trạng phiên / rosbag theo 3 trường hợp chuẩn:
+ * 1. Bình thường: Xanh lá (#16a34a) - Điểm >= 90 (hoặc 100đ), không có sự cố
+ * 2. Cảnh báo: Vàng (#d97706) - Điểm 60-89 hoặc có cảnh báo nhẹ
+ * 3. Lỗi: Đỏ (#dc2626) - Điểm < 60 hoặc có lỗi nghiêm trọng (high severity > 0)
+ */
+export function getHealthCondition(healthScore, warningsCount = 0, highSeverityCount = 0, issues = []) {
+  const issuesList = Array.isArray(issues) ? issues : [];
+  const highCount = Number(highSeverityCount) || issuesList.filter((i) => i.severity === 'high' || i.severity === 'critical').length;
+  const count = Number(warningsCount) || issuesList.length;
+  const score = computeEffectiveHealthScore(healthScore, count, highCount, issuesList);
 
   // Trường hợp 3: Lỗi (Màu đỏ)
   if (score < 60 || highCount > 0 || (count >= 3 && score < 75)) {
@@ -161,6 +201,7 @@ export function getHealthCondition(healthScore, warningsCount = 0, highSeverityC
       bgColor: '#fef2f2',
       borderColor: '#fecaca',
       scoreColor: '#dc2626',
+      effectiveScore: score,
     };
   }
 
@@ -175,6 +216,7 @@ export function getHealthCondition(healthScore, warningsCount = 0, highSeverityC
       bgColor: '#fffbeb',
       borderColor: '#fef3c7',
       scoreColor: '#d97706',
+      effectiveScore: score,
     };
   }
 
@@ -188,5 +230,6 @@ export function getHealthCondition(healthScore, warningsCount = 0, highSeverityC
     bgColor: '#f0fdf4',
     borderColor: '#bbf7d0',
     scoreColor: '#16a34a',
+    effectiveScore: 100,
   };
 }

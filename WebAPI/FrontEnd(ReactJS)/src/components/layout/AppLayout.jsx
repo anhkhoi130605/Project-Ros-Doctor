@@ -7,6 +7,7 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
+import { getReviewsApi } from '../../service';
 import './SidebarAutohide.css';
 
 function getUserInitials(name) {
@@ -69,12 +70,18 @@ export default function AppLayout() {
     }
   };
 
-  const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('userRole');
-    notify(t('common:system.logoutSuccess'), 'info');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/api/auth/logout');
+    } catch (error) {
+      console.warn('Could not record logout activity:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userRole');
+      notify(t('common:system.logoutSuccess'), 'info');
+      navigate('/login');
+    }
   };
 
   const rawRole = String(state.role || localStorage.getItem('userRole') || 'Engineering').toLowerCase();
@@ -90,12 +97,39 @@ export default function AppLayout() {
     ? t('common:roles.user')
     : t('common:roles.engineering');
 
+  // Preload review findings if not loaded yet so badge count is accurate from start
+  useEffect(() => {
+    if (!state.findings || state.findings.length === 0) {
+      getReviewsApi()
+        .then((res) => {
+          const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
+          if (Array.isArray(rawList) && rawList.length > 0) {
+            const mapped = rawList.map((r) => ({
+              ...r,
+              review: {
+                status: r.status || 'pending',
+                note: r.note || '',
+                by: r.reviewedBy || null,
+                at: r.reviewedAt || null,
+              },
+            }));
+            dispatch({ type: 'SET_REVIEWS', findings: mapped });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [dispatch, state.findings]);
+
+  const pendingReviewsCount = (state.findings || []).filter(
+    (f) => (f.review?.status || f.status || 'pending') === 'pending'
+  ).length;
+
   const navItems = [
     ['/dashboard', t('navigation:items.dashboard'), 'grid', ['Admin', 'Engineering', 'User']],
     ['/bags', isUserRole ? t('navigation:items.sharedBags') : t('navigation:items.bags'), 'database', ['Admin', 'Engineering', 'User']],
     ['/analysis', t('navigation:items.analysis'), 'activity', ['Engineering']],
     ['/chat', t('navigation:items.chat'), 'message-square', ['Engineering']],
-    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], 5],
+    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewsCount > 0 ? pendingReviewsCount : undefined],
     ['/reports', isUserRole ? t('navigation:items.approvedReports') : t('navigation:items.reports'), 'file-text', ['Admin', 'Engineering', 'User']],
     ['/benchmark', t('navigation:items.benchmark'), 'trending-up', ['Engineering']],
     ['/usage', t('navigation:items.usage'), 'clock', ['Engineering']],
@@ -111,6 +145,8 @@ export default function AppLayout() {
       return false;
     })
   );
+  const rosbagChildPaths = ['/bags', '/analysis', '/reviews', '/reports', '/benchmark'];
+  const rosbagChildren = filteredNav.filter(([to]) => rosbagChildPaths.includes(to));
 
   const getPageTitle = (pathname) => {
     if (pathname.startsWith('/dashboard')) return t('navigation:pageTitles.dashboard');
@@ -191,6 +227,8 @@ export default function AppLayout() {
         <div className="workspace-label" style={{ marginTop: '12px' }}>{t('navigation:sections.navigation')}</div>
         <nav>
           {filteredNav.map(([to, label, icon, roles, badgeCount]) => {
+            if (to !== '/bags' && rosbagChildPaths.includes(to)) return null;
+            const isRosbagRoute = to === '/bags';
             const isAdminRoute = to === '/admin';
             const isSettingsRoute = to === '/settings';
             const isBagsActiveRoute = to === '/bags' && (
@@ -204,6 +242,48 @@ export default function AppLayout() {
             const isCurrentConfigPath = configPaths.includes(location.pathname);
             const isCurrentAdminPath = location.pathname.startsWith('/admin') && !isCurrentConfigPath;
             const isCurrentSettingsPath = (location.pathname.startsWith('/settings') || isCurrentConfigPath);
+
+            if (isRosbagRoute) {
+              const isCurrentRosbagPath = rosbagChildPaths.some((path) =>
+                location.pathname === path || location.pathname.startsWith(`${path}/`)
+              ) || location.pathname.startsWith('/sessions') || location.pathname.startsWith('/upload');
+
+              return (
+                <div key={to} className={`nav-item-wrapper ${isCurrentRosbagPath ? 'is-active-route' : ''}`}>
+                  <NavLink
+                    to="/bags"
+                    className={`nav-item ${isCurrentRosbagPath ? 'active' : ''}`}
+                    onClick={closeNavIfAuto}
+                  >
+                    <Icon name={icon} size={18} />
+                    <span className="nav-item-label">{t('navigation:items.rosbagGroup')}</span>
+                    <Icon name="down" size={14} className="nav-chevron" />
+                  </NavLink>
+
+                  <div className={`sub-nav-group ${isCurrentRosbagPath ? 'open' : ''}`}>
+                    {rosbagChildren.map(([childTo, childLabel, childIcon, , childBadgeCount]) => {
+                      const isBagsChild = childTo === '/bags';
+                      const isChildActive = isBagsChild && (
+                        location.pathname.startsWith('/sessions') || location.pathname.startsWith('/upload')
+                      );
+
+                      return (
+                        <NavLink
+                          key={childTo}
+                          to={childTo}
+                          className={({ isActive }) => `sub-nav-item ${isActive || isChildActive ? 'active' : ''}`}
+                          onClick={closeNavIfAuto}
+                        >
+                          <Icon name={childIcon} size={14} />
+                          <span>{childLabel}</span>
+                          {childBadgeCount !== undefined && <span className="sub-nav-badge">{childBadgeCount}</span>}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            }
 
             if (isAdminRoute) {
               return (
