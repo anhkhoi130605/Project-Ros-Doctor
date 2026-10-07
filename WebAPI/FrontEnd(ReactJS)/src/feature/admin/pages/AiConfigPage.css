@@ -843,3 +843,216 @@
     align-items: flex-start;
   }
 }
+
+/* ==========================================================================
+   Configuration Scope Selector (Global vs Per-User vs Per-Feature)
+   ========================================================================== */
+.config-scope-banner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 860px) {
+  .config-scope-banner {
+    grid-template-columns: 1fr;
+  }
+}
+
+.config-scope-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--surface, #ffffff);
+  border: 2px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.config-scope-card:hover {
+  border-color: #38bdf8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.08);
+}
+
+.config-scope-card.active {
+  border-color: #0284c7;
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.04) 0%, rgba(56, 189, 248, 0.08) 100%);
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.15);
+}
+
+.config-scope-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  background: #f1f5f9;
+  color: #0284c7;
+  flex-shrink: 0;
+}
+
+.config-scope-card.active .config-scope-icon {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.config-scope-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.config-scope-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text, #0f172a);
+}
+
+.config-scope-desc {
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  line-height: 1.4;
+}
+
+/* ==========================================================================
+   Feature Modules Selector Tabs (Diagnostic, Chat, Report, Embedding)
+   ========================================================================== */
+.feature-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1024px) {
+  .feature-modules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 580px) {
+  .feature-modules-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.feature-module-pill {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  position: relative;
+  text-align: left;
+}
+
+.feature-module-pill:hover {
+  border-color: #38bdf8;
+  background: #f8fafc;
+}
+
+.feature-module-pill.active {
+  border-color: #0284c7;
+  background: #f0f9ff;
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.12);
+}
+
+.feature-module-pill-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.feature-module-pill-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.feature-module-pill-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 12px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.feature-module-pill.active .feature-module-pill-badge {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.feature-module-pill-desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* ==========================================================================
+   Temperature Slider Styling with High-Tech Guidance
+   ========================================================================== */
+.temperature-control-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.temperature-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.temperature-slider-input {
+  width: 100%;
+  accent-color: #0284c7;
+  cursor: pointer;
+}
+
+.temperature-guide-tags {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* User Feature Access Toggles */
+.user-permission-toggles-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .user-permission-toggles-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
