@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card, Button, Badge, Icon } from '../../../components/common/UIComponents';
@@ -38,12 +38,148 @@ const PROMPT_PRESETS = [
   },
 ];
 
-const QUICK_MODELS = [
-  { id: 'qwen-2.5-coder-32b', name: 'Qwen 2.5 Coder 32B', tag: 'Tối ưu ROS2 / Code' },
-  { id: 'gpt-4o', name: 'GPT-4o', tag: 'Đa phương thức' },
-  { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', tag: 'Lý luận sâu' },
-  { id: 'deepseek-chat', name: 'DeepSeek V3', tag: 'Tiết kiệm chi phí' },
-  { id: 'llama-3.3-70b-instruct', name: 'Llama 3.3 70B', tag: 'Mã nguồn mở' },
+export const MASTER_MODELS = [
+  // OpenAI
+  {
+    id: 'gpt-4o',
+    name: 'OpenAI GPT-4o',
+    provider: 'openai',
+    providerName: 'OpenAI API',
+    badge: 'Đa phương thức',
+    context: '128K',
+    description: 'Mô hình đa phương thức hàng đầu, mạnh mẽ toàn diện cho chẩn đoán và phân tích dữ liệu.',
+    isPopular: true,
+  },
+  {
+    id: 'gpt-4o-mini',
+    name: 'OpenAI GPT-4o Mini',
+    provider: 'openai',
+    providerName: 'OpenAI API',
+    badge: 'Tiết kiệm & Nhanh',
+    context: '128K',
+    description: 'Tốc độ phản hồi cực nhanh, chi phí siêu rẻ, tối ưu cho hội thoại và kiểm tra nhanh.',
+    isPopular: true,
+  },
+  {
+    id: 'o1',
+    name: 'OpenAI o1',
+    provider: 'openai',
+    providerName: 'OpenAI API',
+    badge: 'Lý luận sâu',
+    context: '128K',
+    description: 'Mô hình lý luận độc lập cho các sự cố kỹ thuật phức tạp cần suy luận logic nhiều bước.',
+    isPopular: false,
+  },
+  {
+    id: 'o3-mini',
+    name: 'OpenAI o3-mini',
+    provider: 'openai',
+    providerName: 'OpenAI API',
+    badge: 'Mới nhất 2025',
+    context: '200K',
+    description: 'Thế hệ mô hình lý luận toán học và lập trình tốc độ cao mới nhất.',
+    isPopular: false,
+  },
+
+  // Anthropic Claude
+  {
+    id: 'claude-3-5-sonnet',
+    name: 'Claude 3.5 Sonnet',
+    provider: 'anthropic',
+    providerName: 'Anthropic API',
+    badge: 'Đỉnh cao Code & RCA',
+    context: '200K',
+    description: 'Mô hình hàng đầu về khả năng hiểu mã nguồn, phân tích nguyên nhân gốc (RCA) và ngữ cảnh dài.',
+    isPopular: true,
+  },
+  {
+    id: 'claude-3-5-haiku',
+    name: 'Claude 3.5 Haiku',
+    provider: 'anthropic',
+    providerName: 'Anthropic API',
+    badge: 'Siêu tốc độ',
+    context: '200K',
+    description: 'Mô hình phản hồi tức thì với hiệu năng vượt trội trong phân khúc nhỏ gọn.',
+    isPopular: false,
+  },
+
+  // DeepSeek
+  {
+    id: 'deepseek-chat',
+    name: 'DeepSeek V3',
+    provider: 'deepseek',
+    providerName: 'DeepSeek API',
+    badge: 'Hiệu năng cao / Giá rẻ',
+    context: '64K',
+    description: 'Kiến trúc MoE 671B tham số, hiệu năng ngang tầm GPT-4o với chi phí gọi API cực kỳ tiết kiệm.',
+    isPopular: true,
+  },
+  {
+    id: 'deepseek-reasoner',
+    name: 'DeepSeek R1',
+    provider: 'deepseek',
+    providerName: 'DeepSeek API',
+    badge: 'Suy luận R1',
+    context: '64K',
+    description: 'Mô hình lý luận Chain-of-Thought thế hệ mới, giải mã nguyên nhân sâu chuỗi lỗi hệ thống ROS2.',
+    isPopular: true,
+  },
+
+  // Alibaba Cloud Qwen
+  {
+    id: 'qwen-2.5-coder-32b',
+    name: 'Qwen 2.5 Coder 32B',
+    provider: 'qwen-dedicated',
+    providerName: 'Alibaba Cloud (Qwen)',
+    badge: 'Tối ưu ROS2 / Robotics',
+    context: '128K',
+    description: 'Được tinh chỉnh sâu cho lập trình C++, Python và phân tích dữ liệu telemetry / log ROS2.',
+    isPopular: true,
+  },
+  {
+    id: 'qwen-2.5-72b-instruct',
+    name: 'Qwen 2.5 72B Instruct',
+    provider: 'qwen-dedicated',
+    providerName: 'Alibaba Cloud (Qwen)',
+    badge: 'Flagship Qwen',
+    context: '128K',
+    description: 'Mô hình đa nhiệm quy mô lớn nhất dòng Qwen, xuất sắc trong tổng hợp báo cáo kỹ thuật.',
+    isPopular: false,
+  },
+
+  // Google Gemini
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Google Gemini 2.0 Flash',
+    provider: 'custom',
+    providerName: 'Google AI',
+    badge: 'Gemini 2.0 Mới',
+    context: '1M',
+    description: 'Thế hệ tiếp theo của Google với độ trễ tối thiểu, hỗ trợ luồng dữ liệu liên tục đa phương thức.',
+    isPopular: false,
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Google Gemini 1.5 Pro',
+    provider: 'custom',
+    providerName: 'Google AI',
+    badge: 'Ngữ cảnh 2M Tokens',
+    context: '2M',
+    description: 'Cửa sổ ngữ cảnh khổng lồ 2 triệu token, có thể đọc trọn vẹn toàn bộ tệp rosbag và tài liệu.',
+    isPopular: false,
+  },
+
+  // Meta Llama
+  {
+    id: 'llama-3.3-70b-instruct',
+    name: 'Meta Llama 3.3 70B',
+    provider: 'ollama-local',
+    providerName: 'Meta / Ollama',
+    badge: 'Mã nguồn mở SOTA',
+    context: '128K',
+    description: 'Mô hình mã nguồn mở tối tân, có thể tự host nội bộ không phụ thuộc đám mây bên thứ ba.',
+    isPopular: true,
+  },
 ];
 
 const AI_PROVIDERS = [
@@ -75,6 +211,20 @@ export default function AiConfigPage() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [modelSearchQuery, setModelSearchQuery] = useState('');
+  const modelDropdownRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target)) {
+        setIsModelDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // User list state for per-user configuration
   const [members, setMembers] = useState([]);
@@ -416,8 +566,32 @@ export default function AiConfigPage() {
   };
 
   const handleSelectModel = (modelId) => {
-    setAiConfig((prev) => ({ ...prev, modelName: modelId }));
+    const found = MASTER_MODELS.find((m) => m.id === modelId);
+    setAiConfig((prev) => ({
+      ...prev,
+      modelName: modelId,
+      ...(found ? { provider: found.provider } : {}),
+    }));
+    setIsModelDropdownOpen(false);
+    setModelSearchQuery('');
   };
+
+  const filteredModels = useMemo(() => {
+    const q = modelSearchQuery.trim().toLowerCase();
+    if (!q) return MASTER_MODELS;
+    return MASTER_MODELS.filter(
+      (m) =>
+        m.id.toLowerCase().includes(q) ||
+        m.name.toLowerCase().includes(q) ||
+        m.providerName.toLowerCase().includes(q) ||
+        (m.badge && m.badge.toLowerCase().includes(q)) ||
+        (m.description && m.description.toLowerCase().includes(q))
+    );
+  }, [modelSearchQuery]);
+
+  const selectedModelMeta = useMemo(() => {
+    return MASTER_MODELS.find((m) => m.id === aiConfig.modelName);
+  }, [aiConfig.modelName]);
 
   const budgetUsagePercent = Math.min(
     100,
@@ -851,26 +1025,136 @@ export default function AiConfigPage() {
                 </select>
               </div>
 
-              {/* Model Selection */}
-              <div className="form-field-group">
+              {/* Model Selection with Searchable Combobox */}
+              <div className="form-field-group" ref={modelDropdownRef}>
                 <label className="form-field-label">
-                  Mô hình chẩn đoán
-                  <span className="form-field-help">Chọn nhanh hoặc nhập tên mô hình</span>
+                  <span>Mô hình chẩn đoán (LLM Model)</span>
+                  <span className="form-field-help">Master Data: Chọn hoặc tìm kiếm model</span>
                 </label>
-                <input
-                  type="text"
-                  value={aiConfig.modelName}
-                  onChange={(e) => setAiConfig({ ...aiConfig, modelName: e.target.value })}
-                  className="form-input-styled"
-                  placeholder="Ví dụ: qwen-2.5-coder-32b, gpt-4o"
-                />
-                <div className="quick-models-container">
-                  {QUICK_MODELS.map((m) => (
+
+                {/* Combobox Trigger */}
+                <div className="model-search-container">
+                  <div
+                    className={`model-search-trigger ${isModelDropdownOpen ? 'active' : ''}`}
+                    onClick={() => setIsModelDropdownOpen((prev) => !prev)}
+                    role="button"
+                    tabIndex={0}
+                  >
+                    <div className="model-search-trigger-content">
+                      <span style={{ fontSize: '18px' }}>🤖</span>
+                      <div className="model-selected-main">
+                        <div className="model-selected-name">
+                          {selectedModelMeta?.name || aiConfig.modelName}
+                          {selectedModelMeta?.badge && (
+                            <span className="model-badge-chip">{selectedModelMeta.badge}</span>
+                          )}
+                          {selectedModelMeta?.providerName && (
+                            <span className="model-badge-provider">{selectedModelMeta.providerName}</span>
+                          )}
+                          {selectedModelMeta?.context && (
+                            <span className="model-badge-context">{selectedModelMeta.context}</span>
+                          )}
+                        </div>
+                        <div className="model-selected-id">
+                          Mã model: <code>{aiConfig.modelName}</code>
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--muted)' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600 }}>Đổi model</span>
+                      <span style={{ fontSize: '11px', transform: isModelDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}>▼</span>
+                    </div>
+                  </div>
+
+                  {/* Dropdown Menu with Search */}
+                  {isModelDropdownOpen && (
+                    <div className="model-search-menu">
+                      <div className="model-search-header">
+                        <Icon name="search" size={14} />
+                        <input
+                          type="text"
+                          className="model-search-header-input"
+                          placeholder="Tìm theo tên model (gpt, claude, deepseek, qwen, llama...), nhà cung cấp, hoặc tag..."
+                          value={modelSearchQuery}
+                          onChange={(e) => setModelSearchQuery(e.target.value)}
+                          autoFocus
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        {modelSearchQuery && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModelSearchQuery('');
+                            }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '14px', padding: '0 4px' }}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="model-search-list">
+                        {filteredModels.length === 0 ? (
+                          <div style={{ padding: '16px', textAlign: 'center', color: 'var(--muted)', fontSize: '12px' }}>
+                            Không tìm thấy model nào khớp với "{modelSearchQuery}".
+                          </div>
+                        ) : (
+                          filteredModels.map((m) => {
+                            const isSelected = aiConfig.modelName === m.id;
+                            return (
+                              <div
+                                key={m.id}
+                                className={`model-search-item ${isSelected ? 'selected' : ''}`}
+                                onClick={() => handleSelectModel(m.id)}
+                              >
+                                <div className="model-search-item-header">
+                                  <div className="model-search-item-title">
+                                    <span>{m.name}</span>
+                                    {m.badge && <span className="model-badge-chip">{m.badge}</span>}
+                                    <span className="model-badge-provider">{m.providerName}</span>
+                                    {m.context && <span className="model-badge-context">{m.context}</span>}
+                                  </div>
+                                  {isSelected && <span style={{ color: '#0284c7', fontWeight: 'bold' }}>✓</span>}
+                                </div>
+                                <div className="model-search-item-id">
+                                  ID: {m.id}
+                                </div>
+                                {m.description && (
+                                  <div className="model-search-item-desc">
+                                    {m.description}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+
+                      {/* Custom Input Option if query doesn't match an exact model */}
+                      {modelSearchQuery.trim() && !MASTER_MODELS.some((m) => m.id.toLowerCase() === modelSearchQuery.trim().toLowerCase()) && (
+                        <div
+                          className="model-search-custom-row"
+                          onClick={() => handleSelectModel(modelSearchQuery.trim())}
+                        >
+                          <span>✨ Sử dụng mã model tùy chỉnh: <strong>{modelSearchQuery.trim()}</strong></span>
+                          <span>Áp dụng ↵</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Popular Quick Pills */}
+                <div className="quick-models-container" style={{ marginTop: '8px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)', alignSelf: 'center', fontWeight: 600 }}>Phổ biến:</span>
+                  {MASTER_MODELS.filter((m) => m.isPopular).map((m) => (
                     <button
                       key={m.id}
                       type="button"
                       className={`model-pill ${aiConfig.modelName === m.id ? 'active' : ''}`}
                       onClick={() => handleSelectModel(m.id)}
+                      title={m.description}
                     >
                       {m.name}
                     </button>
@@ -878,19 +1162,42 @@ export default function AiConfigPage() {
                 </div>
               </div>
 
-              {/* Vector Database Endpoint */}
+              {/* API Key */}
               <div className="form-field-group">
                 <label className="form-field-label">
-                  Địa chỉ Vector DB (URL)
-                  <span className="form-field-help">Qdrant / Milvus / Chroma</span>
+                  Khóa API (API Key)
+                  <span className="form-field-help">Khóa dịch vụ LLM (OpenAI / Qwen / Claude)</span>
                 </label>
-                <input
-                  type="text"
-                  value={aiConfig.vectorDbUrl}
-                  onChange={(e) => setAiConfig({ ...aiConfig, vectorDbUrl: e.target.value })}
-                  className="form-input-styled"
-                  placeholder="http://localhost:6333"
-                />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={aiConfig.apiKey}
+                    onChange={(e) => setAiConfig({ ...aiConfig, apiKey: e.target.value })}
+                    className="form-input-styled"
+                    placeholder="sk-proj-... hoặc cấu hình trong file .env"
+                    style={{ paddingRight: '42px', fontFamily: showApiKey ? 'monospace' : 'inherit' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey((prev) => !prev)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--muted)',
+                      fontSize: '15px',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    title={showApiKey ? 'Ẩn khóa API' : 'Hiển thị khóa API'}
+                  >
+                    {showApiKey ? '👁️' : '🔒'}
+                  </button>
+                </div>
               </div>
 
               {/* Diagnostic Prompt */}
