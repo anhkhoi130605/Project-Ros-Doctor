@@ -7,6 +7,7 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
+import { apiClient, getReviewsApi, mapReviewsResponse } from '../../service';
 import './SidebarAutohide.css';
 
 function getUserInitials(name) {
@@ -69,12 +70,18 @@ export default function AppLayout() {
     }
   };
 
-  const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('userRole');
-    notify(t('common:system.logoutSuccess'), 'info');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/api/auth/logout');
+    } catch (error) {
+      console.warn('Could not record logout activity:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userRole');
+      notify(t('common:system.logoutSuccess'), 'info');
+      navigate('/login');
+    }
   };
 
   const rawRole = String(state.role || localStorage.getItem('userRole') || 'Engineering').toLowerCase();
@@ -90,12 +97,31 @@ export default function AppLayout() {
     ? t('common:roles.user')
     : t('common:roles.engineering');
 
+  useEffect(() => {
+    if (currentRole === 'user') return;
+    let cancelled = false;
+
+    getReviewsApi()
+      .then((response) => {
+        if (!cancelled) dispatch({ type: 'SET_REVIEWS', findings: mapReviewsResponse(response) });
+      })
+      .catch((error) => {
+        console.error('Không thể tải số kết luận chờ duyệt từ database:', error);
+      });
+
+    return () => { cancelled = true; };
+  }, [currentRole, dispatch]);
+
+  const pendingReviewCount = state.reviewsLoaded
+    ? (state.findings || []).filter((finding) => finding.review?.status === 'pending').length
+    : undefined;
+
   const navItems = [
     ['/dashboard', t('navigation:items.dashboard'), 'grid', ['Admin', 'Engineering', 'User']],
     ['/bags', isUserRole ? t('navigation:items.sharedBags') : t('navigation:items.bags'), 'database', ['Admin', 'Engineering', 'User']],
     ['/analysis', t('navigation:items.analysis'), 'activity', ['Engineering']],
     ['/chat', t('navigation:items.chat'), 'message-square', ['Engineering']],
-    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], 5],
+    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewCount],
     ['/reports', isUserRole ? t('navigation:items.approvedReports') : t('navigation:items.reports'), 'file-text', ['Admin', 'Engineering', 'User']],
     ['/benchmark', t('navigation:items.benchmark'), 'trending-up', ['Engineering']],
     ['/usage', t('navigation:items.usage'), 'clock', ['Engineering']],

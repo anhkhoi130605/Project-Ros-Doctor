@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { DEFAULT_SETTINGS } from '../../../domain/appTypes';
+import { logUserActivityApi } from '../../../service';
 import { PageHeader, Button, Badge, Icon } from '../../../components/common/UIComponents';
 import './SettingsPage.css';
 
@@ -70,6 +71,8 @@ export default function SettingsPage() {
   const handleSave = (e) => {
     if (e) e.preventDefault();
     dispatch({ type: 'SETTINGS', settings });
+    logUserActivityApi({ action: 'UpdateLocalSettings' })
+      .catch((error) => console.warn('Could not record settings activity:', error));
     notify('Đã lưu cấu hình phân tích & ngưỡng kiểm tra thành công!', 'success');
   };
 

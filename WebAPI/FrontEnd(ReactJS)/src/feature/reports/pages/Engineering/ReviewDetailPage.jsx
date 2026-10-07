@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useApp, formatDateTime } from '../../../../stored/appStore';
 import { PageHeader, Badge, Icon, Button, Card } from '../../../../components/common/UIComponents';
 import FindingEvidence from '../../../bags/pages/Engineering/components/FindingEvidence';
-import { submitDecisionApi, getReviewByIdApi } from '../../../../service';
+import { submitDecisionApi, getReviewByIdApi, normalizeReviewStatus } from '../../../../service';
 
 export default function EngineeringReviewDetailPage() {
   const { findingId } = useParams();
@@ -28,7 +28,7 @@ export default function EngineeringReviewDetailPage() {
           if (res) {
             const mapped = {
               ...res,
-              review: { status: res.status || 'pending', note: res.note || '', by: res.reviewedBy, at: res.reviewedAt },
+              review: { status: normalizeReviewStatus(res.status), note: res.note || '', by: res.reviewedBy, at: res.reviewedAt },
             };
             setLocalFinding(mapped);
           }
@@ -74,6 +74,8 @@ export default function EngineeringReviewDetailPage() {
       await submitDecisionApi(finding.id, { decision: 'approved', note: finalNote });
     } catch (err) {
       console.warn('API error when submitting decision:', err);
+      notify('Không thể lưu quyết định duyệt vào database. Vui lòng thử lại.', 'danger');
+      return;
     }
 
     setLocalFinding((prev) =>
@@ -103,6 +105,8 @@ export default function EngineeringReviewDetailPage() {
       await submitDecisionApi(finding.id, { decision: 'changes', note: finalNote });
     } catch (err) {
       console.warn('API error when requesting changes:', err);
+      notify('Không thể lưu yêu cầu chỉnh sửa vào database. Vui lòng thử lại.', 'danger');
+      return;
     }
 
     setLocalFinding((prev) =>
@@ -131,6 +135,8 @@ export default function EngineeringReviewDetailPage() {
       await submitDecisionApi(finding.id, { decision: 'rejected', note: finalNote });
     } catch (err) {
       console.warn('API error when rejecting:', err);
+      notify('Không thể lưu quyết định từ chối vào database. Vui lòng thử lại.', 'danger');
+      return;
     }
 
     setLocalFinding((prev) =>
