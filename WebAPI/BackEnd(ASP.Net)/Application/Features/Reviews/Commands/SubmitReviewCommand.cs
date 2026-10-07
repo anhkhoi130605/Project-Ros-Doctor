@@ -28,9 +28,11 @@ namespace Application.Features.Reviews.Commands
 				throw new ArgumentException($"Finding {command.FindingId} not found");
 			}
 
-			var decision = Enum.TryParse<ReviewStatus>(command.Request.Decision, true, out var d)
-				? d
-				: ReviewStatus.Approved;
+			var decision = string.Equals(command.Request.Decision, "changes", StringComparison.OrdinalIgnoreCase)
+				? ReviewStatus.ChangesNeeded
+				: Enum.TryParse<ReviewStatus>(command.Request.Decision, true, out var parsed) && Enum.IsDefined(parsed)
+					? parsed
+					: throw new ArgumentException($"Invalid review decision: {command.Request.Decision}");
 
 			var auditLog = new ReviewAuditLog
 			{

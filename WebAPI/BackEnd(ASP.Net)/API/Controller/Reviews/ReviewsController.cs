@@ -6,6 +6,7 @@ using Application.Features.Reviews.DTOs;
 using Application.Features.Reviews.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Domain.Enums;
 
 namespace API.Controller.Reviews
 {
@@ -47,6 +48,14 @@ namespace API.Controller.Reviews
 		{
 			var reviewerId = CurrentUserId ?? "usr-reviewer";
 			var result = await _mediator.Send(new SubmitReviewCommand(findingId, request, reviewerId), cancellationToken);
+			var action = result.Status switch
+			{
+				"approved" => UserActionType.ApproveFinding,
+				"rejected" => UserActionType.RejectFinding,
+				"changesneeded" => UserActionType.RequestReviewChanges,
+				_ => UserActionType.SubmitReview
+			};
+			await LogUserActivity(action, findingId, TargetType.Finding, $"Review decision: {result.Status}");
 			return Ok(result);
 		}
 	}
