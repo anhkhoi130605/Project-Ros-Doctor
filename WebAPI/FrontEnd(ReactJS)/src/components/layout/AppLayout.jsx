@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../stored/appStore';
 import { Logo, Button, Badge, Icon } from '../common/UIComponents';
+import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
@@ -18,6 +20,7 @@ function getUserInitials(name) {
 
 export default function AppLayout() {
   const { state, dispatch, notify } = useApp();
+  const { t } = useTranslation(['common', 'navigation']);
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -70,7 +73,7 @@ export default function AppLayout() {
     dispatch({ type: 'LOGOUT' });
     localStorage.removeItem('accessToken');
     localStorage.removeItem('userRole');
-    notify('Đã đăng xuất khỏi hệ thống.', 'info');
+    notify(t('common:system.logoutSuccess'), 'info');
     navigate('/login');
   };
 
@@ -81,18 +84,23 @@ export default function AppLayout() {
     ? 'user'
     : 'engineering';
   const isUserRole = currentRole === 'user';
+  const currentRoleLabel = currentRole === 'admin'
+    ? t('common:roles.admin')
+    : currentRole === 'user'
+    ? t('common:roles.user')
+    : t('common:roles.engineering');
 
   const navItems = [
-    ['/dashboard', 'Tổng quan', 'grid', ['Admin', 'Engineering', 'User']],
-    ['/bags', isUserRole ? 'Rosbag được chia sẻ' : 'Rosbag', 'database', ['Admin', 'Engineering', 'User']],
-    ['/analysis', 'Phân tích', 'activity', ['Engineering']],
-    ['/chat', 'Chat Agent', 'message-square', ['Engineering']],
-    ['/reviews', 'Duyệt kết luận', 'file-text', ['Engineering'], 5],
-    ['/reports', isUserRole ? 'Báo cáo đã duyệt' : 'Báo cáo', 'file-text', ['Admin', 'Engineering', 'User']],
-    ['/benchmark', 'Benchmark', 'trending-up', ['Engineering']],
-    ['/usage', 'Chi phí & hiệu suất', 'clock', ['Engineering']],
-    ['/admin', 'Quản trị hệ thống', 'shield', ['Admin']],
-    ['/settings', 'Cài đặt', 'settings', ['Admin']],
+    ['/dashboard', t('navigation:items.dashboard'), 'grid', ['Admin', 'Engineering', 'User']],
+    ['/bags', isUserRole ? t('navigation:items.sharedBags') : t('navigation:items.bags'), 'database', ['Admin', 'Engineering', 'User']],
+    ['/analysis', t('navigation:items.analysis'), 'activity', ['Engineering']],
+    ['/chat', t('navigation:items.chat'), 'message-square', ['Engineering']],
+    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], 5],
+    ['/reports', isUserRole ? t('navigation:items.approvedReports') : t('navigation:items.reports'), 'file-text', ['Admin', 'Engineering', 'User']],
+    ['/benchmark', t('navigation:items.benchmark'), 'trending-up', ['Engineering']],
+    ['/usage', t('navigation:items.usage'), 'clock', ['Engineering']],
+    ['/admin', t('navigation:items.admin'), 'shield', ['Admin']],
+    ['/settings', t('navigation:items.settings'), 'settings', ['Admin']],
   ];
   const filteredNav = navItems.filter(([, , , roles]) =>
     roles.some((r) => {
@@ -105,23 +113,23 @@ export default function AppLayout() {
   );
 
   const getPageTitle = (pathname) => {
-    if (pathname.startsWith('/dashboard')) return 'Tổng quan';
-    if (pathname.startsWith('/bags')) return 'Rosbag';
-    if (pathname.startsWith('/analysis')) return 'Phân tích & Chẩn đoán';
-    if (pathname.startsWith('/sessions')) return 'Phiên phân tích';
-    if (pathname.startsWith('/reports')) return 'Báo cáo';
-    if (pathname.startsWith('/reviews')) return 'Duyệt kết luận';
-    if (pathname.startsWith('/chat')) return 'Chat Agent';
-    if (pathname.startsWith('/benchmark')) return 'Benchmark';
-    if (pathname.startsWith('/usage')) return 'Chi phí & hiệu suất';
-    if (pathname === '/admin/ai-config') return 'Cấu hình AI';
-    if (pathname === '/admin/cost') return 'Chi phí & hiệu suất';
-    if (pathname === '/admin/analysis-config') return 'Cấu hình phân tích';
-    if (pathname === '/admin/members') return 'Tài khoản & quyền';
-    if (pathname === '/admin/system-logs') return 'Nhật ký hệ thống';
-    if (pathname.startsWith('/admin')) return 'Quản trị hệ thống';
-    if (pathname.startsWith('/settings')) return 'Cài đặt';
-    return 'Không gian làm việc';
+    if (pathname.startsWith('/dashboard')) return t('navigation:pageTitles.dashboard');
+    if (pathname.startsWith('/bags')) return t('navigation:pageTitles.bags');
+    if (pathname.startsWith('/analysis')) return t('navigation:pageTitles.analysis');
+    if (pathname.startsWith('/sessions')) return t('navigation:pageTitles.sessions');
+    if (pathname.startsWith('/reports')) return t('navigation:pageTitles.reports');
+    if (pathname.startsWith('/reviews')) return t('navigation:pageTitles.reviews');
+    if (pathname.startsWith('/chat')) return t('navigation:pageTitles.chat');
+    if (pathname.startsWith('/benchmark')) return t('navigation:pageTitles.benchmark');
+    if (pathname.startsWith('/usage')) return t('navigation:pageTitles.usage');
+    if (pathname === '/admin/ai-config') return t('navigation:pageTitles.aiConfig');
+    if (pathname === '/admin/cost') return t('navigation:pageTitles.usage');
+    if (pathname === '/admin/analysis-config') return t('navigation:pageTitles.analysisConfig');
+    if (pathname === '/admin/members') return t('navigation:pageTitles.members');
+    if (pathname === '/admin/system-logs') return t('navigation:pageTitles.systemLogs');
+    if (pathname.startsWith('/admin')) return t('navigation:pageTitles.admin');
+    if (pathname.startsWith('/settings')) return t('navigation:pageTitles.settings');
+    return t('navigation:pageTitles.workspace');
   };
 
   const currentPageTitle = getPageTitle(location.pathname);
@@ -131,7 +139,7 @@ export default function AppLayout() {
       {mobileNavOpen && (
         <button
           className="sidebar-backdrop"
-          aria-label="Đóng menu điều hướng"
+          aria-label={t('common:aria.closeNavigation')}
           onClick={() => setMobileNavOpen(false)}
         />
       )}
@@ -140,13 +148,13 @@ export default function AppLayout() {
         className={`sidebar ${mobileNavOpen ? 'open' : ''} ${isHovered ? 'is-hovered' : ''} ${isPinned ? 'is-pinned' : ''}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
-        aria-label="Điều hướng ứng dụng"
+        aria-label={t('common:aria.applicationNavigation')}
       >
         <div className="sidebar-header-row">
           <NavLink
             to="/dashboard"
             className="brand-link"
-            aria-label="CTRN SHIFT N, trang chủ"
+            aria-label={t('common:aria.home')}
             onClick={closeNavIfAuto}
           >
             <Logo compact={!isHovered && !isPinned} />
@@ -156,31 +164,31 @@ export default function AppLayout() {
             type="button"
             className={`sidebar-pin-btn ${isPinned ? 'active' : ''}`}
             onClick={togglePin}
-            title={isPinned ? 'Bỏ ghim (tự động ẩn khi rời chuột)' : 'Ghim thanh điều hướng cố định'}
-            aria-label={isPinned ? 'Bỏ ghim' : 'Ghim'}
+            title={isPinned ? t('common:pin.unpinTitle') : t('common:pin.pinTitle')}
+            aria-label={isPinned ? t('common:pin.unpin') : t('common:pin.pin')}
           >
             <Icon name={isPinned ? 'pin' : 'pin-off'} size={15} />
           </button>
 
           <button
             className="mobile-close icon-button"
-            aria-label="Đóng menu"
+            aria-label={t('common:aria.closeMenu')}
             onClick={() => setMobileNavOpen(false)}
           >
             <Icon name="close" />
           </button>
         </div>
 
-        <div className="workspace-label">KHÔNG GIAN LÀM VIỆC</div>
+        <div className="workspace-label">{t('navigation:sections.workspace')}</div>
         <div className="workspace-card">
           <span className="workspace-avatar">R</span>
           <span className="workspace-card-details">
             <strong>{state.profile?.workspace || 'Robotics Lab'}</strong>
-            <small>RAV-13 / Nghiên cứu ROS2</small>
+            <small>{t('common:workspace.research')}</small>
           </span>
         </div>
 
-        <div className="workspace-label" style={{ marginTop: '12px' }}>ĐIỀU HƯỚNG</div>
+        <div className="workspace-label" style={{ marginTop: '12px' }}>{t('navigation:sections.navigation')}</div>
         <nav>
           {filteredNav.map(([to, label, icon, roles, badgeCount]) => {
             const isAdminRoute = to === '/admin';
@@ -223,7 +231,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="users" size={14} />
-                      <span>Tài khoản & quyền</span>
+                      <span>{t('navigation:admin.members')}</span>
                     </NavLink>
                     <NavLink
                       to="/admin/system-logs"
@@ -231,7 +239,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="clock" size={14} />
-                      <span>Nhật ký hệ thống</span>
+                      <span>{t('navigation:admin.systemLogs')}</span>
                     </NavLink>
                     <NavLink
                       to="/admin/user-activity"
@@ -239,7 +247,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="file-text" size={14} />
-                      <span>Lịch sử người dùng</span>
+                      <span>{t('navigation:admin.userActivity')}</span>
                     </NavLink>
                     <NavLink
                       to="/admin/activity"
@@ -247,7 +255,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="activity" size={14} />
-                      <span>Hoạt động gần đây</span>
+                      <span>{t('navigation:admin.recentActivity')}</span>
                     </NavLink>
                   </div>
                 </div>
@@ -280,7 +288,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="cpu" size={14} />
-                      <span>Cấu hình AI</span>
+                      <span>{t('navigation:settings.ai')}</span>
                     </NavLink>
                     <NavLink
                       to="/admin/analysis-config"
@@ -288,7 +296,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="sliders" size={14} />
-                      <span>Cấu hình phân tích</span>
+                      <span>{t('navigation:settings.analysis')}</span>
                     </NavLink>
                     <NavLink
                       to="/admin/cost"
@@ -296,7 +304,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="trending-up" size={14} />
-                      <span>Chi phí & hiệu suất</span>
+                      <span>{t('navigation:settings.cost')}</span>
                     </NavLink>
                     <NavLink
                       to="/settings"
@@ -304,7 +312,7 @@ export default function AppLayout() {
                       onClick={closeNavIfAuto}
                     >
                       <Icon name="settings" size={14} />
-                      <span>Cài đặt hệ thống</span>
+                      <span>{t('navigation:settings.system')}</span>
                     </NavLink>
                   </div>
                 </div>
@@ -348,7 +356,7 @@ export default function AppLayout() {
             onClick={closeNavIfAuto}
           >
             <Icon name="external-link" size={18} />
-            <span className="nav-item-label">Trang giới thiệu</span>
+            <span className="nav-item-label">{t('navigation:items.about')}</span>
           </NavLink>
         </nav>
 
@@ -369,7 +377,7 @@ export default function AppLayout() {
         >
           <img
             src={robotHeroImg}
-            alt="Chẩn đoán ngoại tuyến"
+            alt={t('common:system.offlineDiagnosis')}
             style={{
               width: '100%',
               height: '100%',
@@ -391,10 +399,10 @@ export default function AppLayout() {
             }}
           >
             <strong style={{ fontSize: '10px', letterSpacing: '0.5px', textTransform: 'uppercase', color: '#93c5fd' }}>
-              CHẨN ĐOÁN NGOẠI TUYẾN
+              {t('common:system.offlineDiagnosis')}
             </strong>
             <span style={{ fontSize: '10px', opacity: 0.9, marginTop: '2px' }}>
-              AI đề xuất · Kỹ sư quyết định
+              {t('common:system.humanDecision')}
             </span>
           </div>
         </div>
@@ -409,7 +417,7 @@ export default function AppLayout() {
           <button
             type="button"
             className={`sidebar-account-btn ${userMenuOpen ? 'menu-open' : ''}`}
-            aria-label="Menu tài khoản"
+            aria-label={t('common:aria.accountMenu')}
             onClick={() => setUserMenuOpen(!userMenuOpen)}
           >
             <div
@@ -500,7 +508,7 @@ export default function AppLayout() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
               >
                 <Icon name="user" size={16} />
-                <span>Thông tin cá nhân</span>
+                <span>{t('common:actions.profile')}</span>
               </button>
 
               <button
@@ -529,7 +537,7 @@ export default function AppLayout() {
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
               >
                 <Icon name="logout" size={16} />
-                <span>Đăng xuất</span>
+                <span>{t('common:actions.logout')}</span>
               </button>
             </div>
           )}
@@ -547,7 +555,7 @@ export default function AppLayout() {
         <header className="topbar">
           <button
             className="mobile-menu icon-button"
-            aria-label="Mở menu điều hướng"
+            aria-label={t('common:aria.openNavigation')}
             onClick={() => setMobileNavOpen(true)}
           >
             <Icon name="menu" />
@@ -560,6 +568,7 @@ export default function AppLayout() {
           </div>
 
           <div className="topbar-actions">
+            <LanguageSwitcher />
             <span className="demo-tag">
               <Badge tone="green">LIVE DB</Badge>
             </span>
@@ -576,19 +585,15 @@ export default function AppLayout() {
                 fontWeight: 600,
                 color: '#334155',
               }}
-              title="Vai trò được xác thực từ phiên đăng nhập an toàn"
+              title={t('common:roles.verifiedHint')}
             >
-              <span style={{ fontSize: '11px', color: '#64748b' }}>Vai trò:</span>
+              <span style={{ fontSize: '11px', color: '#64748b' }}>{t('common:roles.label')}</span>
               <strong style={{ color: currentRole === 'admin' ? '#b45309' : currentRole === 'user' ? '#0369a1' : '#4338ca' }}>
-                {currentRole === 'admin'
-                  ? '👑 Quản trị viên'
-                  : currentRole === 'user'
-                  ? '👁️ Người xem'
-                  : '🛠️ Kỹ sư Robotics'}
+                {currentRoleLabel}
               </strong>
             </div>
             <Button variant="ghost" icon="logout" onClick={handleLogout}>
-              Đăng xuất
+              {t('common:actions.logout')}
             </Button>
           </div>
         </header>
@@ -603,7 +608,7 @@ export default function AppLayout() {
 
         <footer className="app-footer">
           <span>CTRN SHIFT N / RAV-13</span>
-          <span>AI đề xuất · Kỹ sư quyết định</span>
+          <span>{t('common:system.humanDecision')}</span>
         </footer>
       </div>
 
@@ -637,7 +642,7 @@ export default function AppLayout() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
               <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                👤 Thông tin cá nhân
+                👤 {t('common:profile.title')}
               </h3>
               <button
                 type="button"
@@ -677,35 +682,37 @@ export default function AppLayout() {
 
             <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Họ & Tên</span>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.fullName')}</span>
                 <strong style={{ color: '#0f172a' }}>{state.profile?.name || ROLE_NAMES[state.role] || 'An Nguyễn'}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Email</span>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.email')}</span>
                 <strong style={{ color: '#0f172a' }}>{state.profile?.email || `${(state.role || 'user').toLowerCase()}@ros2doctor.local`}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Vai trò / Phân quyền</span>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.role')}</span>
                 <span className="badge green" style={{ fontSize: '11px' }}>
-                  <i /> {ROLE_NAMES[state.role] || state.role || 'Robotics Engineer'}
+                  <i /> {currentRoleLabel}
                 </span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Không gian làm việc</span>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.workspace')}</span>
                 <strong style={{ color: '#0f172a' }}>{state.profile?.workspace || 'Robotics Lab / RAV-13'}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Trạng thái tài khoản</span>
-                <span style={{ color: '#16a34a', fontWeight: 700 }}>● Đang hoạt động (Online)</span>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.accountStatus')}</span>
+                <span style={{ color: '#16a34a', fontWeight: 700 }}>{t('common:profile.online')}</span>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Giới hạn AI Requests</span>
-                <strong style={{ color: '#0f172a' }}>{state.aiSettings?.dailyRequests || 100} requests / ngày</strong>
+                <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.aiLimit')}</span>
+                <strong style={{ color: '#0f172a' }}>
+                  {t('common:profile.requestsPerDay', { count: state.aiSettings?.dailyRequests || 100 })}
+                </strong>
               </div>
             </div>
 
@@ -716,7 +723,7 @@ export default function AppLayout() {
                 onClick={() => setShowProfileModal(false)}
                 style={{ minHeight: '38px', padding: '0 24px', background: '#0f172a', color: '#ffffff', border: 'none' }}
               >
-                Đóng
+                {t('common:actions.close')}
               </button>
             </div>
           </div>

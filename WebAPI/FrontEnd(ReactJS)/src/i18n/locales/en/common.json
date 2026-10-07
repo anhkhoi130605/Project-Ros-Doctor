@@ -1,0 +1,77 @@
+{
+  "language": "Language",
+  "languages": {
+    "vi": "Vietnamese",
+    "en": "English"
+  },
+  "actions": {
+    "close": "Close",
+    "logout": "Sign out",
+    "profile": "Personal information"
+  },
+  "aria": {
+    "closeMenu": "Close menu",
+    "closeNavigation": "Close navigation menu",
+    "openNavigation": "Open navigation menu",
+    "applicationNavigation": "Application navigation",
+    "accountMenu": "Account menu",
+    "home": "CTRN SHIFT N, home"
+  },
+  "pin": {
+    "pin": "Pin",
+    "unpin": "Unpin",
+    "pinTitle": "Keep the navigation sidebar pinned",
+    "unpinTitle": "Unpin and auto-hide when the pointer leaves"
+  },
+  "roles": {
+    "label": "Role:",
+    "verifiedHint": "Role verified from the secure sign-in session",
+    "admin": "👑 Administrator",
+    "user": "👁️ Viewer",
+    "engineering": "🛠️ Robotics Engineer"
+  },
+  "profile": {
+    "title": "Personal information",
+    "fullName": "Full name",
+    "email": "Email",
+    "role": "Role / Permissions",
+    "workspace": "Workspace",
+    "accountStatus": "Account status",
+    "online": "● Active (Online)",
+    "aiLimit": "AI request limit",
+    "requestsPerDay": "{{count}} requests / day"
+  },
+  "workspace": {
+    "research": "RAV-13 / ROS2 Research"
+  },
+  "system": {
+    "loadingPage": "Loading page...",
+    "logoutSuccess": "You have signed out.",
+    "offlineDiagnosis": "OFFLINE DIAGNOSTICS",
+    "humanDecision": "AI recommends · Engineer decides"
+  },
+  "pagination": {
+    "summary": "Showing {{start}}–{{end}} of {{total}} items",
+    "pageSize": "Items:",
+    "perPage": "{{count}} / page",
+    "first": "First page",
+    "previous": "Previous",
+    "next": "Next",
+    "last": "Last page"
+  },
+  "statuses": {
+    "pending": "Pending review",
+    "approved": "Approved",
+    "partial": "Partially approved",
+    "changes": "Changes requested",
+    "rejected": "Rejected",
+    "complete": "Completed",
+    "ready": "Ready",
+    "invalid": "Invalid",
+    "outdated": "Update required",
+    "processing": "Processing",
+    "draft": "Draft",
+    "high": "High",
+    "medium": "Medium"
+  }
+}

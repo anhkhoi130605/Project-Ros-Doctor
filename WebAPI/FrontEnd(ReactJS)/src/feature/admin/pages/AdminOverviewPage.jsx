@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore.jsx';
 import { PageHeader, Card } from '../../../components/common/UIComponents.jsx';
 import {
@@ -91,11 +92,18 @@ const roleColors = {
   user: { bg: '#f1f5f9', color: '#475569', border: '#e2e8f0' },
 };
 
+const DEFAULT_AI_MODEL_VI = 'Chưa kết nối';
+const DEFAULT_AI_MODEL_EN = 'Not connected';
+const DEFAULT_AI_PROMPT_VI = 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.';
+const DEFAULT_AI_PROMPT_EN = 'Analyze ROS2 logs using evidence. Separate observations from hypotheses. Engineers review every finding.';
+
 export default function AdminOverviewPage() {
   const { state, dispatch, notify } = useApp();
+  const { i18n } = useTranslation();
   const { tab = 'overview', id: detailId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
 
   const activeTab = (!tab || tab === 'overview') ? 'members' : tab;
 
@@ -148,7 +156,9 @@ export default function AdminOverviewPage() {
   };
 
   const handleDeleteMember = (memberId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa tài khoản này khỏi hệ thống?')) {
+    if (window.confirm(isEnglish
+      ? 'Are you sure you want to remove this account from the system?'
+      : 'Bạn có chắc chắn muốn xóa tài khoản này khỏi hệ thống?')) {
       setMembers((prev) => prev.filter((m) => (m.id || m.email) !== memberId));
       notify('Đã xóa tài khoản khỏi hệ thống.', 'info');
     }
@@ -360,10 +370,16 @@ export default function AdminOverviewPage() {
     maxTokens: 4000,
     rpm: 10,
     monthlyBudget: 25,
-    modelName: 'Chưa kết nối',
+    modelName: DEFAULT_AI_MODEL_VI,
     vectorDbUrl: import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333',
-    prompt: 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
+    prompt: DEFAULT_AI_PROMPT_VI,
   });
+  const displayedAiModelName = aiConfig.modelName === DEFAULT_AI_MODEL_VI || aiConfig.modelName === DEFAULT_AI_MODEL_EN
+    ? isEnglish ? DEFAULT_AI_MODEL_EN : DEFAULT_AI_MODEL_VI
+    : aiConfig.modelName;
+  const displayedAiPrompt = aiConfig.prompt === DEFAULT_AI_PROMPT_VI || aiConfig.prompt === DEFAULT_AI_PROMPT_EN
+    ? isEnglish ? DEFAULT_AI_PROMPT_EN : DEFAULT_AI_PROMPT_VI
+    : aiConfig.prompt;
 
   // Analysis Config state
   const [analysisConfig, setAnalysisConfig] = useState({
@@ -1191,7 +1207,9 @@ export default function AdminOverviewPage() {
                                         border: '1px solid #1e293b',
                                       }}
                                     >
-                                      {log.stackTrace || 'Không có thông tin Stack Trace.'}
+                                      {log.stackTrace || (isEnglish
+                                        ? 'No Stack Trace information is available.'
+                                        : 'Không có thông tin Stack Trace.')}
                                     </pre>
                                   </div>
                                 </div>
@@ -1428,7 +1446,7 @@ export default function AdminOverviewPage() {
                 </label>
                 <input
                   type="text"
-                  value={aiConfig.modelName}
+                  value={displayedAiModelName}
                   onChange={(e) => setAiConfig({ ...aiConfig, modelName: e.target.value })}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px' }}
                 />
@@ -1452,7 +1470,7 @@ export default function AdminOverviewPage() {
                 </label>
                 <textarea
                   rows={4}
-                  value={aiConfig.prompt}
+                  value={displayedAiPrompt}
                   onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', lineHeight: 1.6, resize: 'vertical' }}
                 />

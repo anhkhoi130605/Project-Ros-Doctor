@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card, Button, Badge } from '../../../components/common/UIComponents';
 import { getAiConfigApi, updateAiConfigApi } from '../../../service';
 
+const DEFAULT_AI_PROMPT_VI = 'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.';
+const DEFAULT_AI_PROMPT_EN = 'Analyze ROS2 logs using evidence. Separate observations from hypotheses. Engineers review every finding.';
+
 export default function AiConfigPage() {
   const { state, dispatch, notify } = useApp();
+  const { i18n } = useTranslation();
+  const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
 
   const [aiConfig, setAiConfig] = useState(() => ({
     dailyCalls: state.aiSettings?.dailyRequests || 100,
@@ -15,13 +21,18 @@ export default function AiConfigPage() {
     vectorDbUrl: state.aiSettings?.vectorDbUrl || (import.meta.env.VITE_VECTOR_DB_URL || 'http://localhost:6333'),
     prompt:
       state.aiSettings?.prompt ||
-      'Phân tích log ROS2 dựa trên bằng chứng. Phân biệt quan sát với giả thuyết. Kỹ sư duyệt mọi kết luận.',
+      DEFAULT_AI_PROMPT_VI,
   }));
+  const [usesLocalPromptFallback, setUsesLocalPromptFallback] = useState(() => !state.aiSettings?.prompt);
+  const displayedPrompt = usesLocalPromptFallback
+    ? isEnglish ? DEFAULT_AI_PROMPT_EN : DEFAULT_AI_PROMPT_VI
+    : aiConfig.prompt;
 
   useEffect(() => {
     getAiConfigApi()
       .then((cfg) => {
         if (cfg) {
+          setUsesLocalPromptFallback(false);
           setAiConfig({
             dailyCalls: cfg.dailyRequests ?? 100,
             maxTokens: cfg.tokensPerRun ?? 4000,
@@ -180,8 +191,11 @@ export default function AiConfigPage() {
               </label>
               <textarea
                 rows={5}
-                value={aiConfig.prompt}
-                onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}
+                value={displayedPrompt}
+                onChange={(e) => {
+                  setUsesLocalPromptFallback(false);
+                  setAiConfig({ ...aiConfig, prompt: e.target.value });
+                }}
                 style={{
                   width: '100%',
                   padding: '10px 12px',

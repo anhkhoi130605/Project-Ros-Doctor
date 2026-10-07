@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp, formatDuration } from '../../../../stored/appStore';
 import { ROLES } from '../../../../domain/appTypes';
 import {
@@ -21,6 +22,7 @@ import {
 
 export default function AnalysisConfigurePage() {
   const navigate = useNavigate();
+  const { i18n } = useTranslation();
   const { state, dispatch, notify } = useApp();
   const bag = (state.bags || []).find((item) => item.id === state.selectedBagId);
   const [error, setError] = useState('');
@@ -34,6 +36,13 @@ export default function AnalysisConfigurePage() {
       ...state.analysisConfig?.expected,
     },
   }));
+  const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
+  const displayedConfigName = config.name === 'AGV-Lab · phiên mới' || config.name === 'AGV-Lab · new session'
+    ? isEnglish ? 'AGV-Lab · new session' : 'AGV-Lab · phiên mới'
+    : config.name;
+  const displayedRobotProfile = config.robot === 'AGV-Lab / Cảm biến tiêu chuẩn' || config.robot === 'AGV-Lab / Standard sensors'
+    ? isEnglish ? 'AGV-Lab / Standard sensors' : 'AGV-Lab / Cảm biến tiêu chuẩn'
+    : config.robot;
 
   if (!bag) {
     return (
@@ -103,7 +112,7 @@ export default function AnalysisConfigurePage() {
             <div className="form-grid">
               <FormField label="Tên phiên phân tích" className="span-2">
                 <input
-                  value={config.name}
+                  value={displayedConfigName}
                   onChange={(event) => updateConfig('name', event.target.value)}
                   maxLength={80}
                   required
@@ -112,7 +121,7 @@ export default function AnalysisConfigurePage() {
 
               <FormField label="Hồ sơ robot">
                 <input
-                  value={config.robot}
+                  value={displayedRobotProfile}
                   onChange={(event) => updateConfig('robot', event.target.value)}
                   maxLength={80}
                   required
@@ -120,7 +129,7 @@ export default function AnalysisConfigurePage() {
               </FormField>
 
               <FormField label="Phạm vi dữ liệu">
-                <input value={`Toàn bộ bộ mẫu · 00:00 – ${durationLabel}`} readOnly />
+                <input value={`${isEnglish ? 'Full sample' : 'Toàn bộ bộ mẫu'} · 00:00 – ${durationLabel}`} readOnly />
               </FormField>
             </div>
 
