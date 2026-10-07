@@ -1,10 +1,12 @@
 using System.IO.Compression;
 using System.Linq;
+using System.Threading.RateLimiting;
 using API.Middlewares;
 using API.Middlewares.Extentions;
 using Application;
 using Infrastructure;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,20 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 });
 
 builder.Services.AddOpenApi();
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("activity-search", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.User.GetUserId() ?? context.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+});
 
 var app = builder.Build();
 
@@ -73,6 +89,7 @@ app.UseGlobalExceptionMiddleware();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.UseMiddleware<UserActivityAuditMiddleware>();
 app.MapControllers();
 

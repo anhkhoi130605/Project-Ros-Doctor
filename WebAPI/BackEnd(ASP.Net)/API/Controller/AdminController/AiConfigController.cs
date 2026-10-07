@@ -6,10 +6,14 @@ using Application.Features.Admin.AiConfig.DTOs;
 using Application.Features.Admin.AiConfig.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 
 namespace API.Controller.AdminController
 {
 	[Route("api/admin")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
+	[ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 	public class AiConfigController : BaseController
 	{
 		private readonly IMediator _mediator;
