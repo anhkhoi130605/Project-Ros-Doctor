@@ -5,6 +5,8 @@ using Application.Features.Reports.Commands;
 using Application.Features.Reports.DTOs;
 using Application.Features.Reports.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controller.Reports
@@ -34,6 +36,7 @@ namespace API.Controller.Reports
 			return Ok(result);
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpPost]
 		public async Task<IActionResult> CreateReport([FromBody] CreateReportRequestDto request, CancellationToken cancellationToken)
 		{

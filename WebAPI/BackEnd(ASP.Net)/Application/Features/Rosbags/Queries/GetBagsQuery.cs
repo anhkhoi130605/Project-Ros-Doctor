@@ -63,22 +63,27 @@ namespace Application.Features.Rosbags.Queries
 			var sessionMap = sessions
 				.OrderByDescending(s => s.StartedAt)
 				.GroupBy(s => s.RosbagId)
-				.ToDictionary(g => g.Key, g => g.First().Id);
+				.ToDictionary(g => g.Key, g => g.First());
 
 			return bagsList
-				.Select(b => new RosbagDto
+				.Select(b =>
 				{
-					Id = b.Id,
-					Name = b.Name,
-					StorageUrl = b.StorageUrl,
-					Size = b.Size,
-					Format = b.Format,
-					Duration = b.Duration,
-					Topics = b.Topics,
-					Status = b.Status,
-					Date = b.Date,
-					SessionId = sessionMap.TryGetValue(b.Id, out var sId) ? sId : null,
-					UserId = b.UserId
+					var hasSession = sessionMap.TryGetValue(b.Id, out var sess);
+					return new RosbagDto
+					{
+						Id = b.Id,
+						Name = b.Name,
+						StorageUrl = b.StorageUrl,
+						Size = b.Size,
+						Format = b.Format,
+						Duration = b.Duration,
+						Topics = b.Topics,
+						Status = b.Status,
+						Date = b.Date,
+						SessionId = hasSession && sess != null ? sess.Id : null,
+						ProcessingSeconds = hasSession && sess != null ? sess.ExecutionTimeSec : 0,
+						UserId = b.UserId
+					};
 				})
 				.ToList();
 		}

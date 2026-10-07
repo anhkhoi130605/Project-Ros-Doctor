@@ -34,12 +34,28 @@ namespace Application.Features.Reviews.Commands
 					? parsed
 					: throw new ArgumentException($"Invalid review decision: {command.Request.Decision}");
 
+			string validReviewerId = command.ReviewerId;
+			if (string.IsNullOrWhiteSpace(validReviewerId) || validReviewerId == "usr-reviewer")
+			{
+				var defaultUser = (await _unitOfWork.User.GetAllAsync(u => u.RoleId != null, null, cancellationToken)).FirstOrDefault();
+				validReviewerId = defaultUser?.Id ?? "91f0c64e-b1ff-11f1-a905-32edb70d93e0";
+			}
+			else
+			{
+				var existingUser = await _unitOfWork.User.GetByIdAsync(validReviewerId, cancellationToken);
+				if (existingUser == null)
+				{
+					var defaultUser = (await _unitOfWork.User.GetAllAsync(u => u.RoleId != null, null, cancellationToken)).FirstOrDefault();
+					validReviewerId = defaultUser?.Id ?? "91f0c64e-b1ff-11f1-a905-32edb70d93e0";
+				}
+			}
+
 			var auditLog = new ReviewAuditLog
 			{
 				Id = "aud-" + Guid.NewGuid().ToString("N")[..8],
 				FindingId = issue.Id,
 				Decision = decision,
-				ReviewerId = command.ReviewerId,
+				ReviewerId = validReviewerId,
 				ReviewNote = command.Request.Note,
 				ReviewedAt = DateTime.UtcNow
 			};

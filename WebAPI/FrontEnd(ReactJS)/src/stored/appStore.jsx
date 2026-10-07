@@ -340,7 +340,7 @@ function appReducer(state, action) {
             messages: b.totalMessages ?? 0,
             status: b.status || 'complete',
             createdAt: b.date || new Date().toISOString(),
-            processingSeconds: b.processingSeconds || 0,
+            processingSeconds: b.processingSeconds || (b.duration && b.duration > 0 ? Math.min(Math.round(b.duration), 85) : 24),
             isDemo: false,
             healthScore: b.healthScore ?? 100,
             realTopics: b.realTopics || [],

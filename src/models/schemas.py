@@ -48,6 +48,8 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=100000, description="Tin nhắn từ user hoặc prompt chẩn đoán telemetry")
     session_id: str | None = Field(default=None, description="Mã session chẩn đoán cần hỏi đáp")
     bag_id: str | None = Field(default=None, description="Mã rosbag cần hỏi đáp")
+    api_key: str | None = Field(default=None, description="Khóa API tùy chọn từ client")
+    model: str | None = Field(default=None, description="Tên mô hình LLM tùy chọn từ client")
 
 
 class ChatResponse(BaseModel):

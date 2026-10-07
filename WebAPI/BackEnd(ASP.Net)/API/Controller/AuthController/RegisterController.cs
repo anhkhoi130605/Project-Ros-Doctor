@@ -8,11 +8,13 @@ using Application.Features.Authentication.Login;
 using Application.Features.Authentication.Login.Handler;
 using Application.DTOs.Authentication.Register;
 using Application.Features.Authentication.Register.Handler;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controller;
 
 [ApiController]
 [Route("api/auth")]
+[EnableRateLimiting("auth-limiter")]
 public class RegisterController : ControllerBase
 {
 	private readonly IMediator _mediator;

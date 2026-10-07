@@ -1,6 +1,68 @@
 const AI_AGENT_URL = import.meta.env.VITE_AI_AGENT_URL || '/ai-agent';
 
 /**
+ * Đồng bộ cấu hình API Key và Model trực tiếp sang Python AI Agent.
+ */
+export async function syncAiConfigToAgentApi(config) {
+  try {
+    const res = await fetch(`${AI_AGENT_URL}/api/v1/ai-config`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: config.apiKey,
+        model: config.modelName,
+        base_url: config.baseUrl,
+      }),
+    });
+    return res.json();
+  } catch (err) {
+    console.warn('[AI Agent] Failed to sync config:', err);
+    return null;
+  }
+}
+
+/**
+ * Lấy cấu hình AI hiệu lực dựa trên chức năng (chat, diagnostic, report...) hoặc cấu hình người dùng
+ */
+export function getEffectiveAiConfig(feature = 'chat') {
+  let model = localStorage.getItem('ai_model_name') || 'qwen-2.5-coder-32b';
+  let apiKey = localStorage.getItem('ai_api_key') || '';
+  let temperature = 0.2;
+  let systemPrompt = '';
+
+  // 1. Kiểm tra cấu hình chuyên biệt theo chức năng
+  try {
+    const rawFeatures = localStorage.getItem('ai_per_feature_configs');
+    if (rawFeatures) {
+      const featureConfigs = JSON.parse(rawFeatures);
+      if (featureConfigs && featureConfigs[feature]) {
+        const fc = featureConfigs[feature];
+        if (fc.modelName) model = fc.modelName;
+        if (fc.apiKey) apiKey = fc.apiKey;
+        if (fc.temperature !== undefined) temperature = Number(fc.temperature);
+        if (fc.prompt) systemPrompt = fc.prompt;
+      }
+    }
+  } catch {}
+
+  // 2. Kiểm tra cấu hình riêng của người dùng đang đăng nhập
+  try {
+    const activeUserId = localStorage.getItem('userId');
+    const rawUsers = localStorage.getItem('ai_per_user_configs');
+    if (activeUserId && rawUsers) {
+      const userConfigs = JSON.parse(rawUsers);
+      if (userConfigs && userConfigs[activeUserId]) {
+        const uc = userConfigs[activeUserId];
+        if (uc.modelName && uc.customModel) model = uc.modelName;
+        if (uc.apiKey && uc.customApiKey) apiKey = uc.apiKey;
+      }
+    }
+  } catch {}
+
+  return { model, apiKey, temperature, systemPrompt };
+}
+
+/**
  * Gửi tin nhắn hỏi đáp chẩn đoán sự cố ROS2 tới Python AI Agent (LangGraph + RAG).
  * @param {string} message - Câu hỏi hoặc truy vấn của kỹ sư
  * @returns {Promise<{response: string, analysis: string}>}
@@ -9,6 +71,20 @@ export async function sendChatMessageApi(message, sessionId = null, bagId = null
   const payload = { message };
   if (sessionId) payload.session_id = sessionId;
   if (bagId) payload.bag_id = bagId;
+
+  const effectiveConfig = getEffectiveAiConfig('chat');
+  if (effectiveConfig.apiKey && effectiveConfig.apiKey.trim()) {
+    payload.api_key = effectiveConfig.apiKey.trim();
+  }
+  if (effectiveConfig.model && effectiveConfig.model.trim()) {
+    payload.model = effectiveConfig.model.trim();
+  }
+  if (effectiveConfig.temperature !== undefined) {
+    payload.temperature = effectiveConfig.temperature;
+  }
+  if (effectiveConfig.systemPrompt) {
+    payload.system_prompt = effectiveConfig.systemPrompt;
+  }
 
   const response = await fetch(`${AI_AGENT_URL}/api/v1/chat`, {
     method: 'POST',
@@ -47,6 +123,20 @@ export async function streamChatMessageApi(message, sessionId = null, bagId = nu
   const payload = { message };
   if (sessionId) payload.session_id = sessionId;
   if (bagId) payload.bag_id = bagId;
+
+  const effectiveConfig = getEffectiveAiConfig('chat');
+  if (effectiveConfig.apiKey && effectiveConfig.apiKey.trim()) {
+    payload.api_key = effectiveConfig.apiKey.trim();
+  }
+  if (effectiveConfig.model && effectiveConfig.model.trim()) {
+    payload.model = effectiveConfig.model.trim();
+  }
+  if (effectiveConfig.temperature !== undefined) {
+    payload.temperature = effectiveConfig.temperature;
+  }
+  if (effectiveConfig.systemPrompt) {
+    payload.system_prompt = effectiveConfig.systemPrompt;
+  }
 
   try {
     const response = await fetch(`${AI_AGENT_URL}/api/v1/chat/stream`, {

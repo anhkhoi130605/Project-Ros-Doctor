@@ -5,6 +5,8 @@ using Application.Features.Reviews.Commands;
 using Application.Features.Reviews.DTOs;
 using Application.Features.Reviews.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Domain.Enums;
 
@@ -43,6 +45,7 @@ namespace API.Controller.Reviews
 			return Ok(result);
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost("{findingId}/decision")]
 		public async Task<IActionResult> SubmitDecision(string findingId, [FromBody] SubmitReviewRequestDto request, CancellationToken cancellationToken)
 		{
