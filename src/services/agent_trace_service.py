@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
 
@@ -100,7 +100,7 @@ class AgentTraceService:
                 "report": report,
                 "response": response,
                 "analysis": analysis,
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
             }
 
             result = self._collection.insert_one(document)
