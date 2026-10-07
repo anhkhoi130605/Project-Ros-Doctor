@@ -96,11 +96,7 @@ export default function LoginSuccessPage() {
       notify('Đăng nhập bằng tài khoản Google thành công!', 'success');
 
       const timer = setTimeout(() => {
-        if (normalizedRole === 'Admin') {
-          navigate('/admin', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
+        navigate('/dashboard', { replace: true });
       }, 500);
 
       return () => clearTimeout(timer);
@@ -178,8 +174,8 @@ export default function LoginSuccessPage() {
             </div>
             <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '18px' }}>Đăng nhập thành công!</h3>
             <p style={{ margin: '0 0 20px', color: '#64748b', fontSize: '13px' }}>{status.message}</p>
-            <Button to="/admin" variant="primary" style={{ background: '#0f172a', color: '#ffffff' }}>
-              Vào trang Quản trị
+            <Button to="/dashboard" variant="primary" style={{ background: '#0f172a', color: '#ffffff' }}>
+              Vào trang Tổng quan
             </Button>
           </div>
         ) : (

@@ -54,3 +54,26 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def update_env_setting(key: str, value: str) -> None:
+    """Cập nhật biến môi trường trong file .env và làm mới cache cấu hình."""
+    import re
+    from pathlib import Path
+
+    env_path = Path(".env")
+    content = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+
+    pattern = rf"^{re.escape(key)}=.*$"
+    new_line = f"{key}={value}"
+    if re.search(pattern, content, flags=re.MULTILINE):
+        content = re.sub(pattern, new_line, content, flags=re.MULTILINE)
+    else:
+        if content and not content.endswith("\n"):
+            content += "\n"
+        content += f"{new_line}\n"
+
+    env_path.write_text(content, encoding="utf-8")
+    load_dotenv(override=True)
+    get_settings.cache_clear()
+
