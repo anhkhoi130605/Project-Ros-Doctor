@@ -5,6 +5,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  padding-bottom: 60px;
 }
 
 @keyframes fadeIn {
@@ -205,8 +206,9 @@
 /* Two Column & Grid Layouts */
 .ai-config-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+  width: 100%;
 }
 
 /* Form Groups & Inputs */
@@ -615,7 +617,7 @@
   line-height: 1.6;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .ai-config-grid {
     grid-template-columns: 1fr;
   }

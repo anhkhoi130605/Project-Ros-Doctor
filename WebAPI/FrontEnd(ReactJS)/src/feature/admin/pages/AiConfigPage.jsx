@@ -878,6 +878,21 @@ export default function AiConfigPage() {
                 </div>
               </div>
 
+              {/* Vector Database Endpoint */}
+              <div className="form-field-group">
+                <label className="form-field-label">
+                  Địa chỉ Vector DB (URL)
+                  <span className="form-field-help">Qdrant / Milvus / Chroma</span>
+                </label>
+                <input
+                  type="text"
+                  value={aiConfig.vectorDbUrl}
+                  onChange={(e) => setAiConfig({ ...aiConfig, vectorDbUrl: e.target.value })}
+                  className="form-input-styled"
+                  placeholder="http://localhost:6333"
+                />
+              </div>
+
               {/* Diagnostic Prompt */}
               <div className="form-field-group">
                 <label className="form-field-label">
