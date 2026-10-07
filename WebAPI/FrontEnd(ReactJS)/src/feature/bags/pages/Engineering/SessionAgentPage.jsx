@@ -75,6 +75,25 @@ export default function SessionAgentPage() {
   const triggerAgentAnalysis = useCallback(async () => {
     const s = sessionRef.current;
     if (!s) return;
+
+    // Kiểm tra giới hạn lượt gọi AI trong ngày
+    const maxDailyRequests = Number(state.aiSettings?.dailyRequests ?? 100);
+    const userIdentifier = state.profile?.id || state.profile?.email || 'user';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const storageKey = `ros2_ai_daily_usage_${userIdentifier}_${dateStr}`;
+    const used = parseInt(localStorage.getItem(storageKey) || '0', 10);
+
+    if (maxDailyRequests > 0 && used >= maxDailyRequests) {
+      notify(`Bạn đã đạt giới hạn ${maxDailyRequests} lượt gọi AI trong ngày theo cấu hình hệ thống!`, 'warning');
+      dispatch({
+        type: 'SET_AGENT_ANALYSIS',
+        sessionId: s.id,
+        status: 'error',
+        error: `Đã vượt quá hạn mức AI hôm nay (${used}/${maxDailyRequests} lượt). Vui lòng nâng hạn mức trong Cấu hình AI hoặc quay lại vào ngày mai.`,
+      });
+      return;
+    }
+
     dispatch({ type: 'SET_AGENT_ANALYSIS', sessionId: s.id, status: 'analyzing' });
     try {
       const res = await runAgentDiagnosticApi({
@@ -82,6 +101,10 @@ export default function SessionAgentPage() {
         findings: findingsRef.current,
         topics: s.realTopics || bagRef.current?.realTopics || [],
       });
+
+      // Ghi nhận lượt sử dụng AI
+      localStorage.setItem(storageKey, String(used + 1));
+
       dispatch({
         type: 'SET_AGENT_ANALYSIS',
         sessionId: s.id,
@@ -99,7 +122,7 @@ export default function SessionAgentPage() {
         error: err.message || 'Không thể kết nối Python AI Agent (port 8000)',
       });
     }
-  }, [dispatch, notify]);
+  }, [dispatch, notify, state.aiSettings?.dailyRequests, state.profile?.id, state.profile?.email]);
 
   useEffect(() => {
     const s = sessionRef.current;
