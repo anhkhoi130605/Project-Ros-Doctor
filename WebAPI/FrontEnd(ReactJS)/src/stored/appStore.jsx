@@ -66,6 +66,7 @@ function getInitialState() {
     bags: [],
     sessions: [],
     findings: [],
+    reviewsLoaded: false,
     reports: [],
     users: [
       {
@@ -132,6 +133,7 @@ function loadSavedState(savedJson) {
         sessions: parsedSessions,
         reports: parsedReports,
         findings: parsedFindings,
+        reviewsLoaded: false,
         settings: { ...initial.settings, ...parsed.settings },
         profile: { ...initial.profile, ...parsed.profile },
         signedIn: !!parsed.signedIn || !!token,
@@ -175,6 +177,7 @@ function appReducer(state, action) {
       return {
         ...state,
         signedIn: false,
+        reviewsLoaded: false,
       };
 
     case 'REGISTER_DEMO': {
@@ -396,6 +399,7 @@ function appReducer(state, action) {
       return {
         ...state,
         findings: action.findings,
+        reviewsLoaded: true,
       };
 
     case 'SET_REPORTS':

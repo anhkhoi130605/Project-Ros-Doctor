@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../../../../stored/appStore';
 import { PageHeader, Badge, Card, DataTable, Icon } from '../../../../components/common/UIComponents';
-import { getReviewsApi } from '../../../../service';
+import { getReviewsApi, mapReviewsResponse } from '../../../../service';
 
 export default function EngineeringReviewsListPage() {
   const { state, dispatch, notify } = useApp();
@@ -16,19 +16,7 @@ export default function EngineeringReviewsListPage() {
     setError(null);
     try {
       const res = await getReviewsApi();
-      const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
-      if (Array.isArray(rawList)) {
-        const mapped = rawList.map((r) => ({
-          ...r,
-          review: {
-            status: r.status || 'pending',
-            note: r.note || '',
-            by: r.reviewedBy || null,
-            at: r.reviewedAt || null,
-          },
-        }));
-        dispatch({ type: 'SET_REVIEWS', findings: mapped });
-      }
+      dispatch({ type: 'SET_REVIEWS', findings: mapReviewsResponse(res) });
     } catch (err) {
       console.error('Lỗi khi tải kết luận từ database:', err);
       setError('Không thể tải dữ liệu từ database. Vui lòng kiểm tra kết nối API.');

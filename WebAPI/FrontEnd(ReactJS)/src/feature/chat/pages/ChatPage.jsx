@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card } from '../../../components/common/UIComponents';
-import { sendChatMessageApi, streamChatMessageApi, getBagsApi } from '../../../service';
+import { sendChatMessageApi, streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../service';
 import robotPearlImg from '../../../assets/robot-pearl.png';
 
 const SEVERITY_COLORS = {
@@ -129,6 +129,9 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMsg, initialAgentMsg]);
     setInputText('');
     setIsLoading(true);
+
+    logUserActivityApi({ action: 'ChatAgent', targetId: selectedSessionId || selectedBagId || null })
+      .catch((error) => console.warn('Could not record Chat Agent activity:', error));
 
     try {
       // Stream từng token từ Python AI Agent SSE endpoint

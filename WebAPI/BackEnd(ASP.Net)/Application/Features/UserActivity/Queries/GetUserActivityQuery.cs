@@ -1,8 +1,10 @@
 using MediatR;
+using Domain.Common;
 
 namespace Application.Features.UserActivity.Queries
 {
     public record GetUserActivityQuery(string? UserId, string? Action = null, int Take = 20) : IRequest<List<UserActivityLogDto>>;
+    public record GetUserActivityPageQuery(int PageNumber = 1, int PageSize = 30, string? LogSearch = null, string? UserSearch = null, string? ActionMatches = null) : IRequest<PaginationResult<UserActivityLogDto>>;
 
     public class UserActivityLogDto
     {

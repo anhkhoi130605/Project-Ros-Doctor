@@ -70,12 +70,18 @@ export default function AppLayout() {
     }
   };
 
-  const handleLogout = () => {
-    dispatch({ type: 'LOGOUT' });
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('userRole');
-    notify(t('common:system.logoutSuccess'), 'info');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await apiClient.post('/api/auth/logout');
+    } catch (error) {
+      console.warn('Could not record logout activity:', error);
+    } finally {
+      dispatch({ type: 'LOGOUT' });
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('userRole');
+      notify(t('common:system.logoutSuccess'), 'info');
+      navigate('/login');
+    }
   };
 
   const rawRole = String(state.role || localStorage.getItem('userRole') || 'Engineering').toLowerCase();

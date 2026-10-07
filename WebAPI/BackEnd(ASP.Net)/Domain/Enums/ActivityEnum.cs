@@ -40,6 +40,19 @@ namespace Domain.Enums
         // Agent Chat
         ChatAgent,
 
-        Other
+        Other,
+        CreateRosbag,
+        InspectRosbag,
+        RequestReviewChanges,
+        ViewReview,
+        ViewReport,
+        ViewDashboard,
+        ViewMembers,
+        ViewSystemLogs,
+        ViewAiConfig,
+        ViewAiUsage,
+        ViewSystem,
+        TriggerSystemError,
+        UpdateLocalSettings
     } 
 }
