@@ -585,7 +585,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                         </span>
                       </td>
                       <td style={{ padding: '16px', fontSize: '13px', fontWeight: 800, color: cond.scoreColor }}>
-                        {session.healthScore !== undefined ? `${session.healthScore}/100` : '100/100'}
+                        {`${cond.effectiveScore}/100`}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <span
