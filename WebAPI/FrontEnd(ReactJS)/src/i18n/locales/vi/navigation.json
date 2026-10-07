@@ -1,0 +1,51 @@
+{
+  "sections": {
+    "workspace": "KHÔNG GIAN LÀM VIỆC",
+    "navigation": "ĐIỀU HƯỚNG"
+  },
+  "items": {
+    "dashboard": "Tổng quan",
+    "bags": "Rosbag",
+    "sharedBags": "Rosbag được chia sẻ",
+    "analysis": "Phân tích",
+    "chat": "Chat Agent",
+    "reviews": "Duyệt kết luận",
+    "reports": "Báo cáo",
+    "approvedReports": "Báo cáo đã duyệt",
+    "benchmark": "Benchmark",
+    "usage": "Chi phí & hiệu suất",
+    "admin": "Quản trị hệ thống",
+    "settings": "Cài đặt",
+    "about": "Trang giới thiệu"
+  },
+  "admin": {
+    "members": "Tài khoản & quyền",
+    "systemLogs": "Nhật ký hệ thống",
+    "userActivity": "Lịch sử người dùng",
+    "recentActivity": "Hoạt động gần đây"
+  },
+  "settings": {
+    "ai": "Cấu hình AI",
+    "analysis": "Cấu hình phân tích",
+    "cost": "Chi phí & hiệu suất",
+    "system": "Cài đặt hệ thống"
+  },
+  "pageTitles": {
+    "dashboard": "Tổng quan",
+    "bags": "Rosbag",
+    "analysis": "Phân tích & Chẩn đoán",
+    "sessions": "Phiên phân tích",
+    "reports": "Báo cáo",
+    "reviews": "Duyệt kết luận",
+    "chat": "Chat Agent",
+    "benchmark": "Benchmark",
+    "usage": "Chi phí & hiệu suất",
+    "aiConfig": "Cấu hình AI",
+    "analysisConfig": "Cấu hình phân tích",
+    "members": "Tài khoản & quyền",
+    "systemLogs": "Nhật ký hệ thống",
+    "admin": "Quản trị hệ thống",
+    "settings": "Cài đặt",
+    "workspace": "Không gian làm việc"
+  }
+}

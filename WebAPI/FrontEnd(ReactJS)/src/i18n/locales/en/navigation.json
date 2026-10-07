@@ -1,0 +1,51 @@
+{
+  "sections": {
+    "workspace": "WORKSPACE",
+    "navigation": "NAVIGATION"
+  },
+  "items": {
+    "dashboard": "Overview",
+    "bags": "Rosbags",
+    "sharedBags": "Shared Rosbags",
+    "analysis": "Analysis",
+    "chat": "Chat Agent",
+    "reviews": "Finding Reviews",
+    "reports": "Reports",
+    "approvedReports": "Approved Reports",
+    "benchmark": "Benchmark",
+    "usage": "Cost & Performance",
+    "admin": "System Administration",
+    "settings": "Settings",
+    "about": "About"
+  },
+  "admin": {
+    "members": "Accounts & Permissions",
+    "systemLogs": "System Logs",
+    "userActivity": "User History",
+    "recentActivity": "Recent Activity"
+  },
+  "settings": {
+    "ai": "AI Configuration",
+    "analysis": "Analysis Configuration",
+    "cost": "Cost & Performance",
+    "system": "System Settings"
+  },
+  "pageTitles": {
+    "dashboard": "Overview",
+    "bags": "Rosbags",
+    "analysis": "Analysis & Diagnostics",
+    "sessions": "Analysis Session",
+    "reports": "Reports",
+    "reviews": "Finding Reviews",
+    "chat": "Chat Agent",
+    "benchmark": "Benchmark",
+    "usage": "Cost & Performance",
+    "aiConfig": "AI Configuration",
+    "analysisConfig": "Analysis Configuration",
+    "members": "Accounts & Permissions",
+    "systemLogs": "System Logs",
+    "admin": "System Administration",
+    "settings": "Settings",
+    "workspace": "Workspace"
+  }
+}

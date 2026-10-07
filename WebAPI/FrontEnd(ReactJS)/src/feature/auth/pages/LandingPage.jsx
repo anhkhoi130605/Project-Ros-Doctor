@@ -1,23 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Logo, Button, Icon } from '../../../components/common/UIComponents';
+import LanguageSwitcher from '../../../components/common/LanguageSwitcher';
 import PearlScene from '../../../components/common/PearlScene';
 import SmoothReveal from '../../../components/common/SmoothReveal';
 
 export default function LandingPage() {
+  const { t } = useTranslation(['auth', 'common']);
+  const workflowSteps = t('auth:landing.workflowSteps', { returnObjects: true });
+  const roles = t('auth:landing.roles', { returnObjects: true });
+
   return (
     <div className="ctrn-home">
       <header className="ctrn-public-header">
-        <Link to="/" aria-label="CTRN SHIFT N, trang chủ">
+        <Link to="/" aria-label={t('common:aria.home')}>
           <Logo />
         </Link>
         <nav>
-          <a href="#workflow">Quy trình chẩn đoán</a>
-          <a href="#roles">Vai trò</a>
+          <a href="#workflow">{t('auth:landing.workflowLink')}</a>
+          <a href="#roles">{t('auth:landing.rolesLink')}</a>
+          <LanguageSwitcher />
           <Button to="/login" variant="secondary">
-            Đăng nhập
+            {t('auth:landing.login')}
           </Button>
-          <Button to="/register">Tạo tài khoản</Button>
+          <Button to="/register">{t('auth:landing.register')}</Button>
         </nav>
       </header>
 
@@ -27,25 +34,25 @@ export default function LandingPage() {
             <div className="ctrn-hero-copy">
             <span className="section-kicker">RAV-13 / ROS2 DIAGNOSTICS</span>
             <h1>
-              Hiểu tín hiệu.<br />
-              Giải mã <em>robot.</em>
+              {t('auth:landing.heroTitleLine1')}<br />
+              <em>{t('auth:landing.heroTitleLine2')}</em>
             </h1>
             <p>
-              Từ dữ liệu rosbag đến bằng chứng chẩn đoán. AI gợi ý nguyên nhân và hướng khắc phục. Kỹ sư giữ quyền quyết định.
+              {t('auth:landing.heroDescription')}
             </p>
 
             <div className="button-row">
               <Button to="/login" icon="arrow">
-                Vào không gian làm việc
+                {t('auth:landing.enterWorkspace')}
               </Button>
               <a className="ctrn-text-link" href="#workflow">
-                Khám phá quy trình <Icon name="down" size={16} />
+                {t('auth:landing.exploreWorkflow')} <Icon name="down" size={16} />
               </a>
             </div>
 
             <div className="ctrn-hero-meta">
-              <span>01 / PHÂN TÍCH LOG GHI SẴN</span>
-              <span>02 / KẾT LUẬN CÓ BẰNG CHỨNG</span>
+              <span>{t('auth:landing.metaAnalysis')}</span>
+              <span>{t('auth:landing.metaEvidence')}</span>
             </div>
             </div>
           </SmoothReveal>
@@ -55,41 +62,32 @@ export default function LandingPage() {
 
         <section className="ctrn-workflow" id="workflow">
           <div>
-            <span className="section-kicker">TỪ DỮ LIỆU ĐẾN QUYẾT ĐỊNH</span>
+            <span className="section-kicker">{t('auth:landing.workflowKicker')}</span>
             <h2>
-              Một quy trình.<br />
-              Bốn bước rõ ràng.
+              {t('auth:landing.workflowTitleLine1')}<br />
+              {t('auth:landing.workflowTitleLine2')}
             </h2>
           </div>
 
           <div className="ctrn-workflow-grid">
-            {[
-              ['01', 'Nạp rosbag', 'Trích xuất metadata, kiểm tra tệp và lọc dữ liệu nhạy cảm.'],
-              ['02', 'Phân tích bất thường', 'Tần số, mất gói, timestamp, TF và topic ngừng phát.'],
-              ['03', 'Đối chiếu cùng Agent', 'Xem bằng chứng, hỏi đáp và kiểm tra giả thuyết nguyên nhân.'],
-              ['04', 'Duyệt & xuất báo cáo', 'Kỹ sư xác nhận kết luận trước khi chia sẻ PDF hoặc Markdown.'],
-            ].map(([num, title, desc]) => (
-              <article key={num}>
-                <span>{num}</span>
-                <h3>{title}</h3>
-                <p>{desc}</p>
+            {workflowSteps.map((step) => (
+              <article key={step.number}>
+                <span>{step.number}</span>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
               </article>
             ))}
           </div>
         </section>
 
         <section className="ctrn-roles" id="roles">
-          <span className="section-kicker">ĐÚNG NGƯỜI. ĐÚNG QUYỀN.</span>
-          <h2>Ba vai trò, cùng một hệ thống.</h2>
+          <span className="section-kicker">{t('auth:landing.rolesKicker')}</span>
+          <h2>{t('auth:landing.rolesTitle')}</h2>
           <div className="ctrn-role-grid">
-            {[
-              ['Kỹ sư Robotics', 'Phân tích rosbag, xem giả thuyết bất thường, gắn thẻ bằng chứng và duyệt báo cáo chính thức.'],
-              ['Quản trị viên (Admin)', 'Quản lý tài khoản, cấp quyền theo từng dự án robot và giám sát nhật ký audit hệ thống.'],
-              ['Viewer (Khách)', 'Xem các báo cáo chẩn đoán đã được cấp phép mà không làm thay đổi dữ liệu gốc.'],
-            ].map(([roleTitle, roleDesc], i) => (
-              <div key={i} className="card">
-                <h3>{roleTitle}</h3>
-                <p>{roleDesc}</p>
+            {roles.map((role) => (
+              <div key={role.title} className="card">
+                <h3>{role.title}</h3>
+                <p>{role.description}</p>
               </div>
             ))}
           </div>

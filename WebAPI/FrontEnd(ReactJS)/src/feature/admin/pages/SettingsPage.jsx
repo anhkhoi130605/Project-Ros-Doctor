@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { DEFAULT_SETTINGS } from '../../../domain/appTypes';
 import { PageHeader, Button, Badge, Icon } from '../../../components/common/UIComponents';
@@ -21,6 +22,7 @@ const TOPIC_DESCRIPTIONS = {
 
 export default function SettingsPage() {
   const { state, dispatch, notify } = useApp();
+  const { i18n } = useTranslation();
   const [settings, setSettings] = useState(() => ({
     ...DEFAULT_SETTINGS,
     ...(state.settings || {}),
@@ -29,6 +31,10 @@ export default function SettingsPage() {
       ...(state.settings?.expected || {}),
     },
   }));
+  const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
+  const displayedRobotProfile = settings.robot === 'AGV-Lab Hồ sơ chuẩn' || settings.robot === 'AGV-Lab standard profile'
+    ? isEnglish ? 'AGV-Lab standard profile' : 'AGV-Lab Hồ sơ chuẩn'
+    : settings.robot;
 
   const handleChange = (key, value) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -123,7 +129,7 @@ export default function SettingsPage() {
                   <input
                     id="robot-profile-name"
                     type="text"
-                    value={settings.robot}
+                    value={displayedRobotProfile}
                     onChange={(e) => handleChange('robot', e.target.value)}
                     placeholder="VD: AGV-Lab Hồ sơ chuẩn"
                     required

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { STATUS_MAP } from '../../domain/appTypes';
 
 // SVG Icon Component matching prototype
@@ -311,6 +312,7 @@ export function Button({
 
 // Prototype Badge
 export function Badge({ status, tone, children }) {
+  const { t } = useTranslation('common');
   const defaultToneMap = {
     pending: 'orange',
     approved: 'green',
@@ -327,7 +329,9 @@ export function Badge({ status, tone, children }) {
     medium: 'orange',
   };
   const activeTone = tone || defaultToneMap[status] || 'cyan';
-  const labelText = children || STATUS_MAP[status] || status;
+  const labelText = children || (status
+    ? t(`statuses.${status}`, { defaultValue: STATUS_MAP[status] || status })
+    : '');
 
   return (
     <span className={`badge ${activeTone}`}>
@@ -434,6 +438,7 @@ export function Pagination({
   pageSizeOptions = [10, 20, 50, 100],
   className = '',
 }) {
+  const { t } = useTranslation('common');
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const page = Math.min(Math.max(1, currentPage), totalPages);
 
@@ -473,12 +478,10 @@ export function Pagination({
     >
       {/* Thông tin số lượng hiển thị */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '13px', color: '#64748b' }}>
-        <span>
-          Hiển thị <strong>{startItem} – {endItem}</strong> trong tổng số <strong>{totalItems}</strong> mục
-        </span>
+        <span>{t('pagination.summary', { start: startItem, end: endItem, total: totalItems })}</span>
         {onPageSizeChange && (
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-            <span>Số mục:</span>
+            <span>{t('pagination.pageSize')}</span>
             <select
               value={pageSize}
               onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -494,7 +497,7 @@ export function Pagination({
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt} / trang
+                  {t('pagination.perPage', { count: opt })}
                 </option>
               ))}
             </select>
@@ -520,7 +523,7 @@ export function Pagination({
             cursor: page <= 1 ? 'not-allowed' : 'pointer',
             fontWeight: 600,
           }}
-          title="Trang đầu"
+          title={t('pagination.first')}
         >
           «
         </button>
@@ -544,7 +547,7 @@ export function Pagination({
             gap: '4px',
           }}
         >
-          ← Trước
+          ← {t('pagination.previous')}
         </button>
 
         {pages.map((p, idx) => {
@@ -599,7 +602,7 @@ export function Pagination({
             gap: '4px',
           }}
         >
-          Sau →
+          {t('pagination.next')} →
         </button>
 
         <button
@@ -618,7 +621,7 @@ export function Pagination({
             cursor: page >= totalPages ? 'not-allowed' : 'pointer',
             fontWeight: 600,
           }}
-          title="Trang cuối"
+          title={t('pagination.last')}
         >
           »
         </button>
