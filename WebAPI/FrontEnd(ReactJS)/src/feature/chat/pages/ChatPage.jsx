@@ -109,10 +109,6 @@ export default function ChatPage() {
           setSelectedBagId(urlBagId);
           const found = list.find((b) => b.id === urlBagId);
           if (found && found.sessionId) setSelectedSessionId(found.sessionId);
-        } else if (list.length > 0) {
-          // Auto select latest bag & its session
-          setSelectedBagId(list[0].id);
-          if (list[0].sessionId) setSelectedSessionId(list[0].sessionId);
         }
       })
       .catch((err) => console.warn('Could not load rosbags for chat context:', err));
@@ -121,6 +117,10 @@ export default function ChatPage() {
   const handleBagChange = (e) => {
     const bId = e.target.value;
     setSelectedBagId(bId);
+    if (!bId) {
+      setSelectedSessionId('');
+      return;
+    }
     const found = bags.find((b) => b.id === bId);
     if (found && found.sessionId) {
       setSelectedSessionId(found.sessionId);
@@ -311,15 +311,12 @@ export default function ChatPage() {
               className="chat-context-select"
               aria-label="Chọn Rosbag làm ngữ cảnh chẩn đoán"
             >
-              {bags.length === 0 ? (
-                <option value="">(Chưa có Rosbag nào tải lên Backend)</option>
-              ) : (
-                bags.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    📦 {b.name} ({b.duration}s, {b.topics} topics)
-                  </option>
-                ))
-              )}
+              <option value="">🌐 Không chọn Rosbag cụ thể (Trò chuyện & Hỏi đáp chung)</option>
+              {bags.map((b) => (
+                <option key={b.id} value={b.id}>
+                  📦 {b.name} ({b.duration}s, {b.topics} topics)
+                </option>
+              ))}
             </select>
           </div>
 
@@ -349,9 +346,14 @@ export default function ChatPage() {
                 <span className="chat-session-pill__dot" aria-hidden="true" />
                 Phiên: {selectedSessionId}
               </span>
+            ) : selectedBagId ? (
+              <span className="chat-session-pill">
+                <span className="chat-session-pill__dot" aria-hidden="true" />
+                Rosbag: {selectedBagId}
+              </span>
             ) : (
               <span className="chat-context-fallback">
-                (Tự động đối chiếu telemetry mới nhất)
+                (Chế độ trò chuyện tự do / Không chọn Rosbag)
               </span>
             )}
           </div>

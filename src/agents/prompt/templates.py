@@ -156,6 +156,46 @@ RAG_PROMPT = ChatPromptTemplate.from_messages(
     ]
 )
 
+CONVERSATIONAL_SYSTEM_PROMPT = """You are an expert, professional, and friendly ROS 2 Diagnostic AI Assistant (AI20K).
+Your mission is to assist robotics engineers with ROS 2 issues, bag file inspections (.db3, .mcap), and reliability engineering.
+
+When the user sends greetings, casual messages, or asks who you are:
+1. Greet the user warmly and politely in Vietnamese.
+2. Introduce yourself as the ROS 2 Diagnostic Assistant powered by LangGraph & RAG.
+3. Clearly summarize how you can help:
+   - Diagnosing rosbag recordings for frequency drops, topic dropouts, timestamp anomalies, TF tree breaks, and sensor anomalies.
+   - Root Cause Analysis (RCA) backed by 31 ROS 2 Playbooks.
+   - Answering technical questions about ROS 2 QoS, DDS middleware, and real-time scheduling.
+4. If a rosbag is currently loaded in context, mention it and offer to run a diagnosis or answer questions about it.
+5. NEVER generate a false JSON rosbag diagnostic report or fault list for a simple greeting!
+"""
+
+CONVERSATIONAL_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", CONVERSATIONAL_SYSTEM_PROMPT),
+        ("human", "{query}"),
+    ]
+)
+
+QA_SYSTEM_PROMPT = """You are an authoritative ROS 2 Engineering & Diagnostic Expert.
+Answer the user's technical question clearly, accurately, and practically in Vietnamese.
+
+Guidelines:
+1. Ground your technical explanation on ROS 2 best practices and the provided Playbook knowledge.
+2. Provide concrete CLI commands (e.g. `ros2 topic hz`, `ros2 node info`, `ros2 run tf2_tools view_frames`) where applicable.
+3. Do NOT output a structured JSON rosbag diagnostic report unless explicitly requested to diagnose a bag recording.
+
+Retrieved ROS 2 Playbooks & Knowledge:
+{context}
+"""
+
+QA_PROMPT = ChatPromptTemplate.from_messages(
+    [
+        ("system", QA_SYSTEM_PROMPT),
+        ("human", "{query}"),
+    ]
+)
+
 
 def build_rag_prompt(query: str, context: str, telemetry: str = "Không có dữ liệu telemetry kèm theo."):
     """Build the enriched diagnostic prompt with context and telemetry data."""
@@ -166,3 +206,19 @@ def build_rag_prompt(query: str, context: str, telemetry: str = "Không có dữ
             "telemetry": telemetry if telemetry else "Không có dữ liệu telemetry kèm theo.",
         }
     )
+
+
+def build_conversational_prompt(query: str):
+    """Build conversational greeting / assistant prompt."""
+    return CONVERSATIONAL_PROMPT.invoke({"query": query})
+
+
+def build_qa_prompt(query: str, context: str):
+    """Build technical Q&A prompt with retrieved knowledge."""
+    return QA_PROMPT.invoke(
+        {
+            "query": query,
+            "context": context if context else "Không có dữ liệu tri thức phù hợp.",
+        }
+    )
+
