@@ -5,11 +5,13 @@ using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controller.UserActivity
 {
     [ApiController]
     [Route("api/user-activity")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public class UserActivityController : ControllerBase
     {
         private readonly IMediator _mediator;
@@ -22,14 +24,20 @@ namespace API.Controller.UserActivity
         }
 
         [HttpGet("paged")]
+        [EnableRateLimiting("activity-search")]
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         public async Task<IActionResult> GetPaged([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 30, [FromQuery] string? logSearch = null, [FromQuery] string? userSearch = null, [FromQuery] string? actionMatches = null)
         {
+            if (pageNumber is < 1 or > 10000 || pageSize is < 1 or > 100 ||
+                logSearch?.Length > 100 || userSearch?.Length > 100 || actionMatches?.Length > 1000)
+                return BadRequest("Invalid activity log search or pagination parameters.");
+
             return Ok(await _mediator.Send(new GetUserActivityPageQuery(pageNumber, pageSize, logSearch, userSearch, actionMatches)));
         }
 
         [HttpGet]
-        [AllowAnonymous]
+        [EnableRateLimiting("activity-search")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         public async Task<IActionResult> Get([FromQuery] string? userId = null, [FromQuery] string? action = null, [FromQuery] int take = 50)
         {
             if (take <= 0) take = 20;
@@ -40,7 +48,8 @@ namespace API.Controller.UserActivity
         }
 
         [HttpGet("{id}")]
-        [AllowAnonymous]
+        [EnableRateLimiting("activity-search")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
         public async Task<IActionResult> GetById(string id)
         {
             if (string.IsNullOrWhiteSpace(id))

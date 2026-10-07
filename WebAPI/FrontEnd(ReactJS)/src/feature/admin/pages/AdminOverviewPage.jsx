@@ -260,9 +260,6 @@ export default function AdminOverviewPage() {
   const [userLogUserSearch, setUserLogUserSearch] = useState('');
   const [appliedUserLogSearch, setAppliedUserLogSearch] = useState('');
   const [appliedUserSearch, setAppliedUserSearch] = useState('');
-  const [userLogLegacy, setUserLogLegacy] = useState(false);
-  const [userLogLegacyReason, setUserLogLegacyReason] = useState(null);
-  const [userLogReload, setUserLogReload] = useState(0);
   const [userLogPageLoading, setUserLogPageLoading] = useState(false);
   const [userLogPageError, setUserLogPageError] = useState(null);
   const [userLogsLoading, setUserLogsLoading] = useState(false);
@@ -359,46 +356,22 @@ export default function AdminOverviewPage() {
         if (cancelled) return;
         setUserLogPageData(result.data || []);
         setUserLogTotal(result.totalCount || 0);
-        setUserLogLegacy(false);
-        setUserLogLegacyReason(null);
       })
-      .catch(async (error) => {
+      .catch((error) => {
         if (cancelled) return;
-        if (![401, 403, 404].includes(error.status)) {
-          setUserLogPageError(error.message);
-          return;
-        }
-        try {
-          const recentLogs = await fetchUserActivityLogsApi(100);
-          if (cancelled) return;
-          if (!Array.isArray(recentLogs)) throw new Error('Dữ liệu lịch sử không hợp lệ.');
-          setUserLogLegacy(true);
-          setUserLogLegacyReason(error.status === 404 ? 'outdated' : 'unauthorized');
-          const userNeedle = appliedUserSearch.toLocaleLowerCase();
-          const filteredLogs = recentLogs.filter((item) =>
-            [item.action, item.requestPath, item.entityType, item.entityId, item.id]
-              .some((value) => String(value || '').toLocaleLowerCase().includes(logNeedle)) || matchingActions.includes(item.action)
-          ).filter((item) =>
-            [item.userName, item.email, item.userId]
-              .some((value) => String(value || '').toLocaleLowerCase().includes(userNeedle))
-          );
-          setUserLogTotal(filteredLogs.length);
-          setUserLogPageData(filteredLogs.slice((userLogPage - 1) * 30, userLogPage * 30));
-        } catch (fallbackError) {
-          if (!cancelled) setUserLogPageError(fallbackError.message);
-        }
+        setUserLogPageData([]);
+        setUserLogTotal(0);
+        setUserLogPageError([401, 403].includes(error.status)
+          ? (isEnglish ? 'Sign in with an Admin account to view activity logs.' : 'Đăng nhập bằng tài khoản Admin để xem lịch sử hoạt động.')
+          : error.status === 404
+            ? (isEnglish ? 'The activity log API is unavailable. Restart the backend.' : 'API lịch sử hoạt động chưa có. Hãy khởi động lại backend.')
+            : error.message);
       })
       .finally(() => {
         if (!cancelled) setUserLogPageLoading(false);
       });
     return () => { cancelled = true; };
-  }, [activeTab, userLogPage, userLogReload, appliedUserLogSearch, appliedUserSearch]);
-
-  useEffect(() => {
-    if (activeTab !== 'user-activity' || !userLogLegacy || userLogLegacyReason !== 'outdated') return;
-    const timer = setInterval(() => setUserLogReload((value) => value + 1), 15000);
-    return () => clearInterval(timer);
-  }, [activeTab, userLogLegacy, userLogLegacyReason]);
+  }, [activeTab, userLogPage, appliedUserLogSearch, appliedUserSearch, isEnglish]);
 
   // Fetch System Logs Data with Debounce & AbortController to prevent Race Condition & Spam
   useEffect(() => {
@@ -1404,18 +1377,6 @@ export default function AdminOverviewPage() {
               />
             </label>
           </div>
-          {userLogLegacy && (
-            <div style={{ padding: '12px 16px', marginBottom: 16, borderRadius: 6, background: '#fff7ed', color: '#9a3412', fontSize: 13 }}>
-              {userLogLegacyReason === 'outdated'
-                ? isEnglish
-                  ? 'The backend is using an older API; only the latest 100 logs are shown. Restart the backend to view the full history.'
-                  : 'Backend đang dùng API cũ; chỉ hiển thị tối đa 100 log gần nhất. Khởi động lại backend để xem toàn bộ lịch sử.'
-                : isEnglish
-                  ? 'This session is not authenticated as an Admin by the API; only the latest 100 logs are shown. Sign in again with an Admin account to view the full history.'
-                  : 'Phiên hiện tại chưa được API xác thực quyền Admin; đang hiển thị tối đa 100 log gần nhất. Đăng nhập lại bằng tài khoản Admin để xem toàn bộ lịch sử.'}
-              <button type="button" className="button secondary" onClick={() => setUserLogReload((value) => value + 1)} style={{ marginLeft: 12, minHeight: 28, padding: '4px 10px' }}>{isEnglish ? 'Reload' : 'Tải lại'}</button>
-            </div>
-          )}
           {userLogPageLoading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>{isEnglish ? 'Loading logs...' : 'Đang tải nhật ký...'}</div>
           ) : userLogPageError ? (

@@ -7,7 +7,7 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
-import { apiClient, getReviewsApi, mapReviewsResponse } from '../../service';
+import { getReviewsApi } from '../../service';
 import './SidebarAutohide.css';
 
 function getUserInitials(name) {
@@ -97,31 +97,39 @@ export default function AppLayout() {
     ? t('common:roles.user')
     : t('common:roles.engineering');
 
+  // Preload review findings if not loaded yet so badge count is accurate from start
   useEffect(() => {
-    if (currentRole === 'user') return;
-    let cancelled = false;
+    if (!state.findings || state.findings.length === 0) {
+      getReviewsApi()
+        .then((res) => {
+          const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
+          if (Array.isArray(rawList) && rawList.length > 0) {
+            const mapped = rawList.map((r) => ({
+              ...r,
+              review: {
+                status: r.status || 'pending',
+                note: r.note || '',
+                by: r.reviewedBy || null,
+                at: r.reviewedAt || null,
+              },
+            }));
+            dispatch({ type: 'SET_REVIEWS', findings: mapped });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [dispatch, state.findings]);
 
-    getReviewsApi()
-      .then((response) => {
-        if (!cancelled) dispatch({ type: 'SET_REVIEWS', findings: mapReviewsResponse(response) });
-      })
-      .catch((error) => {
-        console.error('Không thể tải số kết luận chờ duyệt từ database:', error);
-      });
-
-    return () => { cancelled = true; };
-  }, [currentRole, dispatch]);
-
-  const pendingReviewCount = state.reviewsLoaded
-    ? (state.findings || []).filter((finding) => finding.review?.status === 'pending').length
-    : undefined;
+  const pendingReviewsCount = (state.findings || []).filter(
+    (f) => (f.review?.status || f.status || 'pending') === 'pending'
+  ).length;
 
   const navItems = [
     ['/dashboard', t('navigation:items.dashboard'), 'grid', ['Admin', 'Engineering', 'User']],
     ['/bags', isUserRole ? t('navigation:items.sharedBags') : t('navigation:items.bags'), 'database', ['Admin', 'Engineering', 'User']],
     ['/analysis', t('navigation:items.analysis'), 'activity', ['Engineering']],
     ['/chat', t('navigation:items.chat'), 'message-square', ['Engineering']],
-    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewCount],
+    ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewsCount > 0 ? pendingReviewsCount : undefined],
     ['/reports', isUserRole ? t('navigation:items.approvedReports') : t('navigation:items.reports'), 'file-text', ['Admin', 'Engineering', 'User']],
     ['/benchmark', t('navigation:items.benchmark'), 'trending-up', ['Engineering']],
     ['/usage', t('navigation:items.usage'), 'clock', ['Engineering']],
