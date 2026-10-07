@@ -5,7 +5,8 @@
   },
   "items": {
     "dashboard": "Overview",
-    "bags": "Rosbags",
+    "bags": "Records",
+    "rosbagGroup": "RosBag",
     "sharedBags": "Shared Rosbags",
     "analysis": "Analysis",
     "chat": "Chat Agent",
