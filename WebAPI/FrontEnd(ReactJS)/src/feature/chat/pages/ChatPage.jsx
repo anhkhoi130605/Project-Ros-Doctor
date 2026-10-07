@@ -30,11 +30,45 @@ function renderFormattedLogLine(line, lIdx) {
   );
 }
 
+function getDailyUsageKey(userKey) {
+  const dateStr = new Date().toISOString().slice(0, 10);
+  return `ros2_ai_daily_usage_${userKey || 'user'}_${dateStr}`;
+}
+
+function getStoredDailyCalls(userKey) {
+  try {
+    const v = localStorage.getItem(getDailyUsageKey(userKey));
+    return v ? parseInt(v, 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function storeDailyCalls(userKey, count) {
+  try {
+    localStorage.setItem(getDailyUsageKey(userKey), String(count));
+  } catch {
+    // ignore
+  }
+}
+
 export default function ChatPage() {
-  const { notify } = useApp();
+  const { state, notify } = useApp();
   const [searchParams] = useSearchParams();
   const urlSessionId = searchParams.get('session') || '';
   const urlBagId = searchParams.get('bag') || '';
+
+  const userIdentifier = state.profile?.id || state.profile?.email || 'user';
+  const maxDailyRequests = Number(state.aiSettings?.dailyRequests ?? 100);
+
+  const [dailyCallsUsed, setDailyCallsUsed] = useState(() => getStoredDailyCalls(userIdentifier));
+
+  // Sync counter whenever user changes or settings update
+  useEffect(() => {
+    setDailyCallsUsed(getStoredDailyCalls(userIdentifier));
+  }, [userIdentifier, maxDailyRequests]);
+
+  const isLimitReached = maxDailyRequests > 0 && dailyCallsUsed >= maxDailyRequests;
 
   const [bags, setBags] = useState([]);
   const [selectedBagId, setSelectedBagId] = useState(urlBagId);
@@ -108,6 +142,21 @@ export default function ChatPage() {
     const query = inputText.trim();
     if (!query || isLoading) return;
 
+    // Kiểm tra giới hạn lượt gọi AI trong ngày (Enforce dailyRequests quota)
+    if (isLimitReached) {
+      notify(`Bạn đã dùng hết hạn mức AI hôm nay (${dailyCallsUsed}/${maxDailyRequests} lượt gọi).`, 'warning');
+      const limitNoticeMsg = {
+        id: Date.now(),
+        sender: 'agent',
+        text: `⛔ **Đã đạt giới hạn lượt gọi AI trong ngày!**\n\nTài khoản của bạn hiện có giới hạn tối đa **${maxDailyRequests} yêu cầu/ngày** (Đã sử dụng **${dailyCallsUsed}/${maxDailyRequests}** lượt hôm nay).\n\nQuản trị viên đã cấu hình giới hạn này trong phần **Ngân sách & hạn mức**. Vui lòng liên hệ Admin để nâng hạn mức hoặc quay lại vào ngày mai!`,
+        analysis: `Kiểm soát hạn mức: Đạt tối đa ${dailyCallsUsed}/${maxDailyRequests} requests/ngày.`,
+        at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isError: true,
+      };
+      setMessages((prev) => [...prev, limitNoticeMsg]);
+      return;
+    }
+
     const userMsg = {
       id: Date.now(),
       sender: 'user',
@@ -129,6 +178,11 @@ export default function ChatPage() {
     setMessages((prev) => [...prev, userMsg, initialAgentMsg]);
     setInputText('');
     setIsLoading(true);
+
+    // Cập nhật bộ đếm lượt gọi trong ngày
+    const nextCalls = dailyCallsUsed + 1;
+    setDailyCallsUsed(nextCalls);
+    storeDailyCalls(userIdentifier, nextCalls);
 
     logUserActivityApi({ action: 'ChatAgent', targetId: selectedSessionId || selectedBagId || null })
       .catch((error) => console.warn('Could not record Chat Agent activity:', error));
@@ -266,7 +320,27 @@ export default function ChatPage() {
             </select>
           </div>
 
-          <div className="chat-context-session">
+          <div className="chat-context-session" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Visual Quota Indicator Badge */}
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '16px',
+                background: isLimitReached ? '#fee2e2' : '#f0fdf4',
+                color: isLimitReached ? '#b91c1c' : '#15803d',
+                border: `1px solid ${isLimitReached ? '#fca5a5' : '#86efac'}`,
+              }}
+              title={`Hạn mức theo ngày: ${dailyCallsUsed}/${maxDailyRequests} lượt đã sử dụng hôm nay`}
+            >
+              <span>{isLimitReached ? '⛔' : '⚡'}</span>
+              <span>{dailyCallsUsed}/{maxDailyRequests} lượt/ngày</span>
+            </span>
+
             {selectedSessionId ? (
               <span className="chat-session-pill">
                 <span className="chat-session-pill__dot" aria-hidden="true" />
@@ -530,25 +604,52 @@ export default function ChatPage() {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Warning Banner when Daily Quota is Exceeded */}
+        {isLimitReached && (
+          <div style={{
+            margin: '0 16px 12px',
+            padding: '10px 14px',
+            background: '#fff1f2',
+            border: '1px solid #fecdd3',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '13px',
+            color: '#be123c',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>⛔</span>
+              <span>
+                <strong>Đã hết lượt gọi AI hôm nay ({dailyCallsUsed}/{maxDailyRequests} lượt).</strong> Giới hạn này được thiết lập tại Quản trị &gt; Cấu hình AI.
+              </span>
+            </div>
+            <span style={{ fontSize: '11px', color: '#9f1239', fontWeight: 600 }}>Tự động làm mới vào 00:00</span>
+          </div>
+        )}
+
         <form onSubmit={handleSendMessage} className="chat-input-bar">
           <div className="chat-input-shell">
             <span className="chat-input-orbit" aria-hidden="true">⌁</span>
             <input
               type="text"
               className="chat-input"
-              placeholder="Nhập câu hỏi chẩn đoán (ví dụ: Chẩn đoán rosbag bag-123 hoặc Tại sao TF map->odom bị rớt?)..."
+              placeholder={isLimitReached ? `Đã đạt giới hạn ${maxDailyRequests} lượt gọi/ngày theo cấu hình hệ thống.` : "Nhập câu hỏi chẩn đoán (ví dụ: Chẩn đoán rosbag bag-123 hoặc Tại sao TF map->odom bị rớt?)..."}
               value={inputText}
-              disabled={isLoading}
+              disabled={isLoading || isLimitReached}
               onChange={(e) => setInputText(e.target.value)}
             />
-            <span className="chat-input-hint">AI grounded response</span>
+            <span className="chat-input-hint">
+              {isLimitReached ? 'Hết hạn mức ngày' : 'AI grounded response'}
+            </span>
           </div>
           <button
             type="submit"
             className="primary-button chat-send-button"
-            disabled={isLoading || !inputText.trim()}
+            disabled={isLoading || !inputText.trim() || isLimitReached}
+            style={isLimitReached ? { background: '#94a3b8', cursor: 'not-allowed' } : {}}
           >
-            <span>{isLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}</span>
+            <span>{isLimitReached ? 'Đã hết lượt' : isLoading ? 'Đang gửi...' : 'Gửi câu hỏi'}</span>
             <span className="chat-send-button__icon" aria-hidden="true">↗</span>
           </button>
         </form>

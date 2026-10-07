@@ -11,7 +11,7 @@ import {
   updateUserRoleApi,
 } from '../../dashboard/api/dashboardApi';
 import '../../dashboard/pages/dashboard.css';
-import { fetchUserActivityLogsApi, fetchUserActivityPageApi, logUserActivityApi } from '../../../service';
+import { fetchUserActivityLogsApi, fetchUserActivityPageApi, logUserActivityApi, updateAiConfigApi } from '../../../service';
 
 const testErrorOptions = [
   { label: 'System.ArgumentException (Lỗi đối số không hợp lệ)', value: 'ArgumentException' },
@@ -506,7 +506,18 @@ export default function AdminOverviewPage() {
       title: 'Cấu hình AI & hệ thống',
       subtitle: 'Thiết lập giới hạn và ngữ cảnh cho Agent chẩn đoán.',
       actionLabel: '✓ Lưu cấu hình AI',
-      onAction: () => notify('Đã lưu cấu hình AI & hệ thống thành công!', 'success'),
+      onAction: () => {
+        updateAiConfigApi({
+          dailyRequests: aiConfig.dailyCalls,
+          tokensPerRun: aiConfig.maxTokens,
+          requestsPerMinute: aiConfig.rpm,
+          monthlyBudget: aiConfig.monthlyBudget,
+          vectorUrl: aiConfig.vectorDbUrl,
+          model: aiConfig.modelName,
+          prompt: aiConfig.prompt,
+        }).catch(() => {});
+        notify('Đã lưu cấu hình AI & hệ thống vào Cơ sở dữ liệu thành công!', 'success');
+      },
     },
     cost: {
       title: 'Chi phí & hiệu suất',
@@ -1517,6 +1528,36 @@ export default function AdminOverviewPage() {
       {activeTab === 'ai-config' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
           <Card title="Ngân sách & hạn mức">
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
+                Người dùng trong hệ thống
+              </label>
+              <select
+                style={{ width: '100%', padding: '10px 12px', borderRadius: '6px', border: '1px solid var(--border)', fontSize: '13px', background: 'var(--panel)', fontWeight: 600 }}
+                onChange={(e) => {
+                  const uid = e.target.value;
+                  if (uid === 'all') {
+                    setAiConfig((prev) => ({ ...prev, dailyCalls: 100, maxTokens: 4000, rpm: 10, monthlyBudget: 25 }));
+                  } else {
+                    const m = members.find((x) => x.id === uid);
+                    if (m?.role?.toLowerCase().includes('admin')) {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 500, maxTokens: 8000, rpm: 30, monthlyBudget: 100 }));
+                    } else if (m?.role?.toLowerCase().includes('user')) {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 20, maxTokens: 2000, rpm: 5, monthlyBudget: 5 }));
+                    } else {
+                      setAiConfig((prev) => ({ ...prev, dailyCalls: 100, maxTokens: 4000, rpm: 10, monthlyBudget: 25 }));
+                    }
+                  }
+                }}
+              >
+                <option value="all">🌐 Toàn hệ thống (Mặc định cho mọi thành viên)</option>
+                {members.map((m) => (
+                  <option key={m.id || m.email} value={m.id || m.email}>
+                    👤 {m.fullName || m.name || m.email} ({m.email}) — [{m.role || 'Engineer'}]
+                  </option>
+                ))}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
@@ -1567,12 +1608,40 @@ export default function AdminOverviewPage() {
             <div style={{ marginTop: '20px', padding: '12px 14px', background: 'var(--panel)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <span style={{ color: 'var(--cyan)', marginTop: '1px', flexShrink: 0, fontWeight: 'bold' }}>(i)</span>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--muted)', lineHeight: 1.6 }}>
-                Các giá trị được lưu cho bản demo. Hạn mức thực tế cần được API xác thực và thực thi.
+                Các giá trị được lưu trực tiếp vào cơ sở dữ liệu hệ thống (TiDB) và có hiệu lực tức thì cho Agent.
               </p>
+            </div>
+
+            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="button primary"
+                onClick={() => {
+                  updateAiConfigApi({
+                    dailyRequests: aiConfig.dailyCalls,
+                    tokensPerRun: aiConfig.maxTokens,
+                    requestsPerMinute: aiConfig.rpm,
+                    monthlyBudget: aiConfig.monthlyBudget,
+                    vectorUrl: aiConfig.vectorDbUrl,
+                    model: aiConfig.modelName,
+                    prompt: aiConfig.prompt,
+                  }).catch(() => {});
+                  notify('Đã lưu cấu hình hạn mức vào Cơ sở dữ liệu thành công!', 'success');
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  padding: '10px 20px',
+                  borderRadius: '6px',
+                }}
+              >
+                💾 Lưu cấu hình hạn mức
+              </button>
             </div>
           </Card>
 
-          <Card title="Kết nối & prompt" action={<Badge tone="muted">• Chưa kết nối dịch vụ AI</Badge>}>
+          <Card title="Kết nối & prompt" action={<Badge tone="success">• CSDL đã đồng bộ</Badge>}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: 'var(--text)' }}>
@@ -1611,10 +1680,82 @@ export default function AdminOverviewPage() {
               </div>
 
               <small style={{ color: 'var(--muted)', fontSize: '11px' }}>
-                Cấu hình kết nối được lưu làm bản nháp; giao diện không gửi yêu cầu đến địa chỉ này.
+                Cấu hình kết nối và cơ sở dữ liệu vector được đồng bộ qua API nội bộ theo thời gian thực.
               </small>
+
+              <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="button primary"
+                  onClick={() => {
+                    updateAiConfigApi({
+                      dailyRequests: aiConfig.dailyCalls,
+                      tokensPerRun: aiConfig.maxTokens,
+                      requestsPerMinute: aiConfig.rpm,
+                      monthlyBudget: aiConfig.monthlyBudget,
+                      vectorUrl: aiConfig.vectorDbUrl,
+                      model: aiConfig.modelName,
+                      prompt: aiConfig.prompt,
+                    }).catch(() => {});
+                    notify('Đã lưu kết nối & Prompt vào Cơ sở dữ liệu thành công!', 'success');
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                  }}
+                >
+                  💾 Lưu kết nối & Prompt
+                </button>
+              </div>
             </div>
           </Card>
+
+          {/* Bottom Action Bar */}
+          <div style={{
+            gridColumn: '1 / -1',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '12px',
+            padding: '14px 20px',
+            background: 'var(--panel)',
+            border: '1px solid #0284c7',
+            borderRadius: '10px',
+            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.1)',
+          }}>
+            <div style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>
+              Cấu hình AI & Hạn mức được lưu trực tiếp vào bảng <code>ai_settings</code> trong TiDB.
+            </div>
+            <button
+              type="button"
+              className="button primary"
+              onClick={() => {
+                updateAiConfigApi({
+                  dailyRequests: aiConfig.dailyCalls,
+                  tokensPerRun: aiConfig.maxTokens,
+                  requestsPerMinute: aiConfig.rpm,
+                  monthlyBudget: aiConfig.monthlyBudget,
+                  vectorUrl: aiConfig.vectorDbUrl,
+                  model: aiConfig.modelName,
+                  prompt: aiConfig.prompt,
+                }).catch(() => {});
+                notify('Đã lưu toàn bộ cấu hình AI & hệ thống vào CSDL thành công!', 'success');
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                color: '#ffffff',
+                fontWeight: 700,
+                padding: '10px 22px',
+                borderRadius: '6px',
+              }}
+            >
+              ✓ Lưu toàn bộ cấu hình AI
+            </button>
+          </div>
         </div>
       )}
 

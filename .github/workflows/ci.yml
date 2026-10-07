@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: 1. Checkout source code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # =======================================================
       # PHẦN 1: AI SERVICE (PYTHON) - TỐI ƯU TỐC ĐỘ DÙNG PYTHON MÁY
@@ -85,7 +85,7 @@ jobs:
       # =======================================================
       - name: 4.1 Auto merge PR khi toàn bộ test & build trên máy thành công
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |

@@ -5,6 +5,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Domain.Entities.NoSql
 {
+	[BsonIgnoreExtraElements]
 	public class AgentExecutionTraceDocument
 	{
 		[BsonId]
@@ -13,6 +14,9 @@ namespace Domain.Entities.NoSql
 
 		[BsonElement("session_id")]
 		public string SessionId { get; set; } = null!;
+
+		[BsonElement("bag_id")]
+		public string? BagId { get; set; }
 
 		[BsonElement("step")]
 		public string Step { get; set; } = null!; // e.g. "01", "02"
@@ -31,6 +35,15 @@ namespace Domain.Entities.NoSql
 
 		[BsonElement("confidence")]
 		public double Confidence { get; set; }
+
+		[BsonElement("response")]
+		public string? Response { get; set; }
+
+		[BsonElement("analysis")]
+		public string? Analysis { get; set; }
+
+		[BsonElement("report")]
+		public BsonDocument? Report { get; set; }
 
 		[BsonElement("timestamp")]
 		public DateTime Timestamp { get; set; } = DateTime.UtcNow;
