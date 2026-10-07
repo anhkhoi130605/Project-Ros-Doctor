@@ -204,6 +204,15 @@ export default function AdminOverviewPage() {
 
   // User Activity Logs state
   const [userLogs, setUserLogs] = useState([]);
+  const [userLogPage, setUserLogPage] = useState(1);
+  const [userLogPageData, setUserLogPageData] = useState([]);
+  const [userLogTotal, setUserLogTotal] = useState(0);
+  const [userLogSearch, setUserLogSearch] = useState('');
+  const [userLogUserSearch, setUserLogUserSearch] = useState('');
+  const [appliedUserLogSearch, setAppliedUserLogSearch] = useState('');
+  const [appliedUserSearch, setAppliedUserSearch] = useState('');
+  const [userLogPageLoading, setUserLogPageLoading] = useState(false);
+  const [userLogPageError, setUserLogPageError] = useState(null);
   const [userLogsLoading, setUserLogsLoading] = useState(false);
   const [userLogsError, setUserLogsError] = useState(null);
   const [selectedUserLog, setSelectedUserLog] = useState(null);
@@ -274,6 +283,46 @@ export default function AdminOverviewPage() {
     loadMembers();
     loadUserLogs();
   }, [loadMembers, loadUserLogs]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setAppliedUserLogSearch(userLogSearch.trim());
+      setAppliedUserSearch(userLogUserSearch.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [userLogSearch, userLogUserSearch]);
+
+  useEffect(() => {
+    if (activeTab !== 'user-activity') return;
+    let cancelled = false;
+    const logNeedle = appliedUserLogSearch.toLocaleLowerCase();
+    const matchingActions = Object.entries(ACTION_MAP)
+      .filter(([action, info]) => logNeedle && [info.label, ACTION_LABEL_EN[action]]
+        .some((label) => label?.toLocaleLowerCase().includes(logNeedle)))
+      .map(([action]) => action);
+    setUserLogPageLoading(true);
+    setUserLogPageError(null);
+    fetchUserActivityPageApi(userLogPage, 30, appliedUserLogSearch, appliedUserSearch, matchingActions)
+      .then((result) => {
+        if (cancelled) return;
+        setUserLogPageData(result.data || []);
+        setUserLogTotal(result.totalCount || 0);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setUserLogPageData([]);
+        setUserLogTotal(0);
+        setUserLogPageError([401, 403].includes(error.status)
+          ? (isEnglish ? 'Sign in with an Admin account to view activity logs.' : 'Đăng nhập bằng tài khoản Admin để xem lịch sử hoạt động.')
+          : error.status === 404
+            ? (isEnglish ? 'The activity log API is unavailable. Restart the backend.' : 'API lịch sử hoạt động chưa có. Hãy khởi động lại backend.')
+            : error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setUserLogPageLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [activeTab, userLogPage, appliedUserLogSearch, appliedUserSearch, isEnglish]);
 
   // Fetch System Logs Data with Debounce & AbortController to prevent Race Condition & Spam
   useEffect(() => {
@@ -1256,11 +1305,33 @@ export default function AdminOverviewPage() {
 
       {/* User Activity Logs Tab Content */}
       {activeTab === 'user-activity' && (
-        <Card title="Nhật ký Hoạt động Người dùng (User Activity Logs)">
-          {userLogsLoading ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>Đang tải nhật ký...</div>
-          ) : userLogsError ? (
-            <div style={{ color: '#b91c1c', padding: 12, background: '#fef2f2', borderRadius: 6 }}>{userLogsError}</div>
+        <Card title={isEnglish ? 'User activity logs' : 'Nhật ký Hoạt động Người dùng (User Activity Logs)'}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+            <label style={{ display: 'grid', gap: 6, flex: '1 1 240px', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+              {isEnglish ? 'Search logs' : 'Tìm log'}
+              <input
+                type="search"
+                value={userLogSearch}
+                onChange={(event) => { setUserLogSearch(event.target.value); setUserLogPage(1); }}
+                placeholder={isEnglish ? 'Action, request path, or log ID...' : 'Hành động, đường dẫn, mã log...'}
+                style={{ width: '100%', minHeight: 38, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13 }}
+              />
+            </label>
+            <label style={{ display: 'grid', gap: 6, flex: '1 1 240px', fontSize: 13, fontWeight: 600, color: '#334155' }}>
+              {isEnglish ? 'Search users' : 'Tìm người dùng'}
+              <input
+                type="search"
+                value={userLogUserSearch}
+                onChange={(event) => { setUserLogUserSearch(event.target.value); setUserLogPage(1); }}
+                placeholder={isEnglish ? 'Name, email, or user ID...' : 'Tên, email hoặc mã người dùng...'}
+                style={{ width: '100%', minHeight: 38, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 8, fontSize: 13 }}
+              />
+            </label>
+          </div>
+          {userLogPageLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>{isEnglish ? 'Loading logs...' : 'Đang tải nhật ký...'}</div>
+          ) : userLogPageError ? (
+            <div style={{ color: '#b91c1c', padding: 12, background: '#fef2f2', borderRadius: 6 }}>{userLogPageError}</div>
           ) : (
             <div style={{ display: 'grid', gap: 10 }}>
               {userLogs.map((item) => {
