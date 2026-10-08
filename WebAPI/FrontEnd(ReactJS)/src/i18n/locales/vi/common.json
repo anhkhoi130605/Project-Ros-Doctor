@@ -7,7 +7,8 @@
   "actions": {
     "close": "Đóng",
     "logout": "Đăng xuất",
-    "profile": "Thông tin cá nhân"
+    "profile": "Thông tin cá nhân",
+    "editProfile": "Chỉnh sửa hồ sơ"
   },
   "aria": {
     "closeMenu": "Đóng menu",
@@ -34,12 +35,20 @@
     "title": "Thông tin cá nhân",
     "fullName": "Họ & Tên",
     "email": "Email",
+    "phone": "Số điện thoại",
+    "jobTitle": "Chức danh / Chuyên môn",
+    "bio": "Tiểu sử / Giới thiệu",
     "role": "Vai trò / Phân quyền",
     "workspace": "Không gian làm việc",
     "accountStatus": "Trạng thái tài khoản",
     "online": "● Đang hoạt động (Online)",
     "aiLimit": "Giới hạn AI Requests",
-    "requestsPerDay": "{{count}} requests / ngày"
+    "requestsPerDay": "{{count}} requests / ngày",
+    "editTitle": "Chỉnh sửa thông tin cá nhân",
+    "editSubtitle": "Cập nhật thông tin nhận diện, không gian nghiên cứu và bảo mật tài khoản.",
+    "updateSuccess": "Cập nhật thông tin cá nhân thành công!",
+    "save": "Lưu thay đổi",
+    "cancel": "Quay lại"
   },
   "workspace": {
     "research": "RAV-13 / Nghiên cứu ROS2"

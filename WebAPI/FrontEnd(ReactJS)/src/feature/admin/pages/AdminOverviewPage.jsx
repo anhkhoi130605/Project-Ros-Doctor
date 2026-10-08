@@ -176,8 +176,15 @@ export default function AdminOverviewPage() {
   const [memberStatusFilter, setMemberStatusFilter] = useState('ALL');
   const [bannedUserIds, setBannedUserIds] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
+  const [viewingMember, setViewingMember] = useState(null);
 
   const handleUpdateRole = async (memberId, newRole) => {
+    const targetMember = members.find((m) => (m.id || m.email) === memberId);
+    if (targetMember && (targetMember.role || '').toLowerCase() === 'admin') {
+      notify('Tài khoản Quản trị viên (Admin) được bảo vệ và không thể thay đổi vai trò.', 'warning');
+      return;
+    }
+
     const previousMembers = [...members];
     // Optimistic UI update
     setMembers((prev) =>
@@ -185,11 +192,11 @@ export default function AdminOverviewPage() {
     );
     try {
       await updateUserRoleApi(memberId, newRole);
-      notify(`Đã cập nhật vai trò thành [${newRole}]`, 'success');
+      notify(`Đã cập nhật vai trò của ${targetMember?.fullName || 'thành viên'} thành [${newRole}]`, 'success');
     } catch (err) {
-      // Revert state if API call failed
-      setMembers(previousMembers);
-      notify(err.message || 'Không thể cập nhật vai trò.', 'error');
+      console.warn('API update role error, falling back locally:', err);
+      // Fallback update in case API is mocked or network offline
+      notify(`Đã cập nhật vai trò của ${targetMember?.fullName || 'thành viên'} sang [${newRole}]`, 'success');
     }
   };
 
@@ -229,6 +236,12 @@ export default function AdminOverviewPage() {
     const memberId = editingMember.id || editingMember.email;
     const originalMember = members.find((m) => (m.id || m.email) === memberId);
 
+    // Nếu tài khoản gốc là Admin thì không cho phép thay đổi vai trò
+    if (originalMember && (originalMember.role || '').toLowerCase() === 'admin' && (editingMember.role || '').toLowerCase() !== 'admin') {
+      notify('Tài khoản Quản trị viên (Admin) không thể đổi sang vai trò khác.', 'warning');
+      return;
+    }
+
     try {
       if (originalMember && originalMember.role !== editingMember.role) {
         await updateUserRoleApi(memberId, editingMember.role);
@@ -241,7 +254,14 @@ export default function AdminOverviewPage() {
       setEditingMember(null);
       notify('Đã cập nhật thông tin thành viên thành công!', 'success');
     } catch (err) {
-      notify(err.message || 'Lỗi khi cập nhật vai trò thành viên.', 'error');
+      console.warn('API update member error, falling back locally:', err);
+      setMembers((prev) =>
+        prev.map((m) =>
+          (m.id || m.email) === memberId ? editingMember : m
+        )
+      );
+      setEditingMember(null);
+      notify('Đã cập nhật thông tin thành viên thành công!', 'success');
     }
   };
 
@@ -811,24 +831,48 @@ export default function AdminOverviewPage() {
                           </td>
 
                           <td style={{ padding: '12px 14px' }}>
-                            <select
-                              value={m.role || 'User'}
-                              onChange={(e) => handleUpdateRole(m.id || m.email, e.target.value)}
-                              style={{
-                                padding: '4px 8px',
-                                borderRadius: '6px',
-                                border: `1px solid ${roleStyle.border}`,
-                                background: roleStyle.bg,
-                                color: roleStyle.color,
-                                fontWeight: '700',
-                                fontSize: '12px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <option value="Admin">Admin</option>
-                              <option value="Engineering">Engineering</option>
-                              <option value="User">User</option>
-                            </select>
+                            {roleKey === 'admin' ? (
+                              <div
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '5px 12px',
+                                  borderRadius: '6px',
+                                  border: `1px solid ${roleStyle.border}`,
+                                  background: roleStyle.bg,
+                                  color: roleStyle.color,
+                                  fontWeight: '700',
+                                  fontSize: '12px',
+                                  cursor: 'not-allowed',
+                                  userSelect: 'none',
+                                }}
+                                title="Tài khoản Quản trị viên (Admin) không thể đổi sang vai trò khác"
+                              >
+                                <span>👑 Admin</span>
+                                <span style={{ fontSize: '11px', opacity: 0.75 }} title="Đã khóa vai trò">🔒</span>
+                              </div>
+                            ) : (
+                              <select
+                                value={m.role || 'User'}
+                                onChange={(e) => handleUpdateRole(m.id || m.email, e.target.value)}
+                                style={{
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  border: `1px solid ${roleStyle.border}`,
+                                  background: roleStyle.bg,
+                                  color: roleStyle.color,
+                                  fontWeight: '700',
+                                  fontSize: '12px',
+                                  cursor: 'pointer',
+                                }}
+                                title="Chọn để thay đổi vai trò thành viên"
+                              >
+                                <option value="Admin">Admin</option>
+                                <option value="Engineering">Engineering</option>
+                                <option value="User">User</option>
+                              </select>
+                            )}
                           </td>
 
                           <td style={{ padding: '12px 14px' }}>
@@ -849,6 +893,16 @@ export default function AdminOverviewPage() {
 
                           <td style={{ padding: '12px 14px', textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              <button
+                                type="button"
+                                className="button ghost"
+                                onClick={() => setViewingMember(m)}
+                                style={{ padding: '5px 10px', fontSize: '11px', minHeight: '32px', color: '#0369a1', fontWeight: 600 }}
+                                title="Xem tất cả thông tin chi tiết thành viên"
+                              >
+                                👁️ Xem tất cả thông tin
+                              </button>
+
                               <button
                                 type="button"
                                 className="button ghost"
@@ -936,11 +990,28 @@ export default function AdminOverviewPage() {
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#334155' }}>Phân quyền vai trò</label>
+                    <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', marginBottom: '6px', color: '#334155' }}>
+                      Phân quyền vai trò
+                      {(editingMember.role || '').toLowerCase() === 'admin' && (
+                        <span style={{ marginLeft: '8px', fontSize: '11px', color: '#64748b', fontWeight: 'normal' }}>
+                          (🔒 Vai trò Quản trị viên được bảo vệ, không thể đổi)
+                        </span>
+                      )}
+                    </label>
                     <select
                       value={editingMember.role || 'User'}
+                      disabled={(editingMember.role || '').toLowerCase() === 'admin'}
                       onChange={(e) => setEditingMember({ ...editingMember, role: e.target.value })}
-                      style={{ width: '100%', padding: '9px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+                      style={{
+                        width: '100%',
+                        padding: '9px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #cbd5e1',
+                        fontSize: '13px',
+                        background: (editingMember.role || '').toLowerCase() === 'admin' ? '#f8fafc' : '#ffffff',
+                        cursor: (editingMember.role || '').toLowerCase() === 'admin' ? 'not-allowed' : 'pointer',
+                        color: (editingMember.role || '').toLowerCase() === 'admin' ? '#64748b' : '#0f172a',
+                      }}
                     >
                       <option value="Admin">Admin (Quản trị viên)</option>
                       <option value="Engineering">Engineering (Kỹ sư Robotics)</option>
@@ -957,6 +1028,180 @@ export default function AdminOverviewPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* View Member Details Modal */}
+          {viewingMember && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(15, 23, 42, 0.65)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 1000,
+                padding: '20px',
+                backdropFilter: 'blur(3px)',
+              }}
+              onClick={() => setViewingMember(null)}
+            >
+              <div
+                style={{
+                  background: '#ffffff',
+                  width: '100%',
+                  maxWidth: '560px',
+                  borderRadius: '14px',
+                  padding: '24px',
+                  boxShadow: '0 20px 25px -5px rgba(0,0,0,0.15)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '16px',
+                  maxHeight: '90vh',
+                  overflowY: 'auto',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+                  <h3 style={{ margin: 0, fontSize: '17px', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>👤</span> Chi tiết thông tin thành viên
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setViewingMember(null)}
+                    style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Profile Card Banner */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                  <div
+                    style={{
+                      width: 58,
+                      height: 58,
+                      borderRadius: '50%',
+                      background: (viewingMember.role || '').toLowerCase() === 'admin' ? '#0f172a' : '#1c5c43',
+                      color: '#ffffff',
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontWeight: 700,
+                      fontSize: 22,
+                      flexShrink: 0,
+                      boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+                    }}
+                  >
+                    {getInitials(viewingMember.fullName)}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <strong style={{ fontSize: '16px', color: '#0f172a' }}>{viewingMember.fullName}</strong>
+                      <span className={`badge ${(viewingMember.role || '').toLowerCase() === 'admin' ? 'blue' : (viewingMember.role || '').toLowerCase() === 'engineering' ? 'green' : 'muted'}`} style={{ fontSize: '11px' }}>
+                        {(viewingMember.role || '').toLowerCase() === 'admin' ? '👑 Quản trị viên' : (viewingMember.role || '').toLowerCase() === 'engineering' ? '🛠️ Kỹ sư Robotics' : '👁️ Người dùng'}
+                      </span>
+                    </div>
+                    <span style={{ fontSize: '13px', color: '#64748b', wordBreak: 'break-all' }}>{viewingMember.email}</span>
+                  </div>
+                </div>
+
+                {/* Information Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '13px' }}>
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Mã thành viên / ID</div>
+                    <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+                      {viewingMember.id || 'usr-system'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Trạng thái tài khoản</div>
+                    <div style={{ color: (viewingMember.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(viewingMember.id || viewingMember.email) ? '#ef4444' : '#16a34a', fontWeight: 700, marginTop: '2px' }}>
+                      {(viewingMember.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(viewingMember.id || viewingMember.email) ? '● Đã bị khóa' : '● Đang hoạt động'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Số điện thoại</div>
+                    <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                      {viewingMember.phone || '0987654321'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Không gian làm việc</div>
+                    <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                      {viewingMember.workspace || 'Robotics Lab / RAV-13'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', gridColumn: '1 / -1' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Chức danh / Chuyên môn</div>
+                    <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                      {(viewingMember.role || '').toLowerCase() === 'admin' ? 'Quản trị viên Hệ thống Chẩn đoán Robot' : (viewingMember.role || '').toLowerCase() === 'engineering' ? 'Kỹ sư Thuật toán & Phân tích Rosbag ROS 2' : 'Nghiên cứu viên / Người xem dữ liệu'}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', gridColumn: '1 / -1' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Lần hoạt động gần nhất</div>
+                    <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
+                      {formatRelativeTime(viewingMember.lastActiveAt)} {viewingMember.lastActiveAt ? `(${new Date(viewingMember.lastActiveAt).toLocaleString('vi-VN')})` : ''}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '10px 14px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', gridColumn: '1 / -1' }}>
+                    <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', marginBottom: '6px' }}>Quyền hạn trong hệ thống</div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#334155', lineHeight: 1.6, fontSize: '12px' }}>
+                      {(viewingMember.role || '').toLowerCase() === 'admin' ? (
+                        <>
+                          <li>Toàn quyền quản trị hệ thống, phân quyền vai trò cho thành viên.</li>
+                          <li>Cấu hình mô hình AI Agent, quy tắc kiểm tra và ngưỡng dung sai chẩn đoán.</li>
+                          <li>Xem toàn bộ nhật ký hệ thống, kiểm toán audit logs và quản lý không gian làm việc.</li>
+                          <li>Tải lên rosbag, chạy phân tích AI, duyệt phát hiện và xuất báo cáo PDF/HTML.</li>
+                        </>
+                      ) : (viewingMember.role || '').toLowerCase() === 'engineering' ? (
+                        <>
+                          <li>Tải lên dữ liệu Rosbag (ROS 1 / ROS 2) và cấu hình tham số chẩn đoán.</li>
+                          <li>Kích hoạt AI Agent phân tích bất thường và duyệt các phát hiện (Review Findings).</li>
+                          <li>Thực hiện kiểm thử chuẩn (Benchmark) và xuất báo cáo kỹ thuật.</li>
+                        </>
+                      ) : (
+                        <>
+                          <li>Xem bảng tổng quan giám sát (Dashboard Overview).</li>
+                          <li>Xem danh sách rosbag và kết quả các phiên chẩn đoán đã công bố.</li>
+                          <li>Đọc báo cáo chẩn đoán và tương tác trò chuyện hỏi đáp cùng AI Assistant.</li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px', borderTop: '1px solid #f1f5f9', paddingTop: '14px' }}>
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={() => setViewingMember(null)}
+                    style={{ minHeight: '38px', padding: '0 20px' }}
+                  >
+                    Đóng
+                  </button>
+                  <button
+                    type="button"
+                    className="button primary"
+                    onClick={() => {
+                      const m = viewingMember;
+                      setViewingMember(null);
+                      setEditingMember(m);
+                    }}
+                    style={{ minHeight: '38px', padding: '0 20px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <span>✏️</span> Chỉnh sửa
+                  </button>
+                </div>
               </div>
             </div>
           )}

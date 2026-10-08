@@ -7,7 +7,8 @@
   "actions": {
     "close": "Close",
     "logout": "Sign out",
-    "profile": "Personal information"
+    "profile": "Personal information",
+    "editProfile": "Edit Profile"
   },
   "aria": {
     "closeMenu": "Close menu",
@@ -34,12 +35,20 @@
     "title": "Personal information",
     "fullName": "Full name",
     "email": "Email",
+    "phone": "Phone number",
+    "jobTitle": "Job Title / Specialization",
+    "bio": "Bio / Overview",
     "role": "Role / Permissions",
     "workspace": "Workspace",
     "accountStatus": "Account status",
     "online": "● Active (Online)",
     "aiLimit": "AI request limit",
-    "requestsPerDay": "{{count}} requests / day"
+    "requestsPerDay": "{{count}} requests / day",
+    "editTitle": "Edit Profile",
+    "editSubtitle": "Update identity details, workspace environment, and account credentials.",
+    "updateSuccess": "Personal profile updated successfully!",
+    "save": "Save Changes",
+    "cancel": "Back"
   },
   "workspace": {
     "research": "RAV-13 / ROS2 Research"

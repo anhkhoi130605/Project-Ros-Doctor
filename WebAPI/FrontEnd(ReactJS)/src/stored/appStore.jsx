@@ -58,6 +58,10 @@ function getInitialState() {
       name: 'Kỹ sư hệ thống',
       email: 'engineer@ros2doctor.local',
       workspace: 'Robotics Lab',
+      phone: '',
+      jobTitle: 'Kỹ sư phân tích chẩn đoán ROS 2',
+      bio: '',
+      avatarUrl: '',
     },
     settings: { ...DEFAULT_SETTINGS },
     selectedBagId: null,
@@ -160,6 +164,17 @@ function appReducer(state, action) {
         signedIn: false,
         reviewsLoaded: false,
       };
+
+    case 'UPDATE_PROFILE': {
+      const updatedProfile = {
+        ...state.profile,
+        ...action.profile,
+      };
+      return {
+        ...state,
+        profile: updatedProfile,
+      };
+    }
 
     case 'REGISTER_DEMO': {
       const user = action.user;
