@@ -32,8 +32,9 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 				.GroupBy(r => r.Id!)
 				.ToDictionary(g => g.Key, g => g.First().RoleName?.ToString() ?? "User");
 
-			// 3. Lấy nhật ký hoạt động trong 2 giờ gần nhất để ước lượng trạng thái Online/Offline
-			var threshold = DateTimeHelper.GetVietnamTime().AddHours(-2);
+			// 3. Lấy nhật ký hoạt động trong 2 giờ gần nhất (theo chuẩn UTC của DB) để ước lượng trạng thái Online/Away/Offline
+			var nowUtc = DateTime.UtcNow;
+			var threshold = nowUtc.AddHours(-2);
 			var recentLogs = await _unitOfWork.UserActivityLogs.GetAllAsync(
 				filter: l => l.CreatedAt >= threshold
 			);
@@ -45,7 +46,6 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 					g => g.OrderByDescending(x => x.CreatedAt).FirstOrDefault()
 				);
 
-			var now = DateTimeHelper.GetVietnamTime();
 			var result = new List<MemberDto>();
 
 			foreach (var user in users.OrderByDescending(u => u.CreatedAt))
@@ -59,21 +59,20 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 				{
 					roleName = user.Role.RoleName.ToString() ?? "User";
 				}
-
 				latestLogByUser.TryGetValue(user.Id, out var lastLog);
 
-				var lastActiveTime = lastLog?.CreatedAt ?? user.UpdatedAt;
+				DateTime lastActiveTime = lastLog?.CreatedAt ?? user.UpdatedAt;
 				string statusText = "Offline";
 
 				if (user.IsBanned == true || user.Status == UserStatusEnum.Banned)
 				{
 					statusText = "Banned";
 				}
-				else if (lastActiveTime != default && (now - lastActiveTime).TotalMinutes <= 20)
+				else if ((nowUtc - lastActiveTime).TotalMinutes <= 20)
 				{
 					statusText = "Online";
 				}
-				else if (lastActiveTime != default && (now - lastActiveTime).TotalHours <= 2)
+				else if ((nowUtc - lastActiveTime).TotalHours <= 2)
 				{
 					statusText = "Away";
 				}
@@ -91,7 +90,7 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 					Status = statusText,
 					AvatarUrl = user.AvatarUrl,
 					Phone = user.Phone,
-					LastActiveAt = lastActiveTime == default ? null : lastActiveTime,
+					LastActiveAt = lastActiveTime,
 					LastAction = lastLog?.Action,
 					CreatedAt = user.CreatedAt
 				});

@@ -107,6 +107,22 @@ function ProtectedRoute({ children }) {
   }
   return children;
 }
+function RequireRoleRoute({ allowedRoles, children }) {
+  const { state } = useApp();
+  const rawRole = String(state.role || localStorage.getItem('userRole') || 'Engineering').toLowerCase();
+  const currentRole = rawRole.includes('admin')
+    ? 'admin'
+    : rawRole.includes('user')
+      ? 'user'
+      : 'engineering';
+
+  if (!allowedRoles.includes(currentRole)) {
+    // Nếu không đúng Role Admin, tự động điều hướng về /dashboard ngay lập tức
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
 
 export default function AppRouter() {
   return (
@@ -144,12 +160,12 @@ export default function AppRouter() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/benchmark" element={<BenchmarkPage />} />
           <Route path="/usage" element={<CostPerformancePage />} />
-          <Route path="/admin" element={<Navigate to="/admin/members" replace />} />
-          <Route path="/admin/overview" element={<Navigate to="/admin/members" replace />} />
-          <Route path="/admin/ai-config" element={<AiConfigPage />} />
-          <Route path="/admin/:tab" element={<AdminOverviewPage />} />
-          <Route path="/admin/user-activity/:id" element={<AdminOverviewPage />} />
-          <Route path="/admin-dashboard" element={<Navigate to="/admin" replace />} />
+          <Route path="/admin" element={<RequireRoleRoute allowedRoles={['admin']}><Navigate to="/admin/members" replace /></RequireRoleRoute>} />
+          <Route path="/admin/overview" element={<RequireRoleRoute allowedRoles={['admin']}><Navigate to="/admin/members" replace /></RequireRoleRoute>} />
+          <Route path="/admin/ai-config" element={<RequireRoleRoute allowedRoles={['admin']}><AiConfigPage /></RequireRoleRoute>} />
+          <Route path="/admin/:tab" element={<RequireRoleRoute allowedRoles={['admin']}><AdminOverviewPage /></RequireRoleRoute>} />
+          <Route path="/admin/user-activity/:id" element={<RequireRoleRoute allowedRoles={['admin']}><AdminOverviewPage /></RequireRoleRoute>} />
+          <Route path="/admin-dashboard" element={<RequireRoleRoute allowedRoles={['admin']}><Navigate to="/admin" replace /></RequireRoleRoute>} />
           <Route path="/admin-dashboard/*" element={<Navigate to="/admin" replace />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/ai-config" element={<AiConfigPage />} />

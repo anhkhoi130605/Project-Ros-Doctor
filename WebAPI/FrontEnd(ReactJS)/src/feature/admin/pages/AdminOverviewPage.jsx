@@ -162,7 +162,7 @@ export default function AdminOverviewPage() {
       fullName: u.name,
       email: u.email,
       role: u.role === 'admin' ? 'Admin' : u.role === 'engineer' ? 'Engineer' : 'User',
-      status: u.active ? 'ACTIVE' : 'BANNED',
+      status: u.active ? 'Online' : 'Banned',
       isOnline: true,
       lastActive: 'Vừa xong',
     }));
@@ -194,12 +194,23 @@ export default function AdminOverviewPage() {
   };
 
   const handleToggleBan = (memberId) => {
-    const isBanned = bannedUserIds.includes(memberId);
-    if (isBanned) {
+    const member = members.find((m) => (m.id || m.email) === memberId);
+    const currentlyBanned = (member?.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(memberId);
+    if (currentlyBanned) {
       setBannedUserIds((prev) => prev.filter((id) => id !== memberId));
+      setMembers((prev) =>
+        prev.map((m) =>
+          (m.id || m.email) === memberId ? { ...m, status: 'Offline' } : m
+        )
+      );
       notify('Đã mở khóa tài khoản thành công!', 'success');
     } else {
-      setBannedUserIds((prev) => [...prev, memberId]);
+      setBannedUserIds((prev) => [...new Set([...prev, memberId])]);
+      setMembers((prev) =>
+        prev.map((m) =>
+          (m.id || m.email) === memberId ? { ...m, status: 'Banned' } : m
+        )
+      );
       notify('Đã khóa tài khoản người dùng này!', 'warning');
     }
   };
@@ -282,6 +293,10 @@ export default function AdminOverviewPage() {
       const data = await fetchAdminMembersApi();
       if (Array.isArray(data) && data.length > 0) {
         setMembers(data);
+        const bannedFromApi = data
+          .filter((u) => (u.status || '').toUpperCase() === 'BANNED')
+          .map((u) => u.id || u.email);
+        setBannedUserIds(bannedFromApi);
       } else {
         setMembers(fallbackMembers);
       }
@@ -442,7 +457,7 @@ export default function AdminOverviewPage() {
         (m.email || '').toLowerCase().includes(memberSearch.toLowerCase()) ||
         (m.role || '').toLowerCase().includes(memberSearch.toLowerCase());
 
-      const isBanned = bannedUserIds.includes(m.id || m.email);
+      const isBanned = (m.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(m.id || m.email);
 
       let matchStatus = true;
       if (memberStatusFilter === 'BANNED') {
@@ -760,9 +775,11 @@ export default function AdminOverviewPage() {
                   </thead>
                   <tbody>
                     {filteredMembers.map((m) => {
-                      const isBanned = bannedUserIds.includes(m.id || m.email);
+                      const isBanned = (m.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(m.id || m.email);
                       const roleKey = (m.role || 'user').toLowerCase();
                       const roleStyle = roleColors[roleKey] || roleColors.user;
+                      const statusKey = (m.status || 'Offline').toLowerCase();
+                      const badgeClass = statusKey === 'online' ? 'green' : statusKey === 'away' ? 'orange' : 'muted';
 
                       return (
                         <tr key={m.id || m.email} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}>
@@ -820,7 +837,7 @@ export default function AdminOverviewPage() {
                                 <i /> Đã khóa
                               </span>
                             ) : (
-                              <span className={`badge ${ (m.status || '').toLowerCase() === 'online' ? 'green' : 'muted'}`} style={{ fontSize: '11px' }}>
+                              <span className={`badge ${badgeClass}`} style={{ fontSize: '11px' }}>
                                 <i /> {m.status || 'Offline'}
                               </span>
                             )}
