@@ -500,22 +500,37 @@ export default function AppLayout() {
             aria-label={t('common:aria.accountMenu')}
             onClick={() => setUserMenuOpen(!userMenuOpen)}
           >
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: '#0f172a',
-                color: '#ffffff',
-                display: 'grid',
-                placeItems: 'center',
-                fontWeight: 700,
-                fontSize: 13,
-                flexShrink: 0,
-              }}
-            >
-              {getUserInitials(state.profile?.name || state.role)}
-            </div>
+            {state.profile?.avatarUrl ? (
+              <img
+                src={state.profile.avatarUrl}
+                alt="Avatar"
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  flexShrink: 0,
+                  border: '1px solid #cbd5e1',
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: '#0f172a',
+                  color: '#ffffff',
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  flexShrink: 0,
+                }}
+              >
+                {getUserInitials(state.profile?.name || state.role)}
+              </div>
+            )}
             <div className="sidebar-account-details" style={{ flex: 1, minWidth: 0 }}>
               <strong
                 style={{
@@ -589,6 +604,35 @@ export default function AppLayout() {
               >
                 <Icon name="user" size={16} />
                 <span>{t('common:actions.profile')}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  navigate('/profile/edit');
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '9px 12px',
+                  borderRadius: 6,
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: '#2563eb',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'none')}
+              >
+                <Icon name="edit" size={16} />
+                <span>{t('common:actions.editProfile') || 'Chỉnh sửa hồ sơ'}</span>
               </button>
 
               <button
@@ -734,22 +778,38 @@ export default function AppLayout() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px', background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: '50%',
-                  background: '#0f172a',
-                  color: '#ffffff',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontWeight: 700,
-                  fontSize: 20,
-                  flexShrink: 0,
-                }}
-              >
-                {getUserInitials(state.profile?.name || state.role)}
-              </div>
+              {state.profile?.avatarUrl ? (
+                <img
+                  src={state.profile.avatarUrl}
+                  alt="Avatar"
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    flexShrink: 0,
+                    border: '2px solid #e2e8f0',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: '50%',
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontWeight: 700,
+                    fontSize: 20,
+                    flexShrink: 0,
+                  }}
+                >
+                  {getUserInitials(state.profile?.name || state.role)}
+                </div>
+              )}
               <div style={{ minWidth: 0 }}>
                 <strong style={{ fontSize: '16px', color: '#0f172a', display: 'block' }}>
                   {state.profile?.name || ROLE_NAMES[state.role] || 'An Nguyễn'}
@@ -796,14 +856,54 @@ export default function AppLayout() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
               <button
                 type="button"
-                className="button primary"
                 onClick={() => setShowProfileModal(false)}
-                style={{ minHeight: '38px', padding: '0 24px', background: '#0f172a', color: '#ffffff', border: 'none' }}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 18px',
+                  background: '#f1f5f9',
+                  color: '#334155',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'background 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#e2e8f0')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#f1f5f9')}
               >
                 {t('common:actions.close')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowProfileModal(false);
+                  navigate('/profile/edit');
+                }}
+                style={{
+                  minHeight: '38px',
+                  padding: '0 20px',
+                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.opacity = '0.92')}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
+              >
+                <Icon name="edit" size={15} />
+                <span>{t('common:actions.editProfile') || 'Chỉnh sửa hồ sơ'}</span>
               </button>
             </div>
           </div>

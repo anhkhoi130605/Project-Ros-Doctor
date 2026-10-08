@@ -99,6 +99,7 @@ const CostPerformancePage = lazy(() => import('../feature/admin/pages/CostPerfor
 const AdminOverviewPage = lazy(() => import('../feature/admin/pages/AdminOverviewPage'));
 const SettingsPage = lazy(() => import('../feature/admin/pages/SettingsPage'));
 const AiConfigPage = lazy(() => import('../feature/admin/pages/AiConfigPage'));
+const ProfileEditPage = lazy(() => import('../feature/profile/pages/ProfileEditPage'));
 
 function ProtectedRoute({ children }) {
   const { state } = useApp();
@@ -170,6 +171,8 @@ export default function AppRouter() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/ai-config" element={<AiConfigPage />} />
           <Route path="/settings/:tab" element={<AdminOverviewPage />} />
+          <Route path="/profile" element={<ProfileEditPage />} />
+          <Route path="/profile/edit" element={<ProfileEditPage />} />
         </Route>
 
         {/* Fallback Catch-All */}
