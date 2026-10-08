@@ -68,7 +68,7 @@ namespace Application.Features.Admin.ManageUser.UpdateUserRole
 			// 4. Cập nhật thông tin vai trò
 			user.RoleId = roleEntity.Id;
 			user.Role = roleEntity;
-			user.UpdatedAt = Domain.Helper.DateTimeHelper.GetVietnamTime();
+			user.UpdatedAt = DateTime.UtcNow;
 
 			await _unitOfWork.User.UpdateAsync(user, cancellationToken);
 			await _unitOfWork.SaveChangesAsync();

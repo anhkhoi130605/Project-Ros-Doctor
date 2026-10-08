@@ -89,6 +89,7 @@ public class LoginController : ControllerBase
 		return Ok(loginResult);
 	}
 
+	
 	[HttpPost("logout")]
 	public async Task<IActionResult> Logout()
 	{
@@ -105,7 +106,21 @@ public class LoginController : ControllerBase
 				httpMethod: "POST");
 		}
 
+		// 1. Dọn dẹp session Cookie trung gian (nếu đăng nhập bằng Google)
 		await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-		return NoContent();
+
+		// 2. Xóa cookie auth_token (nếu có lưu token ở cookie)
+		var cookieDomain = _configuration["CookieSettings:Domain"];
+		Response.Cookies.Delete("auth_token", new CookieOptions
+		{
+			Path = "/",
+			Secure = true,
+			SameSite = SameSiteMode.Strict,
+			Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain
+		});
+
+		// 3. Phản hồi cho Frontend React
+		return Ok(new { message = "Logged out successfully" });
 	}
+
 }
