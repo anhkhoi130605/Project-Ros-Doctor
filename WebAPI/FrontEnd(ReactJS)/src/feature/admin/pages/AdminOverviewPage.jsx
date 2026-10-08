@@ -194,9 +194,9 @@ export default function AdminOverviewPage() {
       await updateUserRoleApi(memberId, newRole);
       notify(`Đã cập nhật vai trò của ${targetMember?.fullName || 'thành viên'} thành [${newRole}]`, 'success');
     } catch (err) {
-      console.warn('API update role error, falling back locally:', err);
-      // Fallback update in case API is mocked or network offline
-      notify(`Đã cập nhật vai trò của ${targetMember?.fullName || 'thành viên'} sang [${newRole}]`, 'success');
+      // Revert optimistic UI update if API call failed
+      setMembers(previousMembers);
+      notify(err.message || 'Không thể cập nhật vai trò.', 'error');
     }
   };
 
@@ -254,14 +254,7 @@ export default function AdminOverviewPage() {
       setEditingMember(null);
       notify('Đã cập nhật thông tin thành viên thành công!', 'success');
     } catch (err) {
-      console.warn('API update member error, falling back locally:', err);
-      setMembers((prev) =>
-        prev.map((m) =>
-          (m.id || m.email) === memberId ? editingMember : m
-        )
-      );
-      setEditingMember(null);
-      notify('Đã cập nhật thông tin thành viên thành công!', 'success');
+      notify(err.message || 'Lỗi khi cập nhật vai trò thành viên.', 'error');
     }
   };
 
