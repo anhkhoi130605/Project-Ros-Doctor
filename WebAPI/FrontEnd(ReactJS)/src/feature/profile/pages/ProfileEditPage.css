@@ -114,6 +114,18 @@
   transform: scale(1.1);
 }
 
+.profile-avatar-status-badge {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 3px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
+}
+
 .profile-summary-info {
   display: flex;
   flex-direction: column;
@@ -381,6 +393,7 @@
   border-top: 1px solid #f1f5f9;
 }
 
+
 /* Upload Panel Component Styles */
 .profile-upload-panel {
   display: flex;
@@ -453,7 +466,7 @@
   color: #334155;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .profile-upload-btn:hover {
@@ -484,4 +497,3 @@
   background: #fef2f2;
   border-color: #ef4444;
 }
-
