@@ -1,0 +1,20 @@
+skill: secrets-management
+case_id: hardcoded-test-secret-vulnerable
+kind: vulnerable
+target: settings.env
+expected_findings:
+  - id: hardcoded-api-key
+    severity: critical
+    cwe: CWE-798
+    evidence_contains: "sk_test_FAKE_DO_NOT_USE_1234567890"
+remediation:
+  category: auto-fix
+  expected_files:
+    - path: settings.env
+      after: expected/settings.env
+      expected_diff_contains:
+        - "-PAYMENT_API_KEY=sk_test_FAKE_DO_NOT_USE_1234567890"
+        - "+PAYMENT_API_KEY="
+        - " PAYMENT_API_URL=https://payments.example.test"
+      expected_after_contains:
+        - "PAYMENT_API_URL=https://payments.example.test"

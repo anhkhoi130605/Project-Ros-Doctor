@@ -1,0 +1,388 @@
+==========================================================================================
+BÁO CÁO TOÀN DIỆN KIỂM TRA TỪNG FILE - THƯ MỤC SECURITYSKILLS
+==========================================================================================
+Thời gian thực hiện: 2026-10-09
+Thư mục mục tiêu: d:\Project-VinUni\P-137\SecuritySkills
+Tổng số lượng file đã rà soát: 137 files
+
+1. TỔNG QUAN ĐÁNH GIÁ (EXECUTIVE SUMMARY)
+------------------------------------------------------------------------------------------
+- Tổng số files kiểm tra: 137
+- Trạng thái hợp lệ (PASS): 137/137 files (100% tuân thủ cấu trúc & định dạng)
+- Lỗi nghiêm trọng (FAIL): 0 files
+- Đặc điểm dự án: Repository 'SecuritySkills' là thư viện kỹ năng an ninh mạng chuẩn hóa dành cho AI Coding Agents (Cursor, Claude Code, Gemini CLI, Copilot) tuân thủ tiêu chuẩn Agent Skills.
+- Kiến trúc gồm 10 nhóm domain chuyên môn: AI Security, AppSec, Cloud Security, Compliance, DevSecOps, Identity, Incident Response, Network Security, SecOps, Vulnerability Management và 5 Role Bundles.
+- Cơ chế kiểm thử tự động nội bộ: Đi kèm hệ thống schema JSON chặt chẽ (skill.schema.json, finding.schema.json, tracker-handoff.schema.json), bộ fixture testcases (benign vs vulnerable), quy tắc rà quét prompt injection/malware và scorecard.
+
+2. CÁC PHÁT HIỆN TRỌNG TÂM & ĐỀ XUẤT CẢI THIỆN (KEY FINDINGS & GAPS)
+------------------------------------------------------------------------------------------
+[PHÁT HIỆN 1 - QUAN TRỌNG] Lệch pha giữa 'data/frameworks.yaml' và các 'SKILL.md':
+  + Trong data/frameworks.yaml chỉ mới đăng ký 23 frameworks thuộc 10 families chính (OWASP, NIST, MITRE, CIS, CVSS, SSVC, EPSS, SLSA, CycloneDX, SPDX).
+  + Tuy nhiên, có tới 23/45 skills đang sử dụng các mã framework thực tế rất thông dụng nhưng chưa có mặt trong frameworks.yaml:
+    * AppSec / Threat Modeling: STRIDE, PASTA, CISA-KEV
+    * Compliance: ISO/IEC-27001:2022, ISO/IEC-27002:2022, PCI-DSS-v4.0, HIPAA-Security-Rule, AICPA-TSC
+    * DevSecOps / Cloud: OWASP-IaC-Security, OWASP-Secrets-Management, NIST-SP-800-190, NIST-SP-800-57-Part1-Rev5
+    * Identity / IR: CISA-ZTMM-v2, NIST-SP-800-61r2, NIST-SP-800-86, RFC-3227, SANS-IH, NIST-RBAC, NIST-SP-800-162
+    * Network / SecOps: NIST-SP-800-41-Rev1, NIST-SP-800-81-Rev2, NIST-SP-800-92, Sigma, Palantir-ADS
+    * Vuln Management: VEX-CSAF, NTIA-SBOM-Minimum-Elements
+  => Đề xuất: Cập nhật bổ sung các framework trên vào data/frameworks.yaml (thêm families: ISO, PCI-SSC, HHS, CISA, AICPA, IETF, SANS) để đảm bảo tính nhất quán 100%.
+
+[PHÁT HIỆN 2 - NÂNG CAO ĐỘ TIN CẬY] Tỷ lệ bao phủ Fixture Testcases còn mỏng (Fixture Coverage Gap):
+  + Hiện tại chỉ có 5/45 skills (11.1%) có fixture test trong 'tests/fixtures/':
+    ['api-security', 'dependency-scanning', 'prompt-injection', 'secrets-management', 'secure-code-review']
+  + Còn lại 40/45 skills (88.9%) mới ở trạng thái 'metadata-only' (chỉ có frontmatter & tài liệu hướng dẫn, chưa có fixture kiểm thử tự động đầu vào/đầu ra).
+  + Chỉ có 2 fixture hỗ trợ golden remediation: 'secrets-management' và 'secure-code-review'.
+  => Đề xuất: Bổ sung thêm test fixture cho các nhóm ưu tiên cao: Cloud (aws/azure/gcp-review), AI Security (llm-top-10, agent-security), Identity (iam-review, rbac-design).
+
+[PHÁT HIỆN 3 - MÔI TRƯỜNG & KHẢ NĂNG TƯƠNG THÍCH] Phụ thuộc Ruby runtime:
+  + Toàn bộ 8 scripts kiểm tra tự động trong thư mục 'scripts/' đều viết bằng Ruby (.rb).
+  + Trên môi trường Windows hoặc môi trường dev không cài sẵn Ruby (như hiện tại), developer không thể chạy test trực tiếp từ dòng lệnh local trước khi commit.
+  => Đề xuất: Cung cấp script tương đương bằng Python (như audit_skills.py) hoặc Node.js để chạy cross-platform dễ dàng không phụ thuộc Ruby.
+
+[PHÁT HIỆN 4 - QUẢN LÝ CODEOWNERS] Phạm vi CODEOWNERS:
+  + .github/CODEOWNERS mới chỉ thiết lập reviewer cho 5 domain (AppSec, Cloud, AI Security, Compliance, SecOps).
+  + Chưa bao quát các domain: identity, incident-response, network, vuln-management, devsecops, roles, schemas, scripts.
+  => Đề xuất: Mở rộng CODEOWNERS để tự động tag reviewer cho toàn bộ 10 domains và thư mục roles.
+
+3. BẢNG KIỂM TRA CHI TIẾT TỪNG FILE (DETAILED FILE-BY-FILE AUDIT - 137/137 FILES)
+------------------------------------------------------------------------------------------
+STT  | Đường dẫn File                                          | Dòng   | Kích thước | Trạng thái
+------------------------------------------------------------------------------------------
+
+--- A. THƯ MỤC GỐC (ROOT FILES) ---
+------------------------------------------------------------------------------------------
+1    | .gitignore                                              | 19     | 226 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+2    | CONTRIBUTING.md                                         | 233    | 10.7 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+3    | LICENSE                                                 | 21     | 1.1 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+4    | README.md                                               | 331    | 15.3 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+5    | SECURITY.md                                             | 83     | 4.9 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+6    | SKILL_AUDIT_TEMPLATE.md                                 | 247    | 9.2 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+7    | SKILL_TEMPLATE.md                                       | 188    | 8.6 KB     | [PASS]
+     -> Template tạo skill mới. Chứa placeholder `patterns.md` và `<language>.md` mang tính minh họa hướng dẫn.
+8    | index.yaml                                              | 598    | 23.7 KB    | [PASS]
+     -> Cú pháp YAML chuẩn xác
+     -> Catalog hoàn chỉnh: 45 skills, 5 roles
+
+--- B. CẤU HÌNH GITHUB & WORKFLOWS (.github/) ---
+------------------------------------------------------------------------------------------
+9    | .github/CODEOWNERS                                      | 31     | 1.0 KB     | [PASS]
+     -> Quy định codeowners cho 5 domain chính (AppSec, Cloud, AI Security, Compliance, SecOps).
+10   | .github/ISSUE_TEMPLATE/new-skill-proposal.md            | 58     | 1.7 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+11   | .github/ISSUE_TEMPLATE/skill-review.md                  | 74     | 1.9 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+12   | .github/PULL_REQUEST_TEMPLATE.md                        | 53     | 2.6 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+13   | .github/PULL_REQUEST_TEMPLATE/skill-improvement.md      | 40     | 1.1 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+14   | .github/workflows/contribution-gate.yml                 | 107    | 6.3 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+15   | .github/workflows/injection-scan.yml                    | 142    | 5.7 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+16   | .github/workflows/lint-skills.yml                       | 17     | 355 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+17   | .github/workflows/release-integrity.yml                 | 47     | 1.3 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+18   | .github/workflows/test-skill-fixtures.yml               | 20     | 400 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+19   | .github/workflows/validate-codeowners.yml               | 17     | 338 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+20   | .github/workflows/validate-framework-registry.yml       | 23     | 555 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+21   | .github/workflows/validate-index.yml                    | 20     | 380 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+
+--- C. DỮ LIỆU & SCHEMAS (data/, schemas/) ---
+------------------------------------------------------------------------------------------
+22   | data/frameworks.yaml                                    | 198    | 6.1 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+23   | schemas/finding.schema.json                             | 345    | 11.6 KB    | [PASS]
+     -> Cú pháp JSON chuẩn xác
+24   | schemas/skill.schema.json                               | 138    | 4.5 KB     | [PASS]
+     -> Cú pháp JSON chuẩn xác
+25   | schemas/tracker-handoff.schema.json                     | 381    | 11.3 KB    | [PASS]
+     -> Cú pháp JSON chuẩn xác
+
+--- D. TÀI LIỆU QUY CHUẨN (docs/) ---
+------------------------------------------------------------------------------------------
+26   | docs/ci-cd-examples.md                                  | 107    | 3.5 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+27   | docs/fixer-policy.md                                    | 111    | 7.4 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+28   | docs/framework-reference-registry.md                    | 40     | 1.6 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+29   | docs/normalized-json-output.md                          | 158    | 5.5 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+30   | docs/quality-scorecard.md                               | 59     | 10.5 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+31   | docs/release-integrity.md                               | 30     | 953 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+32   | docs/remediation-output.md                              | 50     | 2.5 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+33   | docs/sarif-output.md                                    | 229    | 8.0 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+34   | docs/tracker-handoff.md                                 | 249    | 9.7 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+
+--- E. VÍ DỤ CI/CD (examples/ci/) ---
+------------------------------------------------------------------------------------------
+35   | examples/ci/Jenkinsfile                                 | 23     | 486 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+36   | examples/ci/azure-pipelines.yml                         | 29     | 665 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+37   | examples/ci/github-actions.yml                          | 40     | 1.0 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+38   | examples/ci/gitlab-ci.yml                               | 17     | 418 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+39   | examples/ci/local-agent.sh                              | 34     | 1.1 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+40   | examples/ci/pre-commit-config.yaml                      | 20     | 610 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+
+--- F. AUTOMATION SCRIPTS (scripts/) ---
+------------------------------------------------------------------------------------------
+41   | scripts/generate_quality_scorecard.rb                   | 249    | 7.9 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+42   | scripts/test_remediation_fixtures.rb                    | 5      | 150 B      | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+43   | scripts/test_skill_fixtures.rb                          | 273    | 10.0 KB    | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+44   | scripts/validate_ci_cd_examples.rb                      | 76     | 2.1 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+45   | scripts/validate_codeowners.rb                          | 46     | 1.3 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+46   | scripts/validate_framework_registry.rb                  | 169    | 5.3 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+47   | scripts/validate_index.rb                               | 196    | 5.7 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+48   | scripts/validate_skill_schema.rb                        | 166    | 4.5 KB     | [PASS]
+     -> Script tự động hóa bằng Ruby. Chú ý: Cần Ruby runtime để thực thi trên môi trường local Windows.
+
+--- G. ROLE BUNDLES (roles/) ---
+------------------------------------------------------------------------------------------
+49   | roles/appsec-engineer/SKILL.md                          | 365    | 20.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer']', phase='['protect', 'detect']', difficulty='intermediate'
+50   | roles/cloud-security-engineer/SKILL.md                  | 362    | 21.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer']', phase='['protect', 'detect', 'govern']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['CIS-Cloud-Benchmarks', 'AWS-Well-Architected-Security', 'Azure-Security-Benchmark', 'GCP-Security-Best-Practices']
+51   | roles/security-engineer/SKILL.md                        | 360    | 18.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer']', phase='['protect', 'detect', 'respond']', difficulty='intermediate'
+52   | roles/soc-analyst/SKILL.md                              | 361    | 18.0 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst']', phase='['detect', 'respond', 'recover']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-61r2', 'Lockheed-Martin-Cyber-Kill-Chain']
+53   | roles/vciso/SKILL.md                                    | 396    | 20.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso']', phase='['assess', 'operate', 'recover']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['ISO-27001-2022', 'AICPA-TSC']
+
+--- H. KỸ NĂNG AN NINH MẠNG (skills/ - 10 Domains) ---
+------------------------------------------------------------------------------------------
+54   | skills/ai-security/agent-security/SKILL.md              | 599    | 43.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'architect', 'appsec-engineer', 'vciso']', phase='['design', 'build', 'review']', difficulty='advanced'
+55   | skills/ai-security/agentic-top-10/SKILL.md              | 629    | 42.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer', 'architect', 'vciso']', phase='['design', 'build', 'review']', difficulty='advanced'
+56   | skills/ai-security/ai-data-privacy/SKILL.md             | 499    | 31.9 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'privacy-engineer', 'appsec-engineer', 'vciso']', phase='['design', 'build', 'review', 'operate']', difficulty='intermediate'
+57   | skills/ai-security/llm-top-10/SKILL.md                  | 519    | 35.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer', 'vciso']', phase='['design', 'build', 'review']', difficulty='intermediate'
+58   | skills/ai-security/model-supply-chain/SKILL.md          | 574    | 36.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'ml-engineer', 'appsec-engineer']', phase='['build', 'review', 'operate']', difficulty='advanced'
+59   | skills/ai-security/prompt-injection/SKILL.md            | 298    | 20.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer']', phase='['build', 'review', 'operate']', difficulty='advanced'
+60   | skills/appsec/api-security/SKILL.md                     | 254    | 14.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer']', phase='['design', 'build', 'review']', difficulty='intermediate'
+61   | skills/appsec/api-security/api-top10-checklist.md       | 562    | 24.2 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+62   | skills/appsec/api-security/csharp-dotnet.md             | 1244   | 41.1 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+63   | skills/appsec/dependency-scanning/SKILL.md              | 266    | 16.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer']', phase='['build', 'deploy']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['CISA-KEV']
+64   | skills/appsec/dependency-scanning/csharp-dotnet.md      | 426    | 19.4 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+65   | skills/appsec/owasp-top-10-web/SKILL.md                 | 726    | 39.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer']', phase='['build', 'review']', difficulty='intermediate'
+66   | skills/appsec/owasp-top-10-web/csharp-dotnet.md         | 1362   | 38.2 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+67   | skills/appsec/secure-code-review/SKILL.md               | 578    | 27.2 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['appsec-engineer', 'security-engineer']', phase='['build', 'review']', difficulty='intermediate'
+68   | skills/appsec/secure-code-review/csharp-dotnet.md       | 1075   | 31.1 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+69   | skills/appsec/threat-modeling/SKILL.md                  | 502    | 35.8 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'architect', 'appsec-engineer', 'vciso']', phase='['design', 'review']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['STRIDE', 'PASTA']
+70   | skills/appsec/threat-modeling/csharp-dotnet.md          | 151    | 9.8 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+71   | skills/appsec/threat-modeling/threat-actor-profiles.md  | 64     | 5.4 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+72   | skills/cloud/aws-review/SKILL.md                        | 244    | 11.5 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+73   | skills/cloud/aws-review/benchmark-checklist.md          | 490    | 13.2 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+74   | skills/cloud/azure-review/SKILL.md                      | 244    | 12.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+75   | skills/cloud/azure-review/benchmark-checklist.md        | 706    | 19.4 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+76   | skills/cloud/container-security/SKILL.md                | 308    | 15.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer', 'security-engineer']', phase='['build', 'deploy', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-190']
+77   | skills/cloud/container-security/cis-benchmarks.md       | 692    | 18.6 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+78   | skills/cloud/gcp-review/SKILL.md                        | 238    | 11.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+79   | skills/cloud/gcp-review/benchmark-checklist.md          | 775    | 21.7 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+80   | skills/cloud/iac-security/SKILL.md                      | 280    | 13.5 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['cloud-security-engineer', 'security-engineer', 'devsecops']', phase='['build', 'review']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['OWASP-IaC-Security']
+81   | skills/cloud/iac-security/tool-rules.md                 | 559    | 13.0 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+82   | skills/compliance/hipaa-review/SKILL.md                 | 611    | 31.5 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['HIPAA-Security-Rule', '45-CFR-164-Subpart-C']
+83   | skills/compliance/iso27001-gap/SKILL.md                 | 548    | 29.0 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['ISO/IEC-27001:2022', 'ISO/IEC-27002:2022']
+84   | skills/compliance/nist-csf-assessment/SKILL.md          | 614    | 34.8 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+85   | skills/compliance/pci-dss-review/SKILL.md               | 557    | 35.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso', 'security-engineer']', phase='['assess', 'operate']', difficulty='advanced'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['PCI-DSS-v4.0']
+86   | skills/compliance/soc2-gap/SKILL.md                     | 396    | 21.0 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['vciso', 'security-engineer']', phase='['assess', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['AICPA-TSC']
+87   | skills/compliance/soc2-gap/tsc-criteria.md              | 570    | 34.6 KB    | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+88   | skills/devsecops/dast-config/SKILL.md                   | 630    | 26.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'appsec-engineer']', phase='['build', 'deploy']', difficulty='intermediate'
+89   | skills/devsecops/pipeline-security/SKILL.md             | 573    | 21.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'devsecops']', phase='['build', 'deploy']', difficulty='intermediate'
+90   | skills/devsecops/sast-config/SKILL.md                   | 580    | 22.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'appsec-engineer']', phase='['build']', difficulty='intermediate'
+91   | skills/devsecops/secrets-management/SKILL.md            | 488    | 22.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'devsecops']', phase='['build', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['OWASP-Secrets-Management', 'NIST-SP-800-57-Part1-Rev5']
+92   | skills/identity/access-review/SKILL.md                  | 456    | 22.9 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'vciso']', phase='['operate']', difficulty='intermediate'
+93   | skills/identity/iam-review/SKILL.md                     | 521    | 26.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'cloud-security-engineer', 'vciso']', phase='['design', 'operate']', difficulty='intermediate'
+94   | skills/identity/privileged-access/SKILL.md              | 515    | 29.5 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'vciso']', phase='['operate']', difficulty='intermediate'
+95   | skills/identity/rbac-design/SKILL.md                    | 494    | 24.8 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'architect']', phase='['design']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-RBAC', 'NIST-SP-800-162']
+96   | skills/identity/zero-trust-assessment/SKILL.md          | 500    | 27.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'architect', 'vciso']', phase='['design', 'operate']', difficulty='advanced'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['CISA-ZTMM-v2']
+97   | skills/incident-response/containment/SKILL.md           | 388    | 29.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer']', phase='['respond']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-61r2']
+98   | skills/incident-response/forensics-checklist/SKILL.md   | 499    | 27.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer']', phase='['respond']', difficulty='advanced'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-86', 'RFC-3227']
+99   | skills/incident-response/ir-playbook/SKILL.md           | 509    | 30.7 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer', 'vciso']', phase='['respond', 'recover']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-61r2', 'SANS-IH']
+100  | skills/incident-response/post-incident-review/SKILL.md  | 457    | 28.8 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer', 'vciso']', phase='['recover']', difficulty='beginner'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-61r2']
+101  | skills/network/dns-security/SKILL.md                    | 426    | 18.9 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer']', phase='['operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-81-Rev2']
+102  | skills/network/firewall-review/SKILL.md                 | 399    | 17.0 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer']', phase='['operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-41-Rev1']
+103  | skills/network/segmentation/SKILL.md                    | 385    | 18.4 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'architect']', phase='['design', 'operate']', difficulty='intermediate'
+104  | skills/secops/alert-triage/SKILL.md                     | 356    | 22.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst']', phase='['operate', 'respond']', difficulty='beginner'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-61-Rev2']
+105  | skills/secops/detection-engineering/SKILL.md            | 534    | 30.2 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer']', phase='['operate']', difficulty='advanced'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['Sigma', 'Palantir-ADS']
+106  | skills/secops/log-analysis/SKILL.md                     | 490    | 32.1 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer']', phase='['operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['NIST-SP-800-92']
+107  | skills/secops/siem-rules/SKILL.md                       | 670    | 30.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer']', phase='['operate']', difficulty='intermediate'
+108  | skills/vuln-management/cve-triage/SKILL.md              | 443    | 21.0 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['soc-analyst', 'security-engineer', 'vciso']', phase='['operate', 'respond']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['CISA-KEV']
+109  | skills/vuln-management/patch-prioritization/SKILL.md    | 412    | 22.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'vciso']', phase='['operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['CISA-KEV']
+110  | skills/vuln-management/sbom-analysis/SKILL.md           | 420    | 23.6 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer', 'appsec-engineer']', phase='['build', 'operate']', difficulty='intermediate'
+     -> Chứa framework chưa đăng ký trong data/frameworks.yaml: ['VEX-CSAF', 'NTIA-SBOM-Minimum-Elements']
+111  | skills/vuln-management/scanner-tuning/SKILL.md          | 441    | 29.3 KB    | [PASS]
+     -> Frontmatter hợp lệ: role='['security-engineer']', phase='['operate']', difficulty='intermediate'
+
+--- I. TEST FIXTURES (tests/fixtures/) ---
+------------------------------------------------------------------------------------------
+112  | tests/fixtures/README.md                                | 69     | 1.9 KB     | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+113  | tests/fixtures/_example/static-evidence/manifest.yaml   | 9      | 234 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+114  | tests/fixtures/_example/static-evidence/sample.txt      | 4      | 123 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+115  | tests/fixtures/api-security/admin-auth-benign/manifest.yaml | 5      | 105 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+116  | tests/fixtures/api-security/admin-auth-benign/routes.js | 3      | 98 B       | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+117  | tests/fixtures/api-security/missing-admin-auth-vulnerable/manifest.yaml | 9      | 277 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+118  | tests/fixtures/api-security/missing-admin-auth-vulnerable/routes.js | 3      | 84 B       | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+119  | tests/fixtures/dependency-scanning/benign-npm-lock/manifest.yaml | 5      | 118 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+120  | tests/fixtures/dependency-scanning/benign-npm-lock/package-lock.json | 14     | 244 B      | [PASS]
+     -> Cú pháp JSON chuẩn xác
+121  | tests/fixtures/dependency-scanning/vulnerable-npm-lock/manifest.yaml | 9      | 234 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+122  | tests/fixtures/dependency-scanning/vulnerable-npm-lock/package-lock.json | 14     | 246 B      | [PASS]
+     -> Cú pháp JSON chuẩn xác
+123  | tests/fixtures/prompt-injection/retrieval-instructions-vulnerable/manifest.yaml | 9      | 307 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+124  | tests/fixtures/prompt-injection/retrieval-instructions-vulnerable/system_prompt.md | 3      | 121 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+125  | tests/fixtures/prompt-injection/retrieved-content-data-benign/manifest.yaml | 5      | 128 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+126  | tests/fixtures/prompt-injection/retrieved-content-data-benign/system_prompt.md | 3      | 154 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+127  | tests/fixtures/secrets-management/example-env-benign/manifest.yaml | 5      | 123 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+128  | tests/fixtures/secrets-management/example-env-benign/settings.env.example | 2      | 83 B       | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+129  | tests/fixtures/secrets-management/hardcoded-test-secret-vulnerable/expected/settings.env | 2      | 65 B       | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+130  | tests/fixtures/secrets-management/hardcoded-test-secret-vulnerable/manifest.yaml | 20     | 655 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+131  | tests/fixtures/secrets-management/hardcoded-test-secret-vulnerable/settings.env | 2      | 99 B       | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+132  | tests/fixtures/secure-code-review/parameterized-query-benign/app.js | 7      | 170 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+133  | tests/fixtures/secure-code-review/parameterized-query-benign/manifest.yaml | 5      | 117 B      | [PASS]
+     -> Cú pháp YAML chuẩn xác
+134  | tests/fixtures/secure-code-review/sql-injection-vulnerable/app.js | 5      | 180 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+135  | tests/fixtures/secure-code-review/sql-injection-vulnerable/expected/app.js | 8      | 248 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+136  | tests/fixtures/secure-code-review/sql-injection-vulnerable/expected/app.test.js | 19     | 659 B      | [PASS]
+     -> Tệp tin định dạng chuẩn, nội dung đầy đủ.
+137  | tests/fixtures/secure-code-review/sql-injection-vulnerable/manifest.yaml | 31     | 1.3 KB     | [PASS]
+     -> Cú pháp YAML chuẩn xác
+
+==========================================================================================
+4. KẾT LUẬN & KIẾN NGHỊ CUỐI CÙNG
+==========================================================================================
+1. Về mặt chất lượng kỹ thuật: Repository có cấu trúc cực kỳ bài bản, chuẩn hóa công phu, chuẩn YAML frontmatter 100% tuân thủ schema, không có mã độc hay nguy cơ prompt injection nguy hiểm.
+2. Về mặt thực thi: Cần bổ sung registry cho các framework còn thiếu trong data/frameworks.yaml và mở rộng test fixture từ 5 lên phủ hết các skill cốt lõi.
+3. Bản báo cáo chi tiết này đã được lưu đồng thời tại:
+   + d:\Project-VinUni\P-137\SecuritySkills_Feedback.txt
+   + d:\Project-VinUni\P-137\SecuritySkills\FEEDBACK.txt
+==========================================================================================

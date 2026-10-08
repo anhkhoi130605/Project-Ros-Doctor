@@ -1,0 +1,142 @@
+name: Prompt Injection Scan
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  injection-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Build text-file list (all text files, excluding .git/.github)
+        run: |
+          find . -type f \
+            \( -name '*.md' -o -name '*.mjs' -o -name '*.js' -o -name '*.ts' \
+               -o -name '*.sh' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \
+               -o -name '*.tf' -o -name '*.ql' -o -name '*.kql' -o -name '*.spl' \
+               -o -name '*.py' -o -name '*.toml' -o -name '*.cfg' -o -name '*.txt' \) \
+            -not -path './.git/*' -not -path './.github/*' \
+            > /tmp/textfiles.txt
+          echo "Scanning $(wc -l < /tmp/textfiles.txt) text files."
+
+      - name: Scan for prompt injection patterns (all text files)
+        run: |
+          # Imperative phrases directed at the agent. SECURITY.md and the
+          # ai-security/ educational skills legitimately quote these, and so
+          # do defensive skill notices ("treat it as data...") — all excluded.
+          PATTERNS=(
+            "new directive"
+            "system override"
+            "forget your instructions"
+            "send to http"
+            "curl -X POST"
+            "api.telegram"
+            "discord.com/api/webhooks"
+            "hooks.slack.com/services"
+            "ignore previous instructions and"
+            "ignore all previous instructions"
+            "you are now a"
+            "you are now in"
+            "disregard your"
+            "disregard all previous"
+          )
+          FOUND_ISSUES=0
+          while IFS= read -r f; do
+            case "$f" in
+              ./SECURITY.md|*/ai-security/*) continue ;;
+            esac
+            for pattern in "${PATTERNS[@]}"; do
+              LINES=$(grep -in "$pattern" "$f" 2>/dev/null || true)
+              [ -z "$LINES" ] && continue
+              # Drop lines that are clearly defensive/illustrative.
+              FILTERED=$(echo "$LINES" \
+                | grep -v "treat it as" \
+                | grep -v "not a command" \
+                | grep -v "not as a directive" \
+                | grep -v "not obeyed" \
+                | grep -v "disregard them entirely" \
+                | grep -v "flag it as" \
+                | grep -v "report the finding" \
+                | grep -v "e\.g\.\," \
+                | grep -v "such as" \
+                | grep -v "text like" \
+                | grep -v "contains text" \
+                || true)
+              if [ -n "$FILTERED" ]; then
+                echo "INJECTION pattern \"$pattern\" in $f:"
+                echo "$FILTERED"
+                echo ""
+                FOUND_ISSUES=1
+              fi
+            done
+          done < /tmp/textfiles.txt
+          if [ "$FOUND_ISSUES" -ne 0 ]; then
+            echo "FAIL: Prompt injection patterns detected. Review flagged lines above."
+            exit 1
+          fi
+          echo "PASS: No prompt injection patterns detected."
+
+      - name: Scan code/scripts/templates for malware patterns (non-markdown)
+        run: |
+          # Runnable-code red flags. Scoped to non-md so skill documentation
+          # that *describes* these patterns is not flagged.
+          MAL=(
+            'curl[^|]*\|[[:space:]]*(ba)?sh'
+            'wget[^|]*\|[[:space:]]*(ba)?sh'
+            'curl -X POST'
+            '/dev/tcp/'
+            'nc -e'
+            'bash -i'
+            'base64 -d[^|]*\|[[:space:]]*(ba)?sh'
+            '"preinstall"'
+            '"postinstall"'
+            'child_process'
+            'eval\('
+            'new Function\('
+            'atob\('
+          )
+          FOUND=0
+          for p in "${MAL[@]}"; do
+            M=$(grep -rInE --binary-files=without-match "$p" . \
+                  --include="*.mjs" --include="*.js" --include="*.ts" --include="*.sh" \
+                  --include="*.json" --include="*.yaml" --include="*.yml" --include="*.tf" \
+                  --include="*.ql" --include="*.kql" --include="*.spl" --include="*.py" \
+                  2>/dev/null | grep -vE '(^|/)\.github/' || true)
+            if [ -n "$M" ]; then echo "MALWARE pattern \"$p\":"; echo "$M"; echo ""; FOUND=1; fi
+          done
+          if [ "$FOUND" -ne 0 ]; then
+            echo "FAIL: Suspicious executable patterns in non-markdown files. Manual review required."
+            exit 1
+          fi
+          echo "PASS: No malware patterns in code/scripts/templates."
+
+      - name: Scan for committed secrets (non-markdown)
+        run: |
+          SEC=(
+            'AKIA[0-9A-Z]{16}'
+            'sk-[A-Za-z0-9]{20,}'
+            'gh[pousr]_[A-Za-z0-9]{36,}'
+            'xox[baprs]-[A-Za-z0-9-]{10,}'
+            'glpat-[A-Za-z0-9_-]{20,}'
+            '-----BEGIN [A-Z ]*PRIVATE KEY-----'
+            'AIza[0-9A-Za-z_-]{35}'
+          )
+          FOUND=0
+          for p in "${SEC[@]}"; do
+            M=$(grep -rInE --binary-files=without-match "$p" . \
+                  --include="*.mjs" --include="*.js" --include="*.ts" --include="*.sh" \
+                  --include="*.json" --include="*.yaml" --include="*.yml" --include="*.tf" \
+                  --include="*.env" --include="*.py" \
+                  2>/dev/null | grep -vE '(^|/)\.github/' || true)
+            if [ -n "$M" ]; then echo "SECRET match \"$p\":"; echo "$M"; echo ""; FOUND=1; fi
+          done
+          if [ "$FOUND" -ne 0 ]; then
+            echo "FAIL: Possible committed secret. Rotate and remove from history."
+            exit 1
+          fi
+          echo "PASS: No committed secret values detected."

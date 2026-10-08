@@ -1,0 +1,107 @@
+name: Contribution Gate
+
+# Triages incoming PRs automatically. Runs in the base-repo context (pull_request_target)
+# so it can label/comment/close fork PRs, and NEVER checks out or executes PR code.
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+  issues: write
+  contents: read
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Triage PR
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.0.1
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const {owner, repo} = context.repo;
+            const author = pr.user.login;
+            const assoc = pr.author_association; // OWNER/MEMBER/COLLABORATOR/CONTRIBUTOR/NONE/FIRST_TIME_CONTRIBUTOR
+            const num = pr.number;
+
+            // Never gate maintainers or bots. Do NOT trust the event payload's
+            // author_association alone (it can be NONE/CONTRIBUTOR for org members on
+            // pull_request_target). Verify actual repo permission via the API.
+            if (author.endsWith("[bot]")) { core.info("Skipping bot author."); return; }
+            let isMaintainer = ["OWNER","MEMBER","COLLABORATOR"].includes(assoc);
+            if (!isMaintainer) {
+              try {
+                const perm = await github.rest.repos.getCollaboratorPermissionLevel({owner, repo, username: author});
+                if (["admin","maintain","write"].includes(perm.data.permission)) isMaintainer = true;
+              } catch (e) { core.warning(`permission check failed: ${e.message}`); }
+            }
+            if (isMaintainer) { core.info(`Skipping gate for maintainer/collaborator (${author}).`); return; }
+
+            const ensureLabel = async (name,color,desc) => {
+              try { await github.rest.issues.getLabel({owner,repo,name}); }
+              catch { try { await github.rest.issues.createLabel({owner,repo,name,color,description:desc}); } catch(e){ core.warning(`label ${name}: ${e.message}`);} }
+            };
+            const addLabel = async (name) => { try { await github.rest.issues.addLabels({owner,repo,issue_number:num,labels:[name]}); } catch(e){ core.warning(e.message);} };
+            const comment = async (body) => { try { await github.rest.issues.createComment({owner,repo,issue_number:num,body}); } catch(e){ core.warning(e.message);} };
+            const close = async () => { try { await github.rest.pulls.update({owner,repo,pull_number:num,state:"closed"}); } catch(e){ core.warning(e.message);} };
+
+            try {
+              await ensureLabel("one-open-pr","fbca04","Contributor already has an open PR; only one allowed at a time");
+              await ensureLabel("needs-approved-issue","fbca04","PR has no linked maintainer-approved issue");
+              await ensureLabel("duplicate-skill","d93f0b","PR targets a skill already shipped");
+
+              // --- Check A: one open PR per contributor ---
+              const q = `repo:${owner}/${repo} type:pr state:open author:${author}`;
+              const res = await github.rest.search.issuesAndPullRequests({q, per_page:100});
+              const others = res.data.items.filter(i => i.number !== num);
+              if (others.length >= 1) {
+                await addLabel("one-open-pr");
+                await comment(`Thanks for contributing! 🙏 To keep the queue reviewable, we allow **one open PR per contributor** at a time. You already have #${others[0].number} open, so we're closing this one — please reopen it after that PR is resolved.`);
+                await close();
+                core.info("Closed: one-open-pr"); return;
+              }
+
+              // --- Check B: must reference a maintainer-approved issue ---
+              const body = pr.body || "";
+              const refs = [...body.matchAll(/#(\d+)/g)].map(m => parseInt(m[1],10));
+              let approved = false;
+              for (const n of refs) {
+                try {
+                  const iss = await github.rest.issues.get({owner,repo,issue_number:n});
+                  if ((iss.data.labels||[]).some(l => (l.name||l) === "approved")) { approved = true; break; }
+                } catch {}
+              }
+              if (!approved) {
+                await addLabel("needs-approved-issue");
+                await comment([
+                  `Thanks for the submission! 🙏 SecuritySkills is now **issue-first**: contributions need a linked issue that a maintainer has marked **approved** before a PR is opened.`,
+                  ``,
+                  `Please open an issue describing the skill, wait for the \`approved\` label, then reopen this PR with \`Closes #<issue>\` in the description. The PR template lists everything we'll look for (including an independently runnable reproduction).`
+                ].join("\n"));
+                await close();
+                core.info("Closed: needs-approved-issue"); return;
+              }
+
+              // --- Check C: duplicate of a shipped skill ---
+              const files = await github.paginate(github.rest.pulls.listFiles, {owner,repo,pull_number:num,per_page:100});
+              const newSkillDirs = new Set();
+              for (const f of files) {
+                const m = f.filename.match(/^skills\/([^/]+)\/([^/]+)\/SKILL\.md$/);
+                if (m && f.status === "added") newSkillDirs.add(`skills/${m[1]}/${m[2]}`);
+              }
+              for (const dir of newSkillDirs) {
+                // if the dir already exists on the default branch, it's a dup of a shipped skill
+                try {
+                  await github.rest.repos.getContent({owner,repo,path:`${dir}/SKILL.md`});
+                  await addLabel("duplicate-skill");
+                  await comment(`This PR adds \`${dir}/SKILL.md\`, but a skill already exists at that path. We close duplicates to keep the catalog clean — if this is a meaningful improvement to the existing skill, please open it as an edit to that file (with an approved issue) instead.`);
+                  await close();
+                  core.info("Closed: duplicate-skill"); return;
+                } catch {}
+              }
+
+              core.info("PR passed the contribution gate.");
+            } catch (e) {
+              core.warning(`gate error (non-blocking): ${e.message}`);
+            }
