@@ -1,0 +1,19 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Secrets and credentials
+*.secrets
+.env*
+*.credentials
+*.pem
+*.key
+
+# Plan file (internal reference, not published)
+skillsrepo.md
