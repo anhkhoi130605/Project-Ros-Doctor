@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Icon } from '../../../../../components/common/UIComponents';
 
 export default function DiagnosticChartsSection({
   sessionsCount = 39,
@@ -107,6 +108,7 @@ export default function DiagnosticChartsSection({
 
   return (
     <div
+      className="dash-section dash-diagnostics"
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -120,6 +122,7 @@ export default function DiagnosticChartsSection({
     >
       {/* Header bar with controls */}
       <div
+        className="dash-section-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -132,7 +135,7 @@ export default function DiagnosticChartsSection({
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>📊</span>
+            <Icon name="activity" size={18} className="dash-heading-icon" aria-hidden="true" />
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>
               Trực quan hóa Dữ liệu Chẩn đoán & Telemetry
             </h3>
@@ -144,6 +147,7 @@ export default function DiagnosticChartsSection({
 
         {/* Tab switcher for Bar Chart */}
         <div
+          className="dash-tabs"
           style={{
             display: 'inline-flex',
             backgroundColor: '#f1f5f9',
@@ -155,6 +159,7 @@ export default function DiagnosticChartsSection({
           <button
             type="button"
             onClick={() => setActiveTab('topics')}
+            aria-pressed={activeTab === 'topics'}
             style={{
               padding: '6px 14px',
               fontSize: '12px',
@@ -168,11 +173,12 @@ export default function DiagnosticChartsSection({
               transition: 'all 0.2s',
             }}
           >
-            🎯 Phân bổ theo Topic
+            <Icon name="database" size={14} aria-hidden="true" /> Phân bổ theo Topic
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('sessions')}
+            aria-pressed={activeTab === 'sessions'}
             style={{
               padding: '6px 14px',
               fontSize: '12px',
@@ -186,13 +192,14 @@ export default function DiagnosticChartsSection({
               transition: 'all 0.2s',
             }}
           >
-            ⏱️ 5 Phiên gần đây
+            <Icon name="clock" size={14} aria-hidden="true" /> 5 Phiên gần đây
           </button>
         </div>
       </div>
 
       {/* Main Grid: Biểu đồ tròn (Trái) & Biểu đồ cột (Phải) */}
       <div
+        className="dash-chart-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(320px, 1fr) minmax(380px, 1.35fr)',
@@ -202,6 +209,7 @@ export default function DiagnosticChartsSection({
       >
         {/* ================= CỘT 1: BIỂU ĐỒ HÌNH TRÒN (DONUT CHART) ================= */}
         <div
+          className="dash-chart-panel dash-distribution"
           style={{
             background: '#f8fafc',
             border: '1px solid #e2e8f0',
@@ -214,7 +222,7 @@ export default function DiagnosticChartsSection({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-              🍩 Phân bổ Mức độ & Trạng thái
+              Phân bổ Mức độ & Trạng thái
             </span>
             <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
               Tổng: <strong>{totalDonut}</strong> mục
@@ -331,6 +339,7 @@ export default function DiagnosticChartsSection({
 
         {/* ================= CỘT 2: BIỂU ĐỒ CỘT (BAR CHART) ================= */}
         <div
+          className="dash-chart-panel dash-topic-chart"
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -343,7 +352,7 @@ export default function DiagnosticChartsSection({
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-              📊 {activeTab === 'topics' ? 'Mật độ Sự cố theo Cụm Topic' : 'Tổng số Topic & Cảnh báo theo Phiên'}
+              {activeTab === 'topics' ? 'Mật độ Sự cố theo Cụm Topic' : 'Tổng số Topic & Cảnh báo theo Phiên'}
             </span>
             <span style={{ fontSize: '11px', color: '#2563eb', fontWeight: 600 }}>
               Đỉnh: {maxBarValue} {activeTab === 'topics' ? 'lỗi' : 'topics'}
@@ -512,7 +521,7 @@ export default function DiagnosticChartsSection({
               </>
             ) : (
               <>
-                <span>💡 <em>Rê chuột vào từng cột để xem chi tiết bằng chứng và tần suất topic.</em></span>
+                <span><Icon name="info" size={13} aria-hidden="true" /> <em>Rê chuột vào từng cột để xem chi tiết bằng chứng và tần suất topic.</em></span>
                 <span style={{ color: '#0369a1', fontWeight: 600 }}>Cập nhật theo Telemetry mới nhất</span>
               </>
             )}

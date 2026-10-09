@@ -4,26 +4,31 @@ import { useTranslation } from 'react-i18next';
 import { useAuth } from '../hook/useAuth';
 import { useApp } from '../../../stored/appStore';
 import { getGoogleLoginUrl } from '../api/authApi';
-import { Logo, Button, FormField, Notice } from '../../../components/common/UIComponents';
+import { Logo, Button, FormField, Notice, Icon } from '../../../components/common/UIComponents';
 import LanguageSwitcher from '../../../components/common/LanguageSwitcher';
 import PearlScene from '../../../components/common/PearlScene';
 import { ROLE_NAMES } from '../../../domain/appTypes';
 import SmoothReveal from '../../../components/common/SmoothReveal';
+import './AuthPresentation.css';
 
 export default function LoginPage() {
   const { t } = useTranslation(['auth', 'common']);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isSubmitting, status, login } = useAuth();
-  const { state, dispatch, notify } = useApp();
+  const { isSubmitting, login } = useAuth();
+  const { dispatch, notify } = useApp();
 
   const [email, setEmail] = useState(searchParams.get('email') || 'kpham6488@gmail.com');
   const [password, setPassword] = useState('123456');
   const [error, setError] = useState(searchParams.get('error') || '');
+  const [errorCode, setErrorCode] = useState(searchParams.get('errorCode') || '');
+  const displayedError = errorCode === 'ENGINEER_PENDING_APPROVAL'
+    ? t('auth:login.pendingEngineer') : error;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setErrorCode('');
 
     try {
       // 1. Attempt API login with real backend
@@ -40,7 +45,7 @@ export default function LoginPage() {
           userId: loginResult.user?.id || loginResult.user?.Id || null,
         });
 
-        localStorage.setItem('accessToken', loginResult.token || ('token-' + Date.now()));
+        localStorage.setItem('accessToken', loginResult.token);
         localStorage.setItem('userRole', userRole);
         localStorage.setItem('userEmail', email);
 
@@ -51,35 +56,10 @@ export default function LoginPage() {
         navigate('/dashboard', { replace: true });
         return;
       }
+      setErrorCode(loginResult?.errorCode || '');
+      setError(loginResult?.error || t('auth:login.invalidCredentials'));
     } catch (err) {
-      console.warn('API Login attempt error:', err);
-    }
-
-    // 2. Demo fallback (CHỈ cho phép trong môi trường Development cục bộ)
-    if (import.meta.env.DEV && password === '123456') {
-      const demoUser = (state.users || []).find(
-        (u) => u.email.toLowerCase() === email.toLowerCase()
-      );
-      const role = demoUser?.role || (email.toLowerCase().includes('admin') ? 'Admin' : email.toLowerCase().includes('user') ? 'User' : 'Engineering');
-      const name = demoUser?.name || (role === 'Admin' ? 'Quản trị viên' : role === 'User' ? 'Người dùng' : 'Kỹ sư Robotics');
-      
-      dispatch({
-        type: 'LOGIN',
-        role,
-        userId: demoUser?.id || null,
-        email,
-        userName: name,
-      });
-
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', email);
-
-      const roleDisplay = ROLE_NAMES[role] || role;
-      notify(t('auth:login.success', { role: roleDisplay }), 'success');
-
-      navigate('/dashboard', { replace: true });
-    } else {
-      setError(t('auth:login.invalidCredentials'));
+      setError(err.message || t('auth:login.invalidCredentials'));
     }
   };
 
@@ -90,17 +70,19 @@ export default function LoginPage() {
 
 
   return (
-    <div className="editorial-login">
+    <div className="editorial-login auth-screen">
       <header>
         <Link to="/" aria-label={t('common:aria.home')}>
           <Logo />
         </Link>
-        <nav aria-label={t('auth:login.methodNavigation')}>
+        <nav className="auth-header-actions" aria-label={t('auth:login.methodNavigation')}>
           <LanguageSwitcher />
-          <span>{t('auth:login.noAccount')}</span>
-          <Link to="/register" className="text-link">
-            {t('auth:login.register')}
-          </Link>
+          <div className="auth-prompt">
+            <span>{t('auth:login.noAccount')}</span>
+            <Link to="/register" className="auth-route-link">
+              {t('auth:login.register')} <Icon name="arrow" size={14} aria-hidden="true" />
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -148,9 +130,9 @@ export default function LoginPage() {
             <h2>{t('auth:login.welcome')}</h2>
             <p>{t('auth:login.description')}</p>
 
-            {(error || status.message) && (
-              <Notice tone={error || status.type === 'error' ? 'orange' : 'green'} icon={error || status.type === 'error' ? 'alert' : 'check'}>
-                {error || status.message}
+            {displayedError && (
+              <Notice tone="orange" icon="alert">
+                {displayedError}
               </Notice>
             )}
 
@@ -185,23 +167,9 @@ export default function LoginPage() {
             </div>
 
             <button
+              className="auth-google-button"
               type="button"
               onClick={handleGoogleLogin}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
-                background: '#ffffff',
-                color: '#334155',
-                fontSize: '13px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                cursor: 'pointer',
-              }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24">
                 <path
@@ -225,7 +193,7 @@ export default function LoginPage() {
             </button>
 
             <small className="demo-login-note" style={{ display: 'block', marginTop: '16px', color: '#64748b' }}>
-              {t('auth:login.previewNote')} <strong>demo123</strong>.
+              {t('auth:login.accessNote')}
             </small>
 
 

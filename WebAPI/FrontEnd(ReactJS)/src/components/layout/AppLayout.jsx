@@ -188,7 +188,7 @@ export default function AppLayout() {
       >
         <div className="sidebar-header-row">
           <NavLink
-            to="/dashboard"
+            to="/"
             className="brand-link"
             aria-label={t('common:aria.home')}
             onClick={closeNavIfAuto}

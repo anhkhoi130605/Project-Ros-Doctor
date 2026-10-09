@@ -1,0 +1,201 @@
+.ctrn-home .ctrn-section-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ctrn-home .ctrn-section-link:hover {
+  color: var(--ct-blue, #176cdd);
+}
+
+.ctrn-home .ctrn-public-account {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 290px;
+  padding: 9px 13px;
+  border: 1px solid #d7e5f3;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f8fbff, #edf6ff);
+  color: #12344f;
+  text-decoration: none;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.ctrn-home .ctrn-public-account:hover {
+  border-color: #95c2ee;
+  background: #eaf4ff;
+  box-shadow: 0 4px 14px rgb(23 108 221 / 10%);
+}
+
+.ctrn-home .ctrn-public-account-avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 35px;
+  height: 35px;
+  border-radius: 11px;
+  background: #0c496b;
+  color: #fff;
+}
+
+.ctrn-home .ctrn-public-account-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ctrn-home .ctrn-public-account-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.ctrn-home .ctrn-public-account-copy small {
+  color: #61788d;
+  font-size: 10px;
+}
+
+.ctrn-home .ctrn-public-account > svg {
+  flex-shrink: 0;
+}
+
+.ctrn-home .ctrn-public-account:focus-visible,
+.ctrn-home .ctrn-section-link:focus-visible {
+  outline: 3px solid #86baff;
+  outline-offset: 4px;
+}
+
+@media (width <= 760px) {
+  .ctrn-home .ctrn-public-header nav {
+    gap: 12px;
+  }
+
+  .ctrn-home .ctrn-public-account {
+    margin-left: auto;
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ctrn-home .ctrn-public-account {
+    transition: none;
+  }
+}
+
+/* Scoped typography adjustments preserve the original hero layout. */
+.ctrn-home .ctrn-public-header .ctrn-section-link {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.ctrn-home .ctrn-hero-copy > .section-kicker {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ac650d;
+  letter-spacing: 1.3px;
+  line-height: 1.6;
+}
+
+.ctrn-home .ctrn-hero-meta {
+  font-size: 12px;
+  line-height: 1.7;
+  flex-wrap: wrap;
+  gap: 12px 32px;
+}
+
+.ctrn-home .ctrn-hero .button-row { flex-wrap: wrap; gap: 12px; }
+.ctrn-home .ctrn-hero .button { font-size: 14px; }
+.ctrn-home .landing-explore-button > svg { order: 1; }
+.ctrn-home .ctrn-public-header .button { font-size: 14px; }
+.ctrn-home .ctrn-public-account-copy strong { font-size: 14px; }
+.ctrn-home .ctrn-public-account-copy small { font-size: 12px; }
+.ctrn-home .ctrn-hero .label-top { font-size: 10px; }
+.ctrn-home .ctrn-hero .label-data > span,
+.ctrn-home .ctrn-hero .label-data small { font-size: 9px; line-height: 1.5; }
+.ctrn-home .ctrn-hero .label-data strong { font-size: 14px; }
+.ctrn-home .ctrn-hero .label-data b { font-size: 11px; }
+.ctrn-home .ctrn-hero .robot-coordinate { font-size: 9px; }
+
+/* The selected workflow/role cards and footer keep their existing design. */
+.landing-refined .ctrn-workflow .section-kicker,
+.landing-refined .ctrn-roles .section-kicker { font-size: 12px; font-weight: 650; letter-spacing: 1.5px; color: #607991; }
+
+.landing-refined .ctrn-workflow {
+  padding: 64px max(5%, calc((100vw - 1280px) / 2));
+  border-top: 1px solid #e2e7ed;
+  border-bottom: 1px solid #e2e7ed;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: 56px;
+}
+
+.landing-refined .ctrn-workflow h2,
+.landing-refined .ctrn-roles h2 { margin: 16px 0 28px; font-size: clamp(28px, 2.8vw, 38px); font-weight: 650; letter-spacing: -1.2px; line-height: 1.22; }
+.landing-refined .ctrn-workflow-grid { gap: 18px; }
+.landing-refined .ctrn-workflow-grid article { padding: 22px; border: 1px solid #e0e6ed; border-radius: 10px; background: #f9fbfd; }
+.landing-refined .landing-step-heading { display: flex; justify-content: space-between; align-items: center; color: #176cdd; }
+.landing-refined .landing-step-heading span { font-size: 12px; font-weight: 650; color: #8ca0b3; font-variant-numeric: tabular-nums; }
+.landing-refined .ctrn-workflow-grid h3 { font-size: 17px; margin: 18px 0 10px; letter-spacing: -0.3px; }
+.landing-refined .ctrn-workflow-grid p { font-size: 14px; line-height: 1.8; margin: 0; }
+
+.landing-refined .ctrn-roles { padding: 64px max(5%, calc((100vw - 1280px) / 2)); background: #f5f7fa; }
+.landing-refined .ctrn-role-grid { gap: 20px; }
+.landing-refined .landing-role-card { padding: 26px; background: #fff; border: 1px solid #dfe5eb; border-radius: 10px; box-shadow: none; }
+.landing-refined .landing-role-card::before { display: none; }
+.landing-refined .landing-role-icon { width: 40px; height: 40px; display: grid; place-items: center; background: #edf4fd; color: #176cdd; border-radius: 8px; }
+.landing-refined .landing-role-card h3 { margin: 20px 0 12px; font-size: 18px; letter-spacing: -0.3px; }
+.landing-refined .landing-role-card p { margin: 0; font-size: 14px; line-height: 1.85; color: #617487; }
+
+.landing-refined .landing-footer {
+  display: block;
+  padding: 48px max(5%, calc((100vw - 1280px) / 2)) 0;
+  background: #0b253b;
+  color: #a5b8ca;
+  border: 0;
+}
+.landing-refined .landing-footer-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: 48px; padding-bottom: 38px; }
+.landing-refined .landing-footer .logo { color: #fff; }
+.landing-refined .landing-footer .logo-mark { background: #163b58; }
+.landing-refined .landing-footer .logo small { color: #72b2ff; }
+.landing-refined .landing-footer-brand p { max-width: 320px; color: #a5b8ca; font-size: 13px; line-height: 1.9; margin: 20px 0; }
+.landing-refined .landing-repo-link { display: inline-flex; align-items: center; gap: 10px; color: #d8e9fa; padding: 8px 12px; border: 1px solid #355068; border-radius: 6px; font-size: 12px; }
+.landing-refined .landing-footer-group { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
+.landing-refined .landing-footer-group h3 { color: #f0f5fa; font-size: 13px; font-weight: 650; margin: 4px 0 8px; }
+.landing-refined .landing-footer-group a,
+.landing-refined .landing-footer-group button,
+.landing-refined .landing-footer-bottom button { background: none; border: 0; padding: 0; color: #a5b8ca; font: inherit; font-size: 13px; line-height: 1.6; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; text-align: left; }
+.landing-refined .landing-footer a:hover,
+.landing-refined .landing-footer button:hover { color: #fff; }
+.landing-refined .landing-footer a:focus-visible,
+.landing-refined .landing-footer button:focus-visible { outline: 2px solid #72b2ff; outline-offset: 5px; }
+.landing-refined .landing-footer-bottom { border-top: 1px solid #294257; padding: 22px 0; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; font-size: 12px; color: #90a8bd; }
+.landing-refined .landing-footer-bottom button { font-size: 12px; }
+.landing-refined .landing-footer-bottom button svg { transform: rotate(180deg); }
+
+@media (width <= 1100px) {
+  .landing-refined .ctrn-workflow { gap: 28px; }
+  .landing-refined .landing-footer-grid { gap: 24px; }
+}
+
+@media (width <= 760px) {
+  .landing-refined .ctrn-workflow { display: block; padding: 40px 22px; }
+  .landing-refined .ctrn-workflow-grid { gap: 14px; }
+  .landing-refined .ctrn-workflow-grid article { padding: 18px; }
+  .landing-refined .ctrn-roles { padding: 40px 22px; }
+  .landing-refined .ctrn-role-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .landing-refined .landing-footer { padding: 36px 22px 0; }
+  .landing-refined .landing-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 24px; }
+  .landing-refined .landing-footer-brand { grid-column: 1 / -1; }
+  .landing-refined .landing-footer-bottom { flex-direction: column; align-items: flex-start; gap: 12px; }
+}
+
+@media (width <= 420px) {
+  .landing-refined .ctrn-workflow-grid { grid-template-columns: minmax(0, 1fr); }
+  .landing-refined .landing-footer-grid { grid-template-columns: minmax(0, 1fr); }
+}

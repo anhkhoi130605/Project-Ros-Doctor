@@ -5,6 +5,7 @@ import robotHeroImg from '../../../../../assets/robot-hero.jpg';
 export default function HeroDiagnosisCard() {
   return (
     <div
+      className="dash-hero"
       style={{
         position: 'relative',
         background: 'linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%)',
@@ -21,6 +22,7 @@ export default function HeroDiagnosisCard() {
     >
       {/* Background Robot Image on right */}
       <div
+        className="dash-hero-art"
         style={{
           position: 'absolute',
           top: 0,
@@ -37,7 +39,7 @@ export default function HeroDiagnosisCard() {
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: '58%' }}>
+      <div className="dash-hero-copy" style={{ position: 'relative', zIndex: 2, maxWidth: '58%' }}>
         <span
           style={{
             fontSize: '11px',

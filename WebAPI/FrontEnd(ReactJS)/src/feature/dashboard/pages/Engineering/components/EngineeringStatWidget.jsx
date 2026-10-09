@@ -121,6 +121,7 @@ export default function EngineeringStatWidget({
 
   return (
     <div
+      className="dash-stat"
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -148,6 +149,7 @@ export default function EngineeringStatWidget({
           {label}
         </span>
         <div
+          className="dash-stat-icon"
           style={{
             background: currentTone.bg,
             color: currentTone.color,
@@ -167,7 +169,7 @@ export default function EngineeringStatWidget({
         <strong style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1 }}>
           {value}
         </strong>
-        <div>
+        <div className="dash-stat-spark" aria-hidden="true">
           {renderMiniChart()}
         </div>
       </div>

@@ -51,6 +51,7 @@ export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarnin
 
   return (
     <div
+      className="dash-priority"
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -64,6 +65,7 @@ export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarnin
     >
       {/* Header */}
       <div
+        className="dash-priority-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -91,7 +93,7 @@ export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarnin
       </div>
 
       {/* Mini Donut Chart combined with Priority list */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '14px' }}>
+      <div className="dash-priority-summary" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '14px' }}>
         {/* SVG Donut */}
         <div style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
           <svg
@@ -171,6 +173,7 @@ export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarnin
           const isHov = hoveredIdx === index;
           return (
             <Link
+              className="dash-priority-item"
               key={index}
               to={item.to}
               onMouseEnter={() => setHoveredIdx(index)}

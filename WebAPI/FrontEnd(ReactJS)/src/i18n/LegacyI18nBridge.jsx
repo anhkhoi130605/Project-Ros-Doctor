@@ -5,6 +5,9 @@ import { useTranslation } from 'react-i18next';
 // Only explicitly listed UI copy is translated. Unknown text (including values
 // returned by APIs/database such as rosbag names, topic names and IDs) is kept.
 const ENGLISH_UI_TEXT = new Map([
+  ['Phân bổ theo Topic', 'By topic'],
+  ['5 Phiên gần đây', '5 recent sessions'],
+  ['Xem góc nhìn Người xem (V01)', 'Switch to Viewer view (V01)'],
   ['Không gian quan sát', 'Observation workspace'],
   ['Dữ liệu và kết luận đã được kỹ sư xác nhận trong Robotics Lab.', 'Data and findings verified by engineers in the Robotics Lab.'],
   ['USER · CHỈ XEM', 'USER · READ ONLY'],

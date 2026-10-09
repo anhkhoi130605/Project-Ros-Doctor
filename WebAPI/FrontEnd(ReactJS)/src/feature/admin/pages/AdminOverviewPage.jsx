@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore.jsx';
@@ -9,6 +9,8 @@ import {
   fetchSystemLogsApi,
   triggerTestErrorApi,
   updateUserRoleApi,
+  approveEngineerApi,
+  deleteAdminMemberApi,
 } from '../../dashboard/api/dashboardApi';
 import '../../dashboard/pages/dashboard.css';
 import { fetchUserActivityLogsApi, fetchUserActivityPageApi, logUserActivityApi, updateAiConfigApi } from '../../../service';
@@ -25,6 +27,7 @@ const testErrorOptions = [
 ];
 
 const ACTION_MAP = {
+  DeleteUser: { label: 'Xóa thành viên', icon: '🗑️', bg: '#fee2e2', color: '#b91c1c' },
   CreateRosbag: { label: 'Tạo bản ghi Rosbag', icon: '📁', bg: '#f3e8ff', color: '#7e22ce' },
   InspectRosbag: { label: 'Phân tích bản ghi Rosbag', icon: '🔍', bg: '#e0f2fe', color: '#0284c7' },
   UploadRosbag: { label: 'Tải lên Rosbag', icon: '📁', bg: '#f3e8ff', color: '#7e22ce' },
@@ -60,6 +63,7 @@ const ACTION_MAP = {
 };
 
 const ACTION_LABEL_EN = {
+  DeleteUser: 'Delete member',
   CreateRosbag: 'Create Rosbag record',
   InspectRosbag: 'Analyze Rosbag record',
   UploadRosbag: 'Upload Rosbag',
@@ -148,7 +152,7 @@ const DEFAULT_AI_PROMPT_EN = 'Analyze ROS2 logs using evidence. Separate observa
 
 export default function AdminOverviewPage() {
   const { state, dispatch, notify } = useApp();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation(['auth']);
   const { tab = 'overview', id: detailId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,27 +160,37 @@ export default function AdminOverviewPage() {
 
   const activeTab = (!tab || tab === 'overview') ? 'members' : tab;
 
-  const fallbackMembers = useMemo(() => {
-    return (state.users || []).map((u) => ({
-      id: u.id,
-      fullName: u.name,
-      email: u.email,
-      role: u.role === 'admin' ? 'Admin' : u.role === 'engineer' ? 'Engineer' : 'User',
-      status: u.active ? 'Online' : 'Banned',
-      isOnline: true,
-      lastActive: 'Vừa xong',
-    }));
-  }, [state.users]);
-
   // Members state
-  const [members, setMembers] = useState(fallbackMembers);
+  const [members, setMembers] = useState([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState(null);
+  const memberLoadVersion = useRef(0);
   const [memberSearch, setMemberSearch] = useState('');
   const [memberStatusFilter, setMemberStatusFilter] = useState('ALL');
   const [bannedUserIds, setBannedUserIds] = useState([]);
   const [editingMember, setEditingMember] = useState(null);
   const [viewingMember, setViewingMember] = useState(null);
+  const [approvingMemberId, setApprovingMemberId] = useState(null);
+  const [deletingMemberId, setDeletingMemberId] = useState(null);
+  const memberMutationPending = Boolean(approvingMemberId || deletingMemberId);
+  const isPendingApproval = (member) => (member.accountStatus || member.status || '').toLowerCase() === 'pendingapproval';
+
+  const handleApproveEngineer = async (member) => {
+    if (String(state.role).toLowerCase() !== 'admin' || memberMutationPending) return;
+    if (!window.confirm(t('auth:approval.confirm', { name: member.fullName || member.email }))) return;
+    const memberId = member.id || member.email;
+    setApprovingMemberId(memberId);
+    try {
+      await approveEngineerApi(memberId);
+      setMembers((prev) => prev.map((m) => (m.id || m.email) === memberId
+        ? { ...m, accountStatus: 'Active', status: 'Offline' } : m));
+      notify(t('auth:approval.success'), 'success');
+    } catch (err) {
+      notify(err.data?.message || err.data?.Message || err.message || t('auth:approval.failed'), 'error');
+    } finally {
+      setApprovingMemberId(null);
+    }
+  };
 
   const handleUpdateRole = async (memberId, newRole) => {
     const targetMember = members.find((m) => (m.id || m.email) === memberId);
@@ -224,12 +238,30 @@ export default function AdminOverviewPage() {
     }
   };
 
-  const handleDeleteMember = (memberId) => {
-    if (window.confirm(isEnglish
-      ? 'Are you sure you want to remove this account from the system?'
-      : 'Bạn có chắc chắn muốn xóa tài khoản này khỏi hệ thống?')) {
+  const handleDeleteMember = async (memberId) => {
+    if (String(state.role).toLowerCase() !== 'admin' || memberMutationPending) return;
+    const member = members.find((m) => m.id === memberId);
+    if (!member) return;
+    if (memberId === state.currentUserId) {
+      notify(t('auth:memberDelete.selfBlocked'), 'error');
+      return;
+    }
+    if (!window.confirm(t('auth:memberDelete.confirm', { name: member.fullName || member.email }))) return;
+    setDeletingMemberId(memberId);
+    try {
+      const result = await deleteAdminMemberApi(memberId);
+      if (result?.deleted !== true) throw new Error(t('auth:memberDelete.failed'));
+      // An older GET must not reintroduce this member after deletion is acknowledged.
+      memberLoadVersion.current += 1;
+      setMembersLoading(false);
       setMembers((prev) => prev.filter((m) => (m.id || m.email) !== memberId));
-      notify('Đã xóa tài khoản khỏi hệ thống.', 'info');
+      setBannedUserIds((prev) => prev.filter((id) => id !== memberId));
+      setEditingMember((prev) => prev?.id === memberId ? null : prev);
+      notify(t('auth:memberDelete.success'), 'success');
+    } catch (err) {
+      notify(err.data?.message || err.data?.Message || err.message || t('auth:memberDelete.failed'), 'error');
+    } finally {
+      setDeletingMemberId(null);
     }
   };
 
@@ -302,26 +334,24 @@ export default function AdminOverviewPage() {
 
   // Fetch Members Data
   const loadMembers = useCallback(async () => {
+    const requestVersion = ++memberLoadVersion.current;
     try {
       setMembersLoading(true);
       setMembersError(null);
-      const data = await fetchAdminMembersApi();
-      if (Array.isArray(data) && data.length > 0) {
-        setMembers(data);
-        const bannedFromApi = data
-          .filter((u) => (u.status || '').toUpperCase() === 'BANNED')
-          .map((u) => u.id || u.email);
-        setBannedUserIds(bannedFromApi);
-      } else {
-        setMembers(fallbackMembers);
-      }
+      const data = await fetchAdminMembersApi({ noCache: true });
+      if (requestVersion !== memberLoadVersion.current) return;
+      if (!Array.isArray(data)) throw new Error(t('auth:memberDelete.loadFailed'));
+      setMembers(data);
+      setBannedUserIds(data
+        .filter((u) => (u.status || '').toUpperCase() === 'BANNED')
+        .map((u) => u.id || u.email));
     } catch (err) {
-      // Fallback to store users so accounts & permissions never disappear
-      setMembers((prev) => (prev && prev.length > 0 ? prev : fallbackMembers));
+      if (requestVersion === memberLoadVersion.current)
+        setMembersError(err.message || t('auth:memberDelete.loadFailed'));
     } finally {
-      setMembersLoading(false);
+      if (requestVersion === memberLoadVersion.current) setMembersLoading(false);
     }
-  }, [fallbackMembers]);
+  }, [t]);
 
   // Fetch System Logs Data
   const loadSystemLogs = useCallback(async () => {
@@ -489,7 +519,8 @@ export default function AdminOverviewPage() {
     const total = members.length;
     const online = members.filter((m) => (m.status || '').toLowerCase() === 'online').length;
     const adminCount = members.filter((m) => (m.role || '').toLowerCase() === 'admin').length;
-    return { total, online, adminCount };
+    const pendingCount = members.filter(isPendingApproval).length;
+    return { total, online, adminCount, pendingCount };
   }, [members]);
 
   // AI Config state
@@ -732,6 +763,12 @@ export default function AdminOverviewPage() {
                 {membersLoading ? '...' : memberStats.adminCount}
               </div>
             </div>
+            <div className="card" style={{ padding: '16px 20px', borderLeft: '4px solid #d97706' }}>
+              <div style={{ color: '#64748b', fontSize: 13, fontWeight: 600 }}>{t('auth:approval.pendingEngineers')}</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: '#d97706', marginTop: 4 }}>
+                {membersLoading ? '...' : memberStats.pendingCount}
+              </div>
+            </div>
           </div>
 
           <Card title="Danh sách Thành viên Hệ thống">
@@ -743,9 +780,9 @@ export default function AdminOverviewPage() {
                 onChange={(e) => setMemberSearch(e.target.value)}
                 style={{ flex: '1 1 260px', padding: '9px 14px', borderRadius: 6, border: '1px solid #cbd5e1', fontSize: 14 }}
               />
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>Lọc:</span>
-                {['ALL', 'ONLINE', 'AWAY', 'OFFLINE', 'BANNED'].map((sk) => (
+                {['ALL', 'PENDINGAPPROVAL', 'ONLINE', 'AWAY', 'OFFLINE', 'BANNED'].map((sk) => (
                   <button
                     key={sk}
                     type="button"
@@ -761,10 +798,10 @@ export default function AdminOverviewPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    {sk === 'ALL' ? 'Tất cả' : sk === 'BANNED' ? 'Đã khóa' : sk}
+                    {sk === 'ALL' ? 'Tất cả' : sk === 'PENDINGAPPROVAL' ? t('auth:approval.pending') : sk === 'BANNED' ? 'Đã khóa' : sk}
                   </button>
                 ))}
-                <button type="button" className="button secondary" onClick={loadMembers} disabled={membersLoading} style={{ minHeight: 34 }}>
+                <button type="button" className="button secondary" onClick={loadMembers} disabled={membersLoading || memberMutationPending} style={{ minHeight: 34 }}>
                   ↻ Làm mới
                 </button>
               </div>
@@ -791,6 +828,7 @@ export default function AdminOverviewPage() {
                   <tbody>
                     {filteredMembers.map((m) => {
                       const isBanned = (m.status || '').toUpperCase() === 'BANNED' || bannedUserIds.includes(m.id || m.email);
+                      const pendingApproval = isPendingApproval(m);
                       const roleKey = (m.role || 'user').toLowerCase();
                       const roleStyle = roleColors[roleKey] || roleColors.user;
                       const statusKey = (m.status || 'Offline').toLowerCase();
@@ -850,6 +888,7 @@ export default function AdminOverviewPage() {
                             ) : (
                               <select
                                 value={m.role || 'User'}
+                                disabled={pendingApproval || memberMutationPending}
                                 onChange={(e) => handleUpdateRole(m.id || m.email, e.target.value)}
                                 style={{
                                   padding: '4px 8px',
@@ -875,6 +914,10 @@ export default function AdminOverviewPage() {
                               <span className="badge red" style={{ fontSize: '11px' }}>
                                 <i /> Đã khóa
                               </span>
+                            ) : pendingApproval ? (
+                              <span className="badge orange" style={{ fontSize: '11px' }}>
+                                <i /> {t('auth:approval.pending')}
+                              </span>
                             ) : (
                               <span className={`badge ${badgeClass}`} style={{ fontSize: '11px' }}>
                                 <i /> {m.status || 'Offline'}
@@ -888,6 +931,14 @@ export default function AdminOverviewPage() {
 
                           <td style={{ padding: '12px 14px', textAlign: 'right' }}>
                             <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                              {pendingApproval && (
+                                <button type="button" className="button primary"
+                                  onClick={() => handleApproveEngineer(m)}
+                                  disabled={isBanned || memberMutationPending || String(state.role).toLowerCase() !== 'admin'}
+                                  style={{ padding: '5px 10px', fontSize: '11px', minHeight: '32px' }}>
+                                  {approvingMemberId === (m.id || m.email) ? t('auth:approval.approving') : t('auth:approval.approve')}
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className="button ghost"
@@ -902,6 +953,7 @@ export default function AdminOverviewPage() {
                                 type="button"
                                 className="button ghost"
                                 onClick={() => setEditingMember(m)}
+                                disabled={pendingApproval || memberMutationPending}
                                 style={{ padding: '5px 10px', fontSize: '11px', minHeight: '32px' }}
                               >
                                 ✏️ Sửa
@@ -911,6 +963,7 @@ export default function AdminOverviewPage() {
                                 type="button"
                                 className={`button ${isBanned ? 'secondary' : 'danger'}`}
                                 onClick={() => handleToggleBan(m.id || m.email)}
+                                disabled={memberMutationPending}
                                 style={{ padding: '5px 10px', fontSize: '11px', minHeight: '32px' }}
                               >
                                 {isBanned ? '✅ Mở khóa' : '🚫 Khóa'}
@@ -919,10 +972,12 @@ export default function AdminOverviewPage() {
                               <button
                                 type="button"
                                 className="button ghost"
-                                onClick={() => handleDeleteMember(m.id || m.email)}
+                                onClick={() => handleDeleteMember(m.id)}
+                                disabled={!m.id || m.id === state.currentUserId || memberMutationPending || String(state.role).toLowerCase() !== 'admin'}
+                                title={m.id === state.currentUserId ? t('auth:memberDelete.selfBlocked') : undefined}
                                 style={{ padding: '5px 10px', fontSize: '11px', minHeight: '32px', color: 'var(--red)' }}
                               >
-                                🗑️ Xóa
+                                🗑️ {deletingMemberId === m.id ? t('auth:memberDelete.deleting') : t('auth:memberDelete.delete')}
                               </button>
                             </div>
                           </td>

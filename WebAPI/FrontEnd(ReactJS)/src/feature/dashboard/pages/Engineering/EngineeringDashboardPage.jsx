@@ -1,11 +1,12 @@
 import React from 'react';
-import { PageHeader, Button } from '../../../../components/common/UIComponents';
+import { PageHeader, Button, Icon } from '../../../../components/common/UIComponents';
 import useEngineeringDashboard from './hook/useEngineeringDashboard';
 import EngineeringStatWidget from './components/EngineeringStatWidget';
 import HeroDiagnosisCard from './components/HeroDiagnosisCard';
 import DiagnosticPriorityPanel from './components/DiagnosticPriorityPanel';
 import DiagnosticChartsSection from './components/DiagnosticChartsSection';
 import RecentAnalysisSessionsTable from './components/RecentAnalysisSessionsTable';
+import './dashboard-refined.css';
 
 export default function EngineeringDashboardPage({ onSwitchToViewer }) {
   const {
@@ -19,7 +20,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
   } = useEngineeringDashboard();
 
   return (
-    <div className="dashboard-overview engineering-dashboard" style={{ display: 'grid', gap: '24px' }}>
+    <div className="dashboard-overview engineering-dashboard dashboard-refined" style={{ display: 'grid', gap: '24px' }}>
       {/* Page Header */}
       <PageHeader
         title="Trung tâm chẩn đoán"
@@ -33,7 +34,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
               className="button ghost"
               style={{ fontSize: '12px', padding: '6px 12px', minHeight: '34px', borderRadius: '8px' }}
             >
-              👁️ Xem góc nhìn Người xem (V01)
+              <Icon name="user" size={15} aria-hidden="true" /> Xem góc nhìn Người xem (V01)
             </button>
           )}
           <Button
@@ -48,6 +49,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
 
       {/* Hero & Priority Grid */}
       <div
+        className="dash-lead-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'minmax(0, 2.2fr) minmax(300px, 1fr)',
@@ -63,6 +65,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
 
       {/* 4 Stat Cards Row */}
       <div
+        className="dash-stat-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
