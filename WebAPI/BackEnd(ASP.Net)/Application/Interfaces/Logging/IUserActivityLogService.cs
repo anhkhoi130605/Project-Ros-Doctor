@@ -14,12 +14,13 @@ namespace Application.Interfaces.Logging
         string? IpAddress = null,
         string? UserAgent = null,
         string? UserName = null,
-        string? Email = null);
-
-    /// <summary>
-    /// Ghi lại hành động của người dùng (tạo, xoá, cập nhật...) phục vụ audit trail.
-    /// </summary>
-    public interface IUserActivityLogService
+        string? Email = null,
+        Guid? LogId = null);
+        
+	/// <summary>
+	/// Ghi lại hành động của người dùng (tạo, xoá, cập nhật...) phục vụ audit trail.
+	/// </summary>
+	public interface IUserActivityLogService
     {
         Task LogActivityAsync(LogActivityRequest request);
 

@@ -26,7 +26,6 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 });
 
 // Clean Architecture: Application & Infrastructure layer registrations
-builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
 builder.Services.AddControllers()
@@ -108,6 +107,16 @@ builder.Services.AddRateLimiter(options =>
 			}));
 });
 
+
+builder.Services.AddOutputCache(options =>
+{
+	options.AddPolicy("PublicData", policy =>
+		policy.Expire(TimeSpan.FromSeconds(30)));
+});
+
+builder.Services.AddHealthChecks();
+
+
 var app = builder.Build();
 
 
@@ -126,6 +135,9 @@ app.UseGlobalExceptionMiddleware();
 
 
 app.UseResponseCompression();
+
+
+app.UseOutputCache();
 
 if (app.Environment.IsDevelopment())
 {

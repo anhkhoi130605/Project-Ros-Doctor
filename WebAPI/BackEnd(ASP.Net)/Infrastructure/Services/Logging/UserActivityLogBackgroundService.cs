@@ -181,7 +181,8 @@ namespace Infrastructure.Services.Logging
                         IpAddress = req.IpAddress,
                         UserAgent = req.UserAgent,
                         StatusSystemResponse = HttpStatusCode.OK,
-                    });
+						LogId = (Guid)req.LogId,
+					});
                 }
 
                 foreach (var entity in entities)
