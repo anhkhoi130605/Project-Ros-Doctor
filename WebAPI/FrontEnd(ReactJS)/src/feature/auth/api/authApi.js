@@ -20,6 +20,6 @@ export function getGoogleLoginUrl() {
   return `${apiClient.baseUrl}/api/auth/login-google`;
 }
 
-export function getGoogleRegisterUrl() {
-  return `${apiClient.baseUrl}/api/auth/register-google`;
+export function getGoogleRegisterUrl(role = 'User') {
+  return `${apiClient.baseUrl}/api/auth/register-google?role=${encodeURIComponent(role)}`;
 }

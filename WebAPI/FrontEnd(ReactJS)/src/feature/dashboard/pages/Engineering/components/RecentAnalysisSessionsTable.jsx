@@ -102,6 +102,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
 
   return (
     <div
+      className="dash-section dash-recent"
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -115,6 +116,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
     >
       {/* Header bar */}
       <div
+        className="dash-section-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -125,7 +127,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>📈</span>
+            <Icon name="trending-up" size={18} className="dash-heading-icon" aria-hidden="true" />
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: '#0f172a' }}>
               Phiên phân tích gần đây
             </h3>
@@ -138,6 +140,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
         {/* View mode toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div
+            className="dash-tabs"
             style={{
               display: 'inline-flex',
               backgroundColor: '#f1f5f9',
@@ -149,6 +152,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
             <button
               type="button"
               onClick={() => setViewMode('chart')}
+              aria-pressed={viewMode === 'chart'}
               style={{
                 padding: '6px 14px',
                 fontSize: '12px',
@@ -162,11 +166,12 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                 transition: 'all 0.2s',
               }}
             >
-              📊 Biểu đồ trực quan
+              <Icon name="activity" size={14} aria-hidden="true" /> Biểu đồ trực quan
             </button>
             <button
               type="button"
               onClick={() => setViewMode('table')}
+              aria-pressed={viewMode === 'table'}
               style={{
                 padding: '6px 14px',
                 fontSize: '12px',
@@ -180,7 +185,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                 transition: 'all 0.2s',
               }}
             >
-              📋 Danh sách bảng
+              <Icon name="file-text" size={14} aria-hidden="true" /> Danh sách bảng
             </button>
           </div>
 
@@ -205,6 +210,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
       {/* ================= BIỂU ĐỒ HÌNH TRÒN KẾT HỢP BIỂU ĐỒ CỘT ================= */}
       {viewMode === 'chart' && (
         <div
+          className="dash-chart-grid dash-session-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'minmax(280px, 1fr) minmax(380px, 1.6fr)',
@@ -214,6 +220,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
         >
           {/* 1. Biểu đồ tròn: Tỷ lệ sức khỏe phiên */}
           <div
+            className="dash-chart-panel dash-session-health"
             style={{
               background: '#f8fafc',
               border: '1px solid #e2e8f0',
@@ -227,7 +234,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-                🍩 Tỷ lệ Sức khỏe Phiên
+                Tỷ lệ Sức khỏe Phiên
               </span>
               <span
                 style={{
@@ -327,6 +334,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
 
           {/* 2. Biểu đồ cột: Topics & Cảnh báo của từng phiên thực tế */}
           <div
+            className="dash-chart-panel dash-session-volume"
             style={{
               background: '#ffffff',
               border: '1px solid #e2e8f0',
@@ -340,7 +348,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: '#334155' }}>
-                📊 Khối lượng Topic & Mức độ Cảnh báo theo từng Phiên
+                Khối lượng Topic & Mức độ Cảnh báo theo từng Phiên
               </span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#3b82f6', fontWeight: 600 }}>
@@ -396,10 +404,22 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                   return (
                     <g
                       key={session.id}
+                      className="session-chart-column"
                       style={{ cursor: 'pointer' }}
                       onMouseEnter={() => setHoveredSession(session)}
                       onMouseLeave={() => setHoveredSession(null)}
                     >
+                      {/* Keep hit testing independent of hover decoration and text. */}
+                      <rect
+                        className="session-chart-hit-area"
+                        x={x - 8}
+                        y={chartTop}
+                        width={barWidth + 16}
+                        height={chartHeight - chartTop}
+                        fill="transparent"
+                        pointerEvents="all"
+                      />
+                      <g pointerEvents="none">
                       {/* Hover column backdrop */}
                       {isHov && (
                         <rect x={x - 8} y={chartTop} width={barWidth + 16} height={usableHeight} fill="#f8fafc" rx="4" />
@@ -455,17 +475,19 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                       >
                         {cond.badgeText.replace('● ', '')}
                       </text>
+                      </g>
                     </g>
                   );
                 })}
 
                 {/* X axis baseline */}
-                <line x1="28" y1={chartBottom} x2={chartWidth - 8} y2={chartBottom} stroke="#cbd5e1" strokeWidth="1.5" />
+                <line x1="28" y1={chartBottom} x2={chartWidth - 8} y2={chartBottom} stroke="#cbd5e1" strokeWidth="1.5" pointerEvents="none" />
               </svg>
             </div>
 
             {/* Bottom session tooltip row */}
             <div
+              className="dash-session-tooltip"
               style={{
                 padding: '8px 12px',
                 backgroundColor: '#f8fafc',
@@ -473,37 +495,61 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                 border: '1px solid #f1f5f9',
                 fontSize: '11px',
                 color: '#475569',
-                display: 'flex',
-                justifyContent: 'space-between',
+                display: 'grid',
                 alignItems: 'center',
               }}
             >
-              {hoveredSession ? (
-                <>
+              {/* All rows share a grid cell so the longest detail reserves space,
+                  without moving the chart when the active session changes. */}
+              {displaySessions.map((session) => (
+                <div
+                  key={session.id}
+                  aria-hidden={hoveredSession?.id !== session.id}
+                  style={{
+                    gridArea: '1 / 1',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    minWidth: 0,
+                    overflowWrap: 'anywhere',
+                    visibility: hoveredSession?.id === session.id ? 'visible' : 'hidden',
+                  }}
+                >
                   <span>
-                    Phiên: <strong>{hoveredSession.title || hoveredSession.id}</strong> ({hoveredSession.bagName})
+                    Phiên: <strong>{session.title || session.id}</strong> ({session.bagName})
                   </span>
                   <span style={{
                     color: getHealthCondition(
-                      hoveredSession.healthScore,
-                      hoveredSession.warningsCount || 0,
-                      (hoveredSession.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
+                      session.healthScore,
+                      session.warningsCount || 0,
+                      (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
                     ).color,
                     fontWeight: 700
                   }}>
-                    {hoveredSession.topicsCount || 2} Topics · {getHealthCondition(
-                      hoveredSession.healthScore,
-                      hoveredSession.warningsCount || 0,
-                      (hoveredSession.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
-                    ).summary} · {formatSessionTime(hoveredSession.timestamp)}
+                    {session.topicsCount || 2} Topics · {getHealthCondition(
+                      session.healthScore,
+                      session.warningsCount || 0,
+                      (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
+                    ).summary} · {formatSessionTime(session.timestamp)}
                   </span>
-                </>
-              ) : (
-                <>
-                  <span>💡 <em>Rê chuột vào cột để xem chi tiết rosbag & số lượng topic của từng phiên thực tế.</em></span>
+                </div>
+              ))}
+                <div
+                  aria-hidden={Boolean(hoveredSession)}
+                  style={{
+                    gridArea: '1 / 1',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    minWidth: 0,
+                    visibility: hoveredSession ? 'hidden' : 'visible',
+                  }}
+                >
+                  <span><Icon name="info" size={13} aria-hidden="true" /> <em>Rê chuột vào cột để xem chi tiết rosbag & số lượng topic của từng phiên thực tế.</em></span>
                   <span style={{ color: '#2563eb', fontWeight: 600 }}>Dữ liệu đồng bộ trực tiếp từ SQL Database</span>
-                </>
-              )}
+                </div>
             </div>
           </div>
         </div>

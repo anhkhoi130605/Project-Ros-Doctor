@@ -20,6 +20,7 @@ export function useAuth() {
     try {
       const data = await loginApi({ email, password });
       const token = data?.accessToken || data?.token;
+      if (!token) throw new Error('Máy chủ không cấp phiên đăng nhập.');
       const user = data?.user || {};
       const rawRole = parseUserRole(data, user) || '';
 
@@ -49,7 +50,8 @@ export function useAuth() {
       };
     } catch (error) {
       setStatus({ type: 'error', message: error.message || 'Không thể kết nối đến máy chủ.' });
-      return null;
+      return { success: false, error: error.data?.message || error.data?.Message || error.message,
+        errorCode: error.data?.code };
     } finally {
       setIsSubmitting(false);
     }

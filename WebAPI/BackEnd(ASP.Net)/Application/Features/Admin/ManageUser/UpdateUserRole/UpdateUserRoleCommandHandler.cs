@@ -26,10 +26,13 @@ namespace Application.Features.Admin.ManageUser.UpdateUserRole
 
 			// 1. Tìm user trong cơ sở dữ liệu
 			var user = await _unitOfWork.User.GetAsync(u => u.Id == request.UserId || u.Email == request.UserId, cancellationToken: cancellationToken);
-			if (user == null)
+			if (user == null || user.DeletedAt != null)
 			{
 				throw new KeyNotFoundException($"Không tìm thấy thành viên với Id/Email: {request.UserId}");
 			}
+            if (user.Status == UserStatusEnum.PendingApproval)
+                throw new InvalidOperationException("Hãy dùng chức năng Duyệt Engineer trước khi thay đổi vai trò tài khoản chờ duyệt.");
+            if (!Enum.IsDefined(request.Role)) throw new ArgumentException("Vai trò không hợp lệ.");
 
 			// 2. Tìm hoặc tạo Role entity tương ứng với Enum requested
 			var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == request.Role, cancellationToken: cancellationToken);
@@ -58,7 +61,7 @@ namespace Application.Features.Admin.ManageUser.UpdateUserRole
 					.Select(r => r.Id)
 					.ToHashSet();
 
-				var otherAdminCount = allUsers.Count(u => u.Id != user.Id && adminRoleIds.Contains(u.RoleId));
+				var otherAdminCount = allUsers.Count(u => u.Id != user.Id && u.DeletedAt == null && adminRoleIds.Contains(u.RoleId));
 				if (otherAdminCount == 0)
 				{
 					throw new InvalidOperationException("BẢO MẬT: Không thể giáng cấp Quản trị viên (Admin) duy nhất còn lại của hệ thống!");

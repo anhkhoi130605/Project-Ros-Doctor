@@ -10,7 +10,8 @@ namespace Domain.Enums
 		{
 			Active,
 			Inactive,
-			Banned
+			Banned,
+			PendingApproval
 		}
 		public enum RoleEnum
 		{

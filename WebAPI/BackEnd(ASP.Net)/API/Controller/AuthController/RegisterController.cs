@@ -9,6 +9,8 @@ using Application.Features.Authentication.Login.Handler;
 using Application.DTOs.Authentication.Register;
 using Application.Features.Authentication.Register.Handler;
 using Microsoft.AspNetCore.RateLimiting;
+using Domain.Entities.Identity;
+using static Domain.Enums.UserEnum;
 
 namespace API.Controller;
 
@@ -28,11 +30,15 @@ public class RegisterController : ControllerBase
 
 	// 1. Khi Frontend click, trình duyệt sẽ nhảy vào đây đầu tiên
 	[HttpGet("register-google")]
-	public IActionResult RegisterGoogle()
+	public IActionResult RegisterGoogle([FromQuery] string role = "User")
 	{
+        RoleEnum registrationRole;
+        try { registrationRole = AccountRegistrationPolicy.ParseRole(role); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
 		// Sau khi Google quét vân tay xong, nó sẽ bắt trình duyệt quay lại endpoint "google-response" ở dưới
         // Use explicit redirect path for register flow
 		var properties = new AuthenticationProperties { RedirectUri = "/api/auth/google-register-response" };
+        properties.Items["registrationRole"] = registrationRole.ToString();
 
 		// Lệnh Challenge này sẽ tự động sinh link Google và trả về mã 302 Redirect để trình duyệt tự nhảy sang Google
 		return Challenge(properties, GoogleDefaults.AuthenticationScheme);
@@ -53,11 +59,16 @@ public class RegisterController : ControllerBase
 		try
 		{
 			// 2. Bắn vào MediatR để xử lý logic (Lưu DB, Tạo User nếu chưa có, sinh mã JWT)
-			var command = new GoogleLoginCommand(authenticateResult.Principal);
+            var registrationRole = RoleEnum.User;
+            if (authenticateResult.Properties?.Items.TryGetValue("registrationRole", out var selectedRole) == true)
+                registrationRole = AccountRegistrationPolicy.ParseRole(selectedRole);
+			var command = new GoogleLoginCommand(authenticateResult.Principal, registrationRole, IsRegistration: true);
 			var loginResult = await _mediator.Send(command); // loginResult này là LoginResponseDTO
 
 			// 3. Đăng xuất Cookie trung gian ngay để làm sạch bộ nhớ
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (loginResult.RequiresApproval)
+                return Redirect($"{frontendBaseUrl}/#/register?pending=1&email={Uri.EscapeDataString(loginResult.User.Email)}");
 
 			// 4. ĐIỀU HƯỚNG QUAY LẠI REACT: Đính Token lên URL để React bắt lấy
 			var reactFrontendUrl = $"{frontendBaseUrl}/#/login-success?token={loginResult.AccessToken}";
@@ -67,6 +78,8 @@ public class RegisterController : ControllerBase
 		catch (Exception ex)
 		{
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (ex is AccountPendingApprovalException)
+                return Redirect($"{frontendBaseUrl}/#/login?errorCode={AccountPendingApprovalException.Code}");
 			return Redirect($"{frontendBaseUrl}/#/login?error={Uri.EscapeDataString(ex.Message)}");
 		}
 	}

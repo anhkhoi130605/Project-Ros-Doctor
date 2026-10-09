@@ -39,6 +39,7 @@ namespace Application.Features.Authentication.Login.Handler
                 throw new ArgumentException("Không lấy được email từ Google.");
 
             DomainUser? user;
+            var created = false;
             using (await Application.Common.Helpers.ConcurrencyLockManager.LockAsync($"login:google:{email.Trim().ToLowerInvariant()}", TimeSpan.FromSeconds(10), cancellationToken))
             {
                 // Try find existing user
@@ -46,11 +47,13 @@ namespace Application.Features.Authentication.Login.Handler
 
                 if (user == null)
                 {
+                    var registrationRole = request.IsRegistration ? request.RegistrationRole : RoleEnum.User;
+                    var initialStatus = Domain.Entities.Identity.AccountRegistrationPolicy.InitialStatus(registrationRole);
                     // Create default role if missing
-                    var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == RoleEnum.User, null, cancellationToken);
+                    var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == registrationRole, null, cancellationToken);
                     if (roleEntity == null)
                     {
-                        roleEntity = new DomainRole { RoleName = RoleEnum.User };
+                        roleEntity = new DomainRole { RoleName = registrationRole };
                         await _unitOfWork.Roles.CreateAsync(roleEntity, cancellationToken);
                         await _unitOfWork.SaveChangesAsync(cancellationToken);
                     }
@@ -65,13 +68,31 @@ namespace Application.Features.Authentication.Login.Handler
                         PasswordHash = _passwordHasher.HashPassword(temporaryPassword),
                         RoleId = roleEntity.Id,
                         Role = roleEntity,
+                        Status = initialStatus,
+                        IsBanned = false,
                     };
 
                     await _unitOfWork.User.CreateAsync(user, cancellationToken);
                     await _unitOfWork.SaveChangesAsync(cancellationToken);
+                    created = true;
                 }
             }
 
+            if (created && user.Status == UserStatusEnum.PendingApproval)
+            {
+                await _userActivityLogService.LogActivityAsync(user.Id, UserActionType.Register,
+                    targetId: user.Id, targetType: TargetType.User,
+                    description: "Engineer registered via Google awaiting admin approval",
+                    requestPath: "/api/auth/google-register-response", httpMethod: "GET",
+                    userName: user.FullName, email: user.Email);
+                return new LoginResponseDTO
+                {
+                    RequiresApproval = true,
+                    User = new LoggedinUserDTO { Id = user.Id, Email = user.Email,
+                        FullName = user.FullName, Role = RoleEnum.Engineering.ToString() }
+                };
+            }
+            Domain.Entities.Identity.AccountRegistrationPolicy.EnsureCanSignIn(user);
             var roleName = user.Role?.RoleName?.ToString() ?? RoleEnum.User.ToString();
             var accessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, new List<string> { roleName });
 

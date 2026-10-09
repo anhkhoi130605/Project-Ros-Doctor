@@ -53,6 +53,7 @@ namespace Domain.Enums
         ViewAiUsage,
         ViewSystem,
         TriggerSystemError,
-        UpdateLocalSettings
+        UpdateLocalSettings,
+        DeleteUser
     } 
 }

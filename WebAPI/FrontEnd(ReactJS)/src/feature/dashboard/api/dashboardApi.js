@@ -4,8 +4,12 @@ export async function fetchAdminActivityLogsApi(take = 20) {
   return apiClient.get(`/api/user-activity?take=${take}`);
 }
 
-export async function fetchAdminMembersApi() {
-  return apiClient.get('/api/admin/members');
+export async function fetchAdminMembersApi(options = {}) {
+  return apiClient.get('/api/admin/members', options);
+}
+
+export async function deleteAdminMemberApi(memberId) {
+  return apiClient.delete(`/api/admin/members/${encodeURIComponent(memberId)}`);
 }
 
 export async function fetchSystemLogsApi(queryParams = {}, options = {}) {
@@ -29,6 +33,10 @@ export async function triggerTestErrorApi({ errorType, message }) {
 
 export async function updateUserRoleApi(memberId, role) {
   return apiClient.put(`/api/admin/members/${memberId}/role`, { role });
+}
+
+export async function approveEngineerApi(memberId) {
+  return apiClient.post(`/api/admin/members/${encodeURIComponent(memberId)}/approve-engineer`);
 }
 
 export async function fetchDashboardStatsApi() {

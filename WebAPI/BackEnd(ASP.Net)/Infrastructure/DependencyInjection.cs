@@ -1,4 +1,6 @@
 using System.Text;
+using System.Security.Claims;
+using Domain.Entities.Identity;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -150,6 +152,21 @@ public static class DependencyInjection
 				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty)),
 				ClockSkew = TimeSpan.Zero
 			};
+            options.Events = new JwtBearerEvents
+            {
+                OnTokenValidated = async context =>
+                {
+                    var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
+                        ?? context.Principal?.FindFirstValue("sub");
+                    if (string.IsNullOrEmpty(userId)) { context.Fail("Invalid account."); return; }
+                    var unitOfWork = context.HttpContext.RequestServices.GetRequiredService<IUnitOfWork>();
+                    var user = await unitOfWork.User.GetAsync(u => u.Id == userId,
+                        cancellationToken: context.HttpContext.RequestAborted);
+                    if (user == null) { context.Fail("Account not found."); return; }
+                    try { AccountRegistrationPolicy.EnsureCanSignIn(user); }
+                    catch (UnauthorizedAccessException ex) { context.Fail(ex.Message); }
+                }
+            };
 		})
 	   .AddGoogle(options =>
 	   {

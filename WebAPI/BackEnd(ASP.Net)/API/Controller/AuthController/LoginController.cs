@@ -9,6 +9,7 @@ using Application.Features.Authentication.Login.Handler;
 using Application.Interfaces.Logging;
 using API.Middlewares.Extentions;
 using Domain.Enums;
+using Domain.Entities.Identity;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.AspNetCore.RateLimiting;
@@ -73,6 +74,8 @@ public class LoginController : ControllerBase
 		catch (Exception ex)
 		{
 			await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            if (ex is AccountPendingApprovalException)
+                return Redirect($"{frontendBaseUrl}/#/login?errorCode={AccountPendingApprovalException.Code}");
 			return Redirect($"{frontendBaseUrl}/#/login?error={Uri.EscapeDataString(ex.Message)}");
 		}
 	}
@@ -83,10 +86,15 @@ public class LoginController : ControllerBase
 
 		// 1. Gói dữ liệu vào Command và bắn qua MediatR xuống tầng Application xử lý
 		var command = new LoginCommand(request);
-		var loginResult = await _mediator.Send(command, cancellationToken); // Trả về LoginResponseDTO
-
-		// 2. Trả thẳng cục dữ liệu JSON về cho Axios của React nhận lấy
-		return Ok(loginResult);
+        try
+        {
+            var loginResult = await _mediator.Send(command, cancellationToken);
+            return Ok(loginResult);
+        }
+        catch (AccountPendingApprovalException ex)
+        {
+            return StatusCode(403, new { code = AccountPendingApprovalException.Code, message = ex.Message });
+        }
 	}
 
 	

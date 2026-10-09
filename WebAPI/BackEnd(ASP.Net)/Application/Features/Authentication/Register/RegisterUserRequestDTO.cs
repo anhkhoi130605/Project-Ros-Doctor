@@ -19,5 +19,7 @@ namespace Application.DTOs.Authentication.Register
 	    public Gender? Gender { get; set; }
 	    public DateTime? DateOfBirth { get; set; }
 	    public string? Bio { get; set; }
+
+        public string Role { get; set; } = "User";
 	}
 }
