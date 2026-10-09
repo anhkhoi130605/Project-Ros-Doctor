@@ -41,7 +41,9 @@ namespace Application.Features.Authentication.Login.Handler
 				throw new ArgumentException("Tài khoản hoặc mật khẩu không chính xác.");
 			}
 
-            // Bước C: Đúng tài khoản mật khẩu -> Gọi Service để sinh chuỗi ký số JWT Access Token
+            Domain.Entities.Identity.AccountRegistrationPolicy.EnsureCanSignIn(user);
+
+            // Bước C: Đúng tài khoản mật khẩu và đã được kích hoạt -> sinh JWT
             // IJWTTokenGenerator now accepts string role names
 			var roles = new[] { user.Role?.RoleName.ToString() ?? string.Empty };
 			var accessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, roles);

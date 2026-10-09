@@ -23,7 +23,7 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 		public async Task<List<MemberDto>> Handle(GetMembersQuery request, CancellationToken cancellationToken)
 		{
 			// 1. Lấy danh sách toàn bộ người dùng
-			var users = await _unitOfWork.User.GetAllAsync();
+			var users = await _unitOfWork.User.GetAllAsync(u => u.DeletedAt == null, cancellationToken: cancellationToken);
 
 			// 2. Lấy danh sách Role để map RoleName tương ứng
 			var roles = await _unitOfWork.Roles.GetAllAsync();
@@ -68,6 +68,10 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 				{
 					statusText = "Banned";
 				}
+                else if (user.Status == UserStatusEnum.PendingApproval)
+                {
+                    statusText = "PendingApproval";
+                }
 				else if ((nowUtc - lastActiveTime).TotalMinutes <= 20)
 				{
 					statusText = "Online";
@@ -88,6 +92,7 @@ namespace Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDat
 					Email = user.Email,
 					Role = roleName,
 					Status = statusText,
+                    AccountStatus = (user.Status ?? UserStatusEnum.Active).ToString(),
 					AvatarUrl = user.AvatarUrl,
 					Phone = user.Phone,
 					LastActiveAt = lastActiveTime,

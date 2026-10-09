@@ -8,6 +8,11 @@ namespace Application.Features.Authentication.Register.Validattion
 	{
 		public RegisterUserRequestDTOValidator()
 		{
+            RuleFor(x => x.Role)
+                .Must(role => string.Equals(role, "User", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(role, "Engineer", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(role, "Engineering", StringComparison.OrdinalIgnoreCase))
+                .WithMessage("Chỉ được đăng ký dưới dạng User hoặc Engineer.");
         RuleFor(x => x.Password)
 				.NotEmpty().WithMessage("Mật khẩu là bắt buộc.")
 				.MinimumLength(6).WithMessage("Mật khẩu phải có ít nhất 6 ký tự.");

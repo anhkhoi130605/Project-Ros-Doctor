@@ -30,7 +30,8 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 	{
         // 1. Lấy dữ liệu từ DTO
         var dto = request.Request;
-		var email = dto.Email;
+        var requestedRole = Domain.Entities.Identity.AccountRegistrationPolicy.ParseRole(dto.Role);
+		var email = dto.Email?.Trim();
 		var name = dto.FullName;
 		if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(dto.Password))
 		{
@@ -51,10 +52,10 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 			}
 
 			// 3. Nếu chưa có -> Tiến hành tạo User mới hoàn toàn (Đăng ký thành công)
-			var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == RoleEnum.User, null, cancellationToken);
+			var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == requestedRole, null, cancellationToken);
 			if (roleEntity == null)
 			{
-				roleEntity = new DomainRole { RoleName = RoleEnum.User };
+				roleEntity = new DomainRole { RoleName = requestedRole };
 				await _unitOfWork.Roles.CreateAsync(roleEntity, cancellationToken);
 				await _unitOfWork.SaveChangesAsync(cancellationToken);
 			}
@@ -64,13 +65,13 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 				Email = email,
 				FullName = name ?? string.Empty,
 				PasswordHash = securedPassword,
+				// Chỉ gán khóa ngoại: Role từ GetAsync là detached, gắn navigation sẽ khiến EF thêm lại Role đã tồn tại.
 				RoleId = roleEntity.Id,
-				Role = roleEntity,
 				Phone = dto.Phone,
 				Gender = dto.Gender,
 				DateOfBirth = dto.DateOfBirth,
 				Bio = dto.Bio,
-				Status = UserStatusEnum.Active,
+				Status = Domain.Entities.Identity.AccountRegistrationPolicy.InitialStatus(requestedRole),
 				IsBanned = false,
 			};
 
@@ -82,20 +83,26 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 				UserActionType.Register,
 				targetId: newUser.Id,
 				targetType: TargetType.User,
-				description: "User registered a new account",
+				description: requestedRole == RoleEnum.Engineering
+                    ? "Engineer registered an account awaiting admin approval"
+                    : "User registered a new account",
 				requestPath: "/api/auth/register",
 				httpMethod: "POST",
 				userName: newUser.FullName ?? newUser.Email,
 				email: newUser.Email);
 
-			// 4. Sinh Token JWT lập tức để người dùng đăng ký xong là tự động vào app luôn
+			// Chỉ User được nhận token ngay. Engineer chờ Admin duyệt ở server.
 			var roleName = roleEntity.RoleName?.ToString() ?? RoleEnum.User.ToString();
-			var accessToken = _jwtTokenGenerator.GenerateToken(newUser.Id, newUser.Email, new List<string> { roleName });
+            var requiresApproval = newUser.Status == UserStatusEnum.PendingApproval;
+			var accessToken = requiresApproval ? null
+                : _jwtTokenGenerator.GenerateToken(newUser.Id, newUser.Email, new List<string> { roleName });
 
 			return new RegisterResponse
 			{
 				AccessToken = accessToken,
-				User = new RegisterUserRequestDTO { Email = newUser.Email, FullName = newUser.FullName }
+                UserId = newUser.Id,
+                RequiresApproval = requiresApproval,
+				User = new RegisterUserRequestDTO { Email = newUser.Email, FullName = newUser.FullName, Role = roleName }
 			};
 		}
     }

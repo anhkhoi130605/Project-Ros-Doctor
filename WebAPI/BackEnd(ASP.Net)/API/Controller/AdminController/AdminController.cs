@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using API.Controller.Common;
 using Application.Features.Admin.ManageUser.ReadDataUser.QueriesAdminReadDataUser;
 using Application.Features.Admin.ManageUser.UpdateUserRole;
+using Application.Features.Admin.ManageUser.ApproveEngineer;
+using Application.Features.Admin.ManageUser.DeleteMember;
 using Domain.Enums;
 using static Domain.Enums.UserEnum;
 
@@ -46,6 +48,27 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 			return Ok(result);
 		}
 
+        [HttpDelete("members/{id}")]
+        public async Task<IActionResult> DeleteMember(string id, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(CurrentUserId)) return Unauthorized();
+            await _mediator.Send(new DeleteMemberCommand(id, CurrentUserId), cancellationToken);
+            await LogUserActivity(UserActionType.DeleteUser, targetId: id,
+                targetType: TargetType.User, description: "Đã xóa thành viên khỏi hệ thống (xóa mềm).");
+            return Ok(new { deleted = true, id, message = "Đã xóa tài khoản khỏi hệ thống." });
+        }
+
+        [HttpPost("members/{id}/approve-engineer")]
+        public async Task<IActionResult> ApproveEngineer(string id, CancellationToken cancellationToken)
+        {
+            await _mediator.Send(new ApproveEngineerCommand(id), cancellationToken);
+            // Approval is already persisted; this action uses an audit log and the frontend toast,
+            // not the optional Notification persistence model.
+            await LogUserActivity(UserActionType.AssignRole, targetId: id,
+                targetType: TargetType.User, description: "Đã duyệt tài khoản Engineer.");
+            return Ok(new { message = "Đã duyệt tài khoản Engineer.", accountStatus = "Active" });
+        }
+
 		[HttpPut("members/{id}/role")]
 		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin")]
 		public async Task<IActionResult> UpdateMemberRole(string id, [FromBody] UpdateUserRoleRequestDto request)
@@ -55,7 +78,7 @@ namespace API.Controller.RoleForUser.InClubController.AdminController
 				return BadRequest(new { message = "Vai trò mới không được để trống." });
 			}
 
-			if (!Enum.TryParse<RoleEnum>(request.Role, true, out var parsedRole))
+			if (!Enum.TryParse<RoleEnum>(request.Role, true, out var parsedRole) || !Enum.IsDefined(parsedRole))
 			{
 				return BadRequest(new { message = $"Vai trò [{request.Role}] không hợp lệ." });
 			}
