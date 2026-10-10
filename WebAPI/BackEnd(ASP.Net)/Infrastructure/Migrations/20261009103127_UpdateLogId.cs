@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,35 +11,10 @@ namespace Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ai_usage_logs_analysis_sessions_session_id",
-                table: "ai_usage_logs");
+            // Table, index, FK, LogId column already handled by previous partial applies.
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_ai_usage_logs",
-                table: "ai_usage_logs");
-
-            migrationBuilder.RenameTable(
-                name: "ai_usage_logs",
-                newName: "llm_usage_ledger");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_ai_usage_logs_session_id",
-                table: "llm_usage_ledger",
-                newName: "IX_llm_usage_ledger_session_id");
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "LogId",
-                table: "UserActivityLogs",
-                type: "char(36)",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"),
-                collation: "ascii_general_ci");
-
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_llm_usage_ledger",
-                table: "llm_usage_ledger",
-                column: "Id");
+            // Generate unique UUIDs for existing rows (all have default 00000000-...)
+            migrationBuilder.Sql("UPDATE `UserActivityLogs` SET `LogId` = UUID() WHERE `LogId` = '00000000-0000-0000-0000-000000000000';");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserActivityLogs_LogId",
@@ -47,6 +22,7 @@ namespace Infrastructure.Migrations
                 column: "LogId",
                 unique: true);
 
+            // Add missing indexes
             migrationBuilder.CreateIndex(
                 name: "IX_rosbags_CreatedAt",
                 table: "rosbags",
@@ -96,14 +72,6 @@ namespace Infrastructure.Migrations
                 name: "IX_llm_usage_ledger_CreatedAt",
                 table: "llm_usage_ledger",
                 column: "CreatedAt");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_llm_usage_ledger_analysis_sessions_session_id",
-                table: "llm_usage_ledger",
-                column: "session_id",
-                principalTable: "analysis_sessions",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
@@ -153,9 +121,7 @@ namespace Infrastructure.Migrations
                 name: "IX_analysis_sessions_started_at",
                 table: "analysis_sessions");
 
-            migrationBuilder.DropPrimaryKey(
-                name: "PK_llm_usage_ledger",
-                table: "llm_usage_ledger");
+            migrationBuilder.Sql("ALTER TABLE `llm_usage_ledger` DROP PRIMARY KEY;");
 
             migrationBuilder.DropIndex(
                 name: "IX_llm_usage_ledger_CreatedAt",
@@ -174,10 +140,7 @@ namespace Infrastructure.Migrations
                 table: "ai_usage_logs",
                 newName: "IX_ai_usage_logs_session_id");
 
-            migrationBuilder.AddPrimaryKey(
-                name: "PK_ai_usage_logs",
-                table: "ai_usage_logs",
-                column: "Id");
+            migrationBuilder.Sql("ALTER TABLE `ai_usage_logs` ADD PRIMARY KEY (`Id`);");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_ai_usage_logs_analysis_sessions_session_id",

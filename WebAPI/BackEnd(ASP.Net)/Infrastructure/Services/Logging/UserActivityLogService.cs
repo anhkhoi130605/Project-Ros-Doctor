@@ -33,8 +33,6 @@ namespace Infrastructure.Services.Logging
                 request.UserId, request.ActionType, request.TargetType, request.TargetId, request.Description, request.RequestPath);
 
             // Ghi vào hàng đợi bất đồng bộ Channel<T>, không block HTTP request và được xử lý tuần tự/an toàn bởi BackgroundService
-            _queue.EnqueueAsync(request);
-
 			await _queue.EnqueueAsync(request);
 		}
 
