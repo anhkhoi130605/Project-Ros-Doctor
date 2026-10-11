@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Ensure .env values take precedence over system environment variables
@@ -49,6 +49,21 @@ class Settings(BaseSettings):
     rag_max_documents_per_collection: int = Field(default=5000, ge=1, le=50000)
     rag_chunk_size: int = Field(default=1200, ge=200, le=8000)
     rag_chunk_overlap: int = Field(default=300, ge=0, le=1000)
+    rag_chunk_unit: Literal["tokens", "characters"] = "tokens"
+    rag_token_encoding: str = "cl100k_base"
+    rag_source_namespace: str = Field(default="ctrlshiftn", min_length=1)
+    # Set from the embedding provider contract; independent of retrieval chunk size.
+    rag_embedding_max_tokens: int | None = Field(default=None, ge=1)
+
+    @field_validator("rag_embedding_max_tokens", mode="before")
+    @classmethod
+    def validate_embedding_limit(cls, value):
+        # Environment variables are strings; accept decimal integer syntax only.
+        if isinstance(value, str) and value.isascii() and value.isdecimal():
+            value = int(value)
+        if value is not None and (isinstance(value, bool) or not isinstance(value, int) or value <= 0):
+            raise ValueError("rag_embedding_max_tokens must be a positive integer or None")
+        return value
 
 
 @lru_cache
@@ -76,4 +91,3 @@ def update_env_setting(key: str, value: str) -> None:
     env_path.write_text(content, encoding="utf-8")
     load_dotenv(override=True)
     get_settings.cache_clear()
-

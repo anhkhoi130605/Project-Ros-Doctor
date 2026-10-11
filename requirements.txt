@@ -11,6 +11,8 @@ langchain>=0.3.0
 langchain-openai>=0.3.0
 langchain-chroma>=0.2.0
 langchain-text-splitters>=0.3.0
+tiktoken>=0.8.0
+filelock>=3.16.0
 langgraph>=0.2.0
 
 # Database (uncomment as needed)

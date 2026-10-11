@@ -6,13 +6,14 @@ from typing import Any
 from langchain_core.documents import Document
 from pymongo import MongoClient
 
+from src.agents.chunking.source import make_source_id, source_text
 from src.agents.chunking.strategies import (
     MarkdownHeaderChunker,
     StandardTextChunker,
-    generate_document_hash_id,
 )
 from src.agents.embedding.models import get_embedding_model
 from src.agents.ingestion.loaders import MarkdownPlaybookLoader
+from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.stores import get_chroma_store
 from src.config import Settings, get_settings
 
@@ -49,7 +50,7 @@ class MongoRAGPipeline:
         self._ensure_index()
 
     def _load_markdown_documents(self) -> list[Document]:
-        loader = MarkdownPlaybookLoader()
+        loader = MarkdownPlaybookLoader(namespace=self._settings.rag_source_namespace)
         return loader.load()
 
     def _load_mongo_documents(self) -> list[Document]:
@@ -71,16 +72,20 @@ class MongoRAGPipeline:
                             "source_type": "mongodb",
                             "source_collection": collection_name,
                             "source_document_id": document_id,
+                            "source_id": make_source_id(
+                                "mongo",
+                                self._settings.rag_source_namespace,
+                                self._settings.mongo_database_name,
+                                collection_name,
+                                document_id,
+                            ),
                         },
                     )
                 )
         return documents
 
     def _ensure_index(self) -> None:
-        """Populate Chroma vector store with Playbooks and MongoDB docs if currently empty."""
-        if self._vector_store._collection.count() > 0:
-            return
-
+        """Reconcile loaded sources, including changed content and chunking profiles."""
         documents_to_add: list[Document] = []
 
         # 1. Ingest Markdown Playbooks
@@ -97,11 +102,7 @@ class MongoRAGPipeline:
             mongo_chunks = text_chunker.split_documents(mongo_docs)
             documents_to_add.extend(mongo_chunks)
 
-        if not documents_to_add:
-            return
-
-        ids = [generate_document_hash_id(doc, idx) for idx, doc in enumerate(documents_to_add)]
-        self._vector_store.add_documents(documents_to_add, ids=ids)
+        sync_source_chunks(self._vector_store, [*md_docs, *mongo_docs], documents_to_add)
 
     def retrieve(
         self,
@@ -129,13 +130,14 @@ class MongoRAGPipeline:
             sources.append(source_info)
 
             # Construct clean citation header
-            source_label = meta.get("source_file") or meta.get("source_collection") or meta.get("source_type", "knowledge")
+            source_label = (
+                meta.get("source_file") or meta.get("source_collection") or meta.get("source_type", "knowledge")
+            )
             section_label = meta.get("section") or meta.get("title") or ""
             section_suffix = f" > {section_label}" if section_label else ""
 
             context_parts.append(
-                f"[Source: {source_label}{section_suffix} | Relevance: {source_info['score']}]\n"
-                f"{document.page_content}"
+                f"[Source: {source_label}{section_suffix} | Relevance: {source_info['score']}]\n{source_text(document)}"
             )
 
         return "\n\n".join(context_parts), sources
