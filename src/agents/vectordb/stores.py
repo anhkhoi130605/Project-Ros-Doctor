@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
 from src.agents.chunking.strategies import CHUNKING_VERSION
-from src.agents.embedding.models import get_embedding_model
+from src.agents.embedding.models import ResilientEmbeddingModel, get_embedding_model
 from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.revisions import RevisionedChroma
 from src.config import Settings, get_settings
@@ -20,6 +20,7 @@ def create_chroma_store(
     persist_directory: str | None = None,
     embedding_function: Embeddings | None = None,
     settings: Settings | None = None,
+    embedding_profile: str | None = None,
 ) -> RevisionedChroma:
     """Create a persistent Chroma store with guarded revision publication."""
     active_settings = settings or get_settings()
@@ -29,23 +30,52 @@ def create_chroma_store(
     if not resolved_collection.endswith(suffix):
         resolved_collection += suffix
     resolved_persist_dir = persist_directory or active_settings.chroma_persist_dir
-    resolved_embeddings = embedding_function or get_embedding_model(active_settings)
+    resolved_embeddings = embedding_function if embedding_function is not None else get_embedding_model(active_settings)
+    owned_embeddings = resolved_embeddings if embedding_function is None else None
 
-    raw = Chroma(
-        collection_name=resolved_collection,
-        embedding_function=resolved_embeddings,
-        persist_directory=resolved_persist_dir,
-    )
-    manifest_name = hashlib.sha256(resolved_collection.encode()).hexdigest() + ".json"
-    return RevisionedChroma(raw, Path(resolved_persist_dir).resolve() / "revision_manifests" / manifest_name)
+    try:
+        if isinstance(resolved_embeddings, ResilientEmbeddingModel):
+            profile_id = resolved_embeddings.embedding_profile_id
+            if embedding_profile is not None and embedding_profile != profile_id:
+                raise ValueError("embedding_profile does not match the supplied embedding model")
+        else:
+            if not isinstance(embedding_profile, str) or not embedding_profile.strip():
+                raise ValueError("Custom embeddings require an explicit stable embedding_profile")
+            profile_id = hashlib.sha256(embedding_profile.encode()).hexdigest()
+
+        # Separate both vector spaces and namespaces. Existing collections are retained
+        # for rollback; the pipeline builds the new index from authoritative sources.
+        index_id = hashlib.sha256(f"{active_settings.rag_source_namespace}:{profile_id}".encode()).hexdigest()
+        resolved_collection += f"_emb_{index_id}"
+        raw = Chroma(
+            collection_name=resolved_collection,
+            embedding_function=resolved_embeddings,
+            persist_directory=resolved_persist_dir,
+            collection_metadata={"embedding_profile": profile_id},
+        )
+        if (raw._collection.metadata or {}).get("embedding_profile") != profile_id:
+            raise ValueError("Collection embedding profile mismatch; rebuild into a new collection")
+        manifest_name = hashlib.sha256(resolved_collection.encode()).hexdigest() + ".json"
+        return RevisionedChroma(
+            raw,
+            Path(resolved_persist_dir).resolve() / "revision_manifests" / manifest_name,
+            owned_embeddings=owned_embeddings,
+        )
+    except BaseException:
+        if isinstance(owned_embeddings, ResilientEmbeddingModel):
+            owned_embeddings.close()
+        raise
 
 
 def get_chroma_store(
     settings: Settings | None = None,
     embedding_function: Embeddings | None = None,
+    embedding_profile: str | None = None,
 ) -> RevisionedChroma:
     """Get the configured Chroma vector store."""
-    return create_chroma_store(settings=settings, embedding_function=embedding_function)
+    return create_chroma_store(
+        settings=settings, embedding_function=embedding_function, embedding_profile=embedding_profile
+    )
 
 
 class ChromaVectorStore:
@@ -56,8 +86,19 @@ class ChromaVectorStore:
         store: Chroma | RevisionedChroma | None = None,
         settings: Settings | None = None,
         embedding_function: Embeddings | None = None,
+        embedding_profile: str | None = None,
     ) -> None:
-        self._store = store or get_chroma_store(settings=settings, embedding_function=embedding_function)
+        self._store = store or get_chroma_store(
+            settings=settings, embedding_function=embedding_function, embedding_profile=embedding_profile
+        )
+
+    def close(self) -> None:
+        if isinstance(self._store, RevisionedChroma):
+            self._store.close()
+
+    async def aclose(self) -> None:
+        if isinstance(self._store, RevisionedChroma):
+            await self._store.aclose()
 
     @property
     def store(self) -> Chroma | RevisionedChroma:

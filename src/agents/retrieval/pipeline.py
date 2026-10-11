@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from functools import lru_cache
+import threading
 from typing import Any
 
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from pymongo import MongoClient
 
 from src.agents.chunking.source import make_source_id, source_text
@@ -11,7 +12,7 @@ from src.agents.chunking.strategies import (
     MarkdownHeaderChunker,
     StandardTextChunker,
 )
-from src.agents.embedding.models import get_embedding_model
+from src.agents.embedding.models import ResilientEmbeddingModel, get_embedding_model
 from src.agents.ingestion.loaders import MarkdownPlaybookLoader
 from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.stores import get_chroma_store
@@ -21,8 +22,13 @@ from src.config import Settings, get_settings
 class MongoRAGPipeline:
     """Unified RAG pipeline combining ROS2 Markdown playbooks and MongoDB benchmark data."""
 
-    def __init__(self, settings: Settings) -> None:
-        if not settings.openai_api_key:
+    def __init__(
+        self,
+        settings: Settings,
+        embeddings: Embeddings | None = None,
+        embedding_profile: str | None = None,
+    ) -> None:
+        if embeddings is None and not settings.openai_api_key:
             raise RuntimeError("OPENAI_API_KEY chưa được cấu hình")
 
         self._settings = settings
@@ -42,12 +48,20 @@ class MongoRAGPipeline:
         else:
             self._database = None
 
-        self._embeddings = get_embedding_model(settings)
-        self._vector_store = get_chroma_store(
-            settings=settings,
-            embedding_function=self._embeddings,
-        )
-        self._ensure_index()
+        self._owns_embeddings = embeddings is None
+        self._embeddings = embeddings
+        try:
+            if self._embeddings is None:
+                self._embeddings = get_embedding_model(settings)
+            self._vector_store = get_chroma_store(
+                settings=settings,
+                embedding_function=self._embeddings,
+                embedding_profile=embedding_profile,
+            )
+            self._ensure_index()
+        except BaseException:
+            self.close()
+            raise
 
     def _load_markdown_documents(self) -> list[Document]:
         loader = MarkdownPlaybookLoader(namespace=self._settings.rag_source_namespace)
@@ -143,14 +157,67 @@ class MongoRAGPipeline:
         return "\n\n".join(context_parts), sources
 
     def close(self) -> None:
-        if self._client is not None:
-            self._client.close()
+        try:
+            if self._owns_embeddings and isinstance(self._embeddings, ResilientEmbeddingModel):
+                self._embeddings.close()
+        finally:
+            if self._client is not None:
+                self._client.close()
+
+    async def aclose(self) -> None:
+        try:
+            if self._owns_embeddings and isinstance(self._embeddings, ResilientEmbeddingModel):
+                await self._embeddings.aclose()
+        finally:
+            if self._client is not None:
+                self._client.close()
 
 
 # Backward-compatible alias
 UnifiedRAGPipeline = MongoRAGPipeline
 
 
-@lru_cache(maxsize=1)
+_PIPELINE_LOCK = threading.Lock()
+_PIPELINE: MongoRAGPipeline | None = None
+_PIPELINE_STOPPED = False
+
+
+def start_rag_pipeline() -> None:
+    """Allow lazy construction for a new application lifespan."""
+    global _PIPELINE_STOPPED
+    with _PIPELINE_LOCK:
+        if _PIPELINE is not None:
+            raise RuntimeError("RAG pipeline must be shut down before restarting")
+        _PIPELINE_STOPPED = False
+
+
 def get_rag_pipeline() -> MongoRAGPipeline:
-    return MongoRAGPipeline(get_settings())
+    """Borrow the application-owned embedding instance; serialize initial indexing."""
+    global _PIPELINE
+    with _PIPELINE_LOCK:
+        if _PIPELINE_STOPPED:
+            raise RuntimeError("RAG pipeline is stopped")
+        if _PIPELINE is None:
+            _PIPELINE = MongoRAGPipeline(get_settings(), embeddings=get_embedding_model())
+        return _PIPELINE
+
+
+async def shutdown_rag_pipeline() -> None:
+    """Release the cached pipeline without constructing it during shutdown."""
+    global _PIPELINE, _PIPELINE_STOPPED
+    # Construction includes synchronous indexing and can hold this lock for a while.
+    # Do not block the event loop while waiting for it.
+    import asyncio
+
+    def stop():
+        global _PIPELINE_STOPPED
+        with _PIPELINE_LOCK:
+            _PIPELINE_STOPPED = True
+            return _PIPELINE
+
+    instance = await asyncio.to_thread(stop)
+    if instance is not None:
+        await instance.aclose()
+        with _PIPELINE_LOCK:
+            if _PIPELINE is instance:
+                _PIPELINE = None

@@ -3,6 +3,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from src.agents.embedding import shutdown_embedding_model
+from src.agents.embedding.models import reset_global_embedding_manager
+from src.agents.retrieval.pipeline import shutdown_rag_pipeline, start_rag_pipeline
 from src.api.routes import router
 from src.config import get_settings
 
@@ -10,9 +13,17 @@ from src.config import get_settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
+    reset_global_embedding_manager()
+    start_rag_pipeline()
     print(f"Starting {settings.app_name} in {settings.app_env} mode")
-    yield
-    print("Shutting down...")
+    try:
+        yield
+    finally:
+        print("Shutting down...")
+        try:
+            await shutdown_rag_pipeline()
+        finally:
+            await shutdown_embedding_model()
 
 
 app = FastAPI(

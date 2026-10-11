@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     embedding_model: str = "text-embedding-3-small"
+    embedding_request_timeout: float = Field(default=30.0, ge=1.0, le=300.0)
+    embedding_max_retries: int = Field(default=3, ge=0, le=10)
+    embedding_chunk_size: int = Field(default=256, ge=1, le=2048)
+    embedding_dimensions: int | None = Field(default=None, ge=1, le=3072)
+    embedding_max_concurrency: int = Field(default=10, ge=1, le=100)
+    embedding_cache_enabled: bool = True
+    embedding_cache_max_size: int = Field(default=2000, ge=100, le=50000)
 
     # Database
     database_url: str = "sqlite:///./data/app.db"
