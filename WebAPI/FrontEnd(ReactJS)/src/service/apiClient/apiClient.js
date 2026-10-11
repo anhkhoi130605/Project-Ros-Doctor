@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
+const API_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? 'https://localhost:7149' : '');
 
 // In-memory cache & In-flight request deduplication
 const apiCache = new Map();
