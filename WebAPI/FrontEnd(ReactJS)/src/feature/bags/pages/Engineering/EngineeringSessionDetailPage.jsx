@@ -390,7 +390,7 @@ export default function EngineeringSessionDetailPage() {
           className={activeTab === 'timeline' ? 'active' : ''}
           style={{ cursor: 'pointer' }}
         >
-          Topics & Timeline
+          Topic & Dòng thời gian
         </a>
         <a
           href="#issues"

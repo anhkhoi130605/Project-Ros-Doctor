@@ -184,24 +184,26 @@ def main():
     print("\nPreparing BENCHMARK-16-CURATED...")
     suite_16 = build_suite_16()
     if suite_16:
-        result = col.replace_one(
+        result = col.update_one(
             {"code": suite_16["code"]},
-            suite_16,
+            {"$setOnInsert": {**suite_16, "is_published": True, "version": 1,
+                              "updated_at": suite_16["created_at"], "change_request": None}},
             upsert=True,
         )
-        status = "Updated" if result.matched_count > 0 else "Inserted"
+        status = "Kept existing (use review workflow to update)" if result.matched_count > 0 else "Inserted"
         print(f"[{status}] BENCHMARK-16-CURATED with {suite_16['total_cases']} test cases.")
 
     # 2. Suite 100
     print("\nPreparing BENCHMARK-100-SCENARIOS...")
     suite_100 = build_suite_100()
     if suite_100:
-        result = col.replace_one(
+        result = col.update_one(
             {"code": suite_100["code"]},
-            suite_100,
+            {"$setOnInsert": {**suite_100, "is_published": True, "version": 1,
+                              "updated_at": suite_100["created_at"], "change_request": None}},
             upsert=True,
         )
-        status = "Updated" if result.matched_count > 0 else "Inserted"
+        status = "Kept existing (use review workflow to update)" if result.matched_count > 0 else "Inserted"
         print(f"[{status}] BENCHMARK-100-SCENARIOS with {suite_100['total_cases']} test cases.")
 
     # Verify counts

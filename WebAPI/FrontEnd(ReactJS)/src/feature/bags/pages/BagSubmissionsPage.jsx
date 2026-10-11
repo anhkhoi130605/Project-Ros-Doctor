@@ -148,14 +148,14 @@ export default function BagSubmissionsPage() {
           <div className="bs-table-scroll" role="region" aria-label={txt('Danh sách file gửi duyệt', 'Submitted files')} tabIndex={0}><table className="bs-table">
             <thead><tr><th scope="col">{txt('File / mô tả', 'File / description')}</th><th scope="col">{txt('Trạng thái', 'Status')}</th><th scope="col">{txt('Kết quả duyệt', 'Review decision')}</th><th scope="col">{txt('Thao tác', 'Actions')}</th></tr></thead>
             <tbody>{visible.map(entry => <React.Fragment key={entry.id}><tr>
-              <td><div className="bs-file-heading"><span className="bs-row-icon"><Icon name="file-text" size={20} /></span><div><strong className="bs-filename">{entry.fileName}</strong><div className="bs-metadata">{(entry.sizeBytes / 1024 / 1024).toFixed(2)} MB <span>·</span> {entry.topicCount} topics</div></div></div>
+              <td><div className="bs-file-heading"><span className="bs-row-icon"><Icon name="file-text" size={20} /></span><div><strong className="bs-filename" translate="no">{entry.fileName}</strong><div className="bs-metadata">{(entry.sizeBytes / 1024 / 1024).toFixed(2)} MB <span>·</span> {entry.topicCount} topics</div></div></div>
                 <div className="bs-file-details"><time className="bs-muted">{date(entry.createdAt)}</time>
-                  {entry.description && <p className="bs-description">{entry.description}</p>}
+                  {entry.description && <p className="bs-description" translate="no">{entry.description}</p>}
                   {canReview && <small className="bs-muted">{txt('Người gửi: ', 'Submitted by: ')}{entry.userId}</small>}
                 </div>
               </td>
               <td><span className={`bs-status bs-tone-${entry.reviewStatus}`}><Icon name={statusIcons[entry.reviewStatus] || 'info'} size={14} />{busy === entry.id ? txt('Đang lưu…', 'Saving…') : statuses[entry.reviewStatus] || entry.reviewStatus}</span></td>
-              <td><p className="bs-review-note">{entry.reviewNote || (entry.reviewStatus === 'Submitted' ? txt('Chưa có quyết định', 'No decision yet') : '—')}</p>
+              <td><p className="bs-review-note" data-i18n-ignore="true">{entry.reviewNote || (entry.reviewStatus === 'Submitted' ? txt('Chưa có quyết định', 'No decision yet') : '—')}</p>
                 {entry.reviewedAt && <time className="bs-muted">{date(entry.reviewedAt)}</time>}
               </td>
               <td><div className="bs-row-actions">

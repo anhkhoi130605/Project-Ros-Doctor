@@ -971,7 +971,7 @@ export default function AiConfigPage() {
           </div>
           <div className="ai-status-card-value">{aiConfig.dailyCalls} lượt/ngày</div>
           <div className="ai-status-card-sub">
-            <span>Max tokens: {aiConfig.maxTokens}</span>
+            <span>{isEnglish ? 'Max tokens:' : 'Tokens tối đa:'} {aiConfig.maxTokens}</span>
             <span>RPM: {aiConfig.rpm}</span>
           </div>
         </div>
@@ -1689,7 +1689,7 @@ export default function AiConfigPage() {
                   <div className="form-field-group">
                     <label className="form-field-label">
                       Giới hạn Token tối đa cho chức năng này
-                      <span className="form-field-help">tokens/call</span>
+                      <span className="form-field-help">{isEnglish ? 'tokens/call' : 'tokens/lần gọi'}</span>
                     </label>
                     <input
                       type="number"
@@ -2025,7 +2025,7 @@ export default function AiConfigPage() {
             </span>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
-                Tổng tiêu thụ: <strong>{usageStats.totalTokens.toLocaleString()} tokens</strong> • Chi phí: <strong>${Number(usageStats.totalCostUsd || 0).toFixed(4)}</strong>
+                Tổng tiêu thụ: <strong>{usageStats.totalTokens.toLocaleString(isEnglish ? 'en-US' : 'vi-VN')} tokens</strong> • Chi phí: <strong>${Number(usageStats.totalCostUsd || 0).toFixed(4)}</strong>
               </span>
               <Button variant="secondary" icon="refresh-cw" onClick={() => loadDatabaseData(true)}>
                 Làm mới
@@ -2039,8 +2039,8 @@ export default function AiConfigPage() {
                 <tr>
                   <th>Mã Phiên / Log ID</th>
                   <th>Mô hình</th>
-                  <th>Prompt Tokens</th>
-                  <th>Completion Tokens</th>
+                      <th>{isEnglish ? 'Prompt tokens' : 'Tokens đầu vào'}</th>
+                      <th>{isEnglish ? 'Completion tokens' : 'Tokens đầu ra'}</th>
                   <th>Tổng Tokens</th>
                   <th>Độ trễ</th>
                   <th>Chi phí</th>
@@ -2057,11 +2057,11 @@ export default function AiConfigPage() {
                       <td>
                         <strong style={{ color: '#0f172a' }}>{log.modelName || aiConfig.modelName}</strong>
                       </td>
-                      <td>{(log.promptTokens || 0).toLocaleString()}</td>
-                      <td>{(log.completionTokens || 0).toLocaleString()}</td>
+                      <td>{(log.promptTokens || 0).toLocaleString(isEnglish ? 'en-US' : 'vi-VN')}</td>
+                      <td>{(log.completionTokens || 0).toLocaleString(isEnglish ? 'en-US' : 'vi-VN')}</td>
                       <td>
                         <strong style={{ color: '#0284c7' }}>
-                          {((log.promptTokens || 0) + (log.completionTokens || 0)).toLocaleString()}
+                          {((log.promptTokens || 0) + (log.completionTokens || 0)).toLocaleString(isEnglish ? 'en-US' : 'vi-VN')}
                         </strong>
                       </td>
                       <td>
@@ -2071,7 +2071,7 @@ export default function AiConfigPage() {
                       </td>
                       <td>${Number(log.costUsd || 0).toFixed(5)}</td>
                       <td style={{ color: 'var(--muted)' }}>
-                        {log.timestamp ? new Date(log.timestamp).toLocaleString('vi-VN') : 'Vừa xong'}
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString(isEnglish ? 'en-US' : 'vi-VN') : 'Vừa xong'}
                       </td>
                     </tr>
                   ))

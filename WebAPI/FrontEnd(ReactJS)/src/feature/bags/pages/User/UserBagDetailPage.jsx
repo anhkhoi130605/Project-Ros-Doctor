@@ -85,7 +85,7 @@ export default function UserBagDetailPage() {
       <div className="two-column">
         <Card title="Metadata bản ghi">
           <dl className="detail-list">
-            <dt>Storage ID</dt>
+            <dt>Mã lưu trữ</dt>
             <dd>{String(bag.format || '').toUpperCase() === 'MCAP' ? 'mcap' : 'sqlite3'}</dd>
             <dt>Thời điểm bắt đầu</dt>
             <dd>{metadata.startedAt}</dd>

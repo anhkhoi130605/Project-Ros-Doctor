@@ -376,7 +376,7 @@ export default function ChatPage() {
                 <div className="bubble-text">
                   {m.text ? (
                     <>
-                      {m.text}
+                      <span translate={m.isError ? undefined : 'no'}>{m.text}</span>
                       {m.isStreaming && <span className="streaming-cursor" />}
                     </>
                   ) : m.isStreaming ? (
@@ -435,19 +435,19 @@ export default function ChatPage() {
 
                           {f.evidence && (
                             <div style={{ fontSize: '12px', color: '#334155', backgroundColor: '#f8fafc', padding: '6px 8px', borderRadius: '4px', marginTop: '6px' }}>
-                              <strong>📊 Bằng chứng:</strong> {f.evidence}
+                              <strong>📊 Bằng chứng:</strong> <span translate="no">{f.evidence}</span>
                             </div>
                           )}
 
                           {f.root_cause && (
                             <div style={{ fontSize: '12px', color: '#334155', marginTop: '6px' }}>
-                              <strong>🔍 Nguyên nhân gốc (RCA):</strong> {f.root_cause}
+                              <strong>🔍 Nguyên nhân gốc (RCA):</strong> <span translate="no">{f.root_cause}</span>
                             </div>
                           )}
 
                           {f.recommended_action && (
                             <div style={{ fontSize: '12px', color: '#047857', backgroundColor: '#ecfdf5', padding: '6px 8px', borderRadius: '4px', marginTop: '6px' }}>
-                              <strong>🛠️ Khắc phục Playbook:</strong> {f.recommended_action}
+                              <strong>🛠️ Khắc phục Playbook:</strong> <span translate="no">{f.recommended_action}</span>
                             </div>
                           )}
 
