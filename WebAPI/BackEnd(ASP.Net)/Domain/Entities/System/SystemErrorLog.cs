@@ -1,6 +1,6 @@
 using System;
 using System.Net;
-using Domain.Entities.Config;
+using Domain.Common;
 
 namespace Domain.Entities.System
 {

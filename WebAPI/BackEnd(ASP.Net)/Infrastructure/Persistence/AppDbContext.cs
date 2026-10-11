@@ -50,6 +50,7 @@ public partial class AppDbContext : DbContext
 	public virtual DbSet<Domain.Entities.RosbagAnalysis.ReviewAuditLog> ReviewAuditLogs { get; set; }
 	public virtual DbSet<Domain.Entities.RosbagAnalysis.Report> Reports { get; set; }
 	public virtual DbSet<Domain.Entities.RosbagAnalysis.AiUsageLog> AiUsageLogs { get; set; }
+	public virtual DbSet<Domain.Entities.Notifications.Notification> Notifications { get; set; }
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -107,6 +108,7 @@ public partial class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.UserActivityLogConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.UserConfiguration.AccountPolicyConfiguration());
         modelBuilder.ApplyConfiguration(new Configurations.SystemConfiguration.SystemErrorLogConfiguration());
+        modelBuilder.ApplyConfiguration(new Configurations.SystemConfiguration.NotificationConfiguration());
 
         // Cấu hình nhóm Settings & AI
         modelBuilder.ApplyConfiguration(new Configurations.ConfigurationConfig.AiSettingConfiguration());

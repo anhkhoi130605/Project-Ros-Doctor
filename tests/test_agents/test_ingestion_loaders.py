@@ -1,6 +1,5 @@
 from pathlib import Path
 from unittest.mock import MagicMock
-import pytest
 
 from src.agents.ingestion.loaders import (
     MarkdownPlaybookLoader,

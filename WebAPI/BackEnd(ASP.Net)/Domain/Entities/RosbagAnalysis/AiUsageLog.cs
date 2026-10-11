@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Domain.Entities.Config;
+using Domain.Common;
 
 namespace Domain.Entities.RosbagAnalysis
 {

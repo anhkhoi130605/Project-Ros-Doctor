@@ -19,14 +19,21 @@ namespace Application.Features.Authentication.Login.Handler
 		private readonly IJWTTokenGenerator _jwtTokenGenerator;
 		private readonly IPasswordHasher passwordHasher;
 		private readonly IUserActivityLogService _userActivityLogService;
+		private readonly Domain.Entities.Identity.IAccountRegistrationPolicy _accountRegistrationPolicy;
 
 		// 1. Inject UnitOfWork (quản lý DB) và JwtTokenGenerator (tầng Infrastructure) vào qua Constructor
-		public LoginCommandHandler(IUnitOfWork unitOfWork, IJWTTokenGenerator jwtTokenGenerator, IPasswordHasher passwordHasher, IUserActivityLogService userActivityLogService)
+		public LoginCommandHandler(
+			IUnitOfWork unitOfWork,
+			IJWTTokenGenerator jwtTokenGenerator,
+			IPasswordHasher passwordHasher,
+			IUserActivityLogService userActivityLogService,
+			Domain.Entities.Identity.IAccountRegistrationPolicy accountRegistrationPolicy)
 		{
 			_unitOfWork = unitOfWork;
 			_jwtTokenGenerator = jwtTokenGenerator;
 			this.passwordHasher = passwordHasher;
 			_userActivityLogService = userActivityLogService;
+			_accountRegistrationPolicy = accountRegistrationPolicy;
 		}
 
 		// 2. Hàm Handle xử lý logic nghiệp vụ đăng nhập
@@ -41,7 +48,7 @@ namespace Application.Features.Authentication.Login.Handler
 				throw new ArgumentException("Tài khoản hoặc mật khẩu không chính xác.");
 			}
 
-            Domain.Entities.Identity.AccountRegistrationPolicy.EnsureCanSignIn(user);
+            _accountRegistrationPolicy.EnsureCanSignIn(user);
 
             // Bước C: Đúng tài khoản mật khẩu và đã được kích hoạt -> sinh JWT
             // IJWTTokenGenerator now accepts string role names

@@ -3,13 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from pathlib import Path
 import re
+from pathlib import Path
 from typing import Any
 
+import yaml
 from langchain_core.documents import Document
 from pymongo import MongoClient
-import yaml
 
 from src.agents.chunking.source import make_source_id
 from src.config import Settings, get_settings

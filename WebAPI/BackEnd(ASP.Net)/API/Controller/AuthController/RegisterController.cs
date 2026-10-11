@@ -21,11 +21,13 @@ public class RegisterController : ControllerBase
 {
 	private readonly IMediator _mediator;
 	private readonly IConfiguration _configuration;
+	private readonly IAccountRegistrationPolicy _accountRegistrationPolicy;
 
-	public RegisterController(IMediator mediator, IConfiguration configuration)
+	public RegisterController(IMediator mediator, IConfiguration configuration, IAccountRegistrationPolicy accountRegistrationPolicy)
 	{
 		_mediator = mediator;
 		_configuration = configuration;
+		_accountRegistrationPolicy = accountRegistrationPolicy;
 	}
 
 	// 1. Khi Frontend click, trình duyệt sẽ nhảy vào đây đầu tiên
@@ -33,7 +35,7 @@ public class RegisterController : ControllerBase
 	public IActionResult RegisterGoogle([FromQuery] string role = "User")
 	{
         RoleEnum registrationRole;
-        try { registrationRole = AccountRegistrationPolicy.ParseRole(role); }
+        try { registrationRole = _accountRegistrationPolicy.ParseRole(role); }
         catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
 		// Sau khi Google quét vân tay xong, nó sẽ bắt trình duyệt quay lại endpoint "google-response" ở dưới
         // Use explicit redirect path for register flow
@@ -61,7 +63,7 @@ public class RegisterController : ControllerBase
 			// 2. Bắn vào MediatR để xử lý logic (Lưu DB, Tạo User nếu chưa có, sinh mã JWT)
             var registrationRole = RoleEnum.User;
             if (authenticateResult.Properties?.Items.TryGetValue("registrationRole", out var selectedRole) == true)
-                registrationRole = AccountRegistrationPolicy.ParseRole(selectedRole);
+                registrationRole = _accountRegistrationPolicy.ParseRole(selectedRole);
 			var command = new GoogleLoginCommand(authenticateResult.Principal, registrationRole, IsRegistration: true);
 			var loginResult = await _mediator.Send(command); // loginResult này là LoginResponseDTO
 
