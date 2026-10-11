@@ -24,7 +24,6 @@ class RevisionedChroma:
     def __init__(self, store, manifest_path: str | Path):
         self._store = store
         self.manifest_path = Path(manifest_path)
-        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = FileLock(str(self.manifest_path) + ".lock")
 
     @property
