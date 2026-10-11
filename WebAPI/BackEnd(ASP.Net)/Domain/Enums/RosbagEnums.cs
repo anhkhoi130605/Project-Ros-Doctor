@@ -1,5 +1,13 @@
 namespace Domain.Enums
 {
+	public enum RosbagReviewStatus
+	{
+		Draft,
+		Submitted,
+		Approved,
+		Rejected
+	}
+
 	public enum RosbagFormat
 	{
 		MCAP,

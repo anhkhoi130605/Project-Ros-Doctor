@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Icon } from '../../../../../components/common/UIComponents';
 
 export default function DiagnosticChartsSection({
-  sessionsCount = 39,
-  bagsCount = 39,
-  highWarningsCount = 110,
-  pendingCount = 149,
+  sessionsCount = 0,
+  bagsCount = 0,
+  highWarningsCount = 0,
+  pendingCount = 0,
   topicStats = [],
   recentSessions = [],
 }) {
@@ -18,7 +18,7 @@ export default function DiagnosticChartsSection({
     {
       id: 'high',
       label: 'Cảnh báo mức cao',
-      value: highWarningsCount || 110,
+      value: highWarningsCount,
       color: '#ef4444',
       lightColor: '#fee2e2',
       desc: 'Cần đối chiếu bằng chứng ngay',
@@ -26,7 +26,7 @@ export default function DiagnosticChartsSection({
     {
       id: 'pending',
       label: 'Kết luận chờ duyệt',
-      value: pendingCount || 149,
+      value: pendingCount,
       color: '#f59e0b',
       lightColor: '#fef3c7',
       desc: 'Kỹ sư kiểm tra trước khi xuất',
@@ -34,7 +34,7 @@ export default function DiagnosticChartsSection({
     {
       id: 'sessions',
       label: 'Phiên hoạt động',
-      value: sessionsCount || 39,
+      value: sessionsCount,
       color: '#10b981',
       lightColor: '#d1fae5',
       desc: 'Tổng phiên ghi nhận',
@@ -42,7 +42,7 @@ export default function DiagnosticChartsSection({
     {
       id: 'bags',
       label: 'Rosbag đã phân tích',
-      value: bagsCount || 39,
+      value: bagsCount,
       color: '#3b82f6',
       lightColor: '#dbeafe',
       desc: 'Dữ liệu rosbag hoàn chỉnh',
@@ -70,29 +70,17 @@ export default function DiagnosticChartsSection({
   });
 
   // 2. Data cho Biểu đồ cột (Bar Chart) từ DB Telemetry thực tế
-  const topicData = topicStats.length > 0 ? topicStats : [
-    { name: '/tf', label: 'TF Frame', count: 48, rate: '50 Hz', color: '#3b82f6', note: 'Buffer timeout frame' },
-    { name: '/ouster/imu', label: 'Ouster IMU', count: 34, rate: '100 Hz', color: '#f59e0b', note: 'Bias drift gia tốc' },
-    { name: '/clock', label: 'Sim Clock', count: 18, rate: '100 Hz', color: '#10b981', note: 'Đồng bộ thời gian' },
-    { name: '/scan', label: 'LiDAR Scan', count: 14, rate: '30 Hz', color: '#ef4444', note: 'Dropout & Jitter' },
-    { name: '/odom', label: 'Odometry', count: 10, rate: '30 Hz', color: '#6366f1', note: 'Covariance lệch' },
-  ];
+  const topicData = topicStats;
 
   const sessionTrendData = recentSessions.length > 0
     ? recentSessions.map((s, idx) => ({
         name: `#${s.id.replace('sess-', '').slice(0, 6)}`,
         label: s.bagName ? s.bagName.split('.')[0].slice(0, 14) : `Phiên ${idx + 1}`,
-        count: s.topicsCount || 2,
+        count: s.topicsCount ?? 0,
         warnings: s.warningsCount || 0,
         color: (s.warningsCount || 0) > 0 ? '#ef4444' : '#10b981',
       }))
-    : [
-        { name: '#5d17ea', label: 'scen_03_accel', count: 2, warnings: 4, color: '#ef4444' },
-        { name: '#ba2103', label: 'scen_01_frame', count: 2, warnings: 6, color: '#ef4444' },
-        { name: '#8256d9', label: 'scen_05_drift', count: 2, warnings: 3, color: '#f59e0b' },
-        { name: '#946bee', label: 'scen_04_drop', count: 2, warnings: 2, color: '#f59e0b' },
-        { name: '#f91ea1', label: 'scen_01_imu', count: 2, warnings: 1, color: '#3b82f6' },
-      ];
+    : [];
 
   const currentBarData = activeTab === 'topics' ? topicData : sessionTrendData;
   const maxBarValue = Math.max(...currentBarData.map((d) => d.count), 20);
@@ -103,8 +91,12 @@ export default function DiagnosticChartsSection({
   const chartBottom = 175;
   const chartTop = 25;
   const usableHeight = chartBottom - chartTop;
-  const barSpacing = svgWidth / currentBarData.length;
+  const barSpacing = svgWidth / (currentBarData.length || 1);
   const barWidth = Math.min(36, barSpacing - 18);
+
+  if (totalDonut === 0 && topicData.length === 0 && recentSessions.length === 0) {
+    return <section className="card" style={{ padding: 24 }}><h3>Dữ liệu chẩn đoán</h3><p>Chưa có dữ liệu để hiển thị biểu đồ.</p></section>;
+  }
 
   return (
     <div

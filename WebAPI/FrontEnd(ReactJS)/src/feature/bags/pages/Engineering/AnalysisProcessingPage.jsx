@@ -1,161 +1,78 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../../../stored/appStore';
-import { ROLES } from '../../../../domain/appTypes';
-import {
-  Button,
-  Card,
-  EmptyState,
-  Icon,
-  PageHeader,
-} from '../../../../components/common/UIComponents';
-import AnalysisProgress from './components/AnalysisProgress';
-import {
-  ANALYSIS_PROCESSING_STEPS,
-  getAnalysisPhase,
-} from '../../constants/analysisProcessing';
+import { apiClient } from '../../../../service/apiClient/apiClient';
+import { Button, Card, EmptyState, Icon, PageHeader } from '../../../../components/common/UIComponents';
 
 export default function AnalysisProcessingPage() {
-  const navigate = useNavigate();
-  const { state, dispatch, notify } = useApp();
-  const [progress, setProgress] = useState(0);
-  const [phase, setPhase] = useState(getAnalysisPhase(0));
-  const bag = (state.bags || []).find((item) => item.id === state.selectedBagId);
-  const resultSessionId = useMemo(() => {
-    const bagSession = (state.sessions || []).find((session) => session.bagId === bag?.id);
-    return bagSession?.id || bag?.sessionId || `SESS-${Date.now().toString().slice(-4)}`;
-  }, [bag?.id, bag?.sessionId, state.sessions]);
+  const { state } = useApp();
+  const bag = (state.bags || []).find(item => item.id === state.selectedBagId);
+  const canAnalyze = ['engineering', 'admin'].includes(String(state.role).toLowerCase());
+  const [result, setResult] = useState({ status: 'running' });
+  // Reuse the request during StrictMode effect replay and ordinary re-renders.
+  const requestRef = useRef(null);
+  const bagId = bag?.id;
+  const bagPath = bag?.storageUrl;
 
   useEffect(() => {
-    const isEng = String(state.role || '').toLowerCase().includes('eng') || String(state.role || '').toLowerCase() === 'admin';
-    if (!bag || !isEng) return undefined;
+    if (!bagId || !canAnalyze) return;
+    let active = true;
+    if (!bagPath) {
+      setResult({ status: 'error', message: 'Rosbag chưa có đường dẫn tệp trên máy chủ. Vui lòng kiểm tra lại bản ghi.' });
+      return;
+    }
+    if (requestRef.current?.bagId !== bagId) {
+      setResult({ status: 'running' });
+      const promise = apiClient.post('/api/bags/inspect', { bagPath }, {
+        signal: AbortSignal.timeout(120000),
+        handleErrorLocally: true,
+      }).then(report => {
+        if (!report?.sessionId || report.bagId !== bagId) {
+          throw new Error('Máy chủ chưa trả về phiên phân tích hợp lệ của rosbag này. Vui lòng kiểm tra danh sách phiên trước khi chạy lại.');
+        }
+        return report;
+      });
+      requestRef.current = { bagId, promise };
+    }
+    requestRef.current.promise.then(report => {
+      if (active) setResult({ status: 'complete', sessionId: report.sessionId });
+    }).catch(error => {
+      if (!active) return;
+      setResult({ status: 'error', message: error.name === 'TimeoutError'
+        ? 'Chưa nhận được phản hồi sau 2 phút. Máy chủ có thể vẫn đang xử lý; hãy kiểm tra danh sách phiên trước khi chạy lại để tránh tạo phiên trùng.'
+        : error.name === 'AbortError'
+          ? 'Yêu cầu đã bị gián đoạn. Vui lòng kiểm tra danh sách phiên để xác nhận kết quả.'
+          : error.message || 'Không thể phân tích rosbag. Vui lòng kiểm tra backend.' });
+    });
+    return () => { active = false; };
+  }, [bagId, bagPath, canAnalyze]);
 
-    let currentProgress = 0;
-    let completionTimer;
-    const interval = window.setInterval(() => {
-      currentProgress = Math.min(currentProgress + 4, 100);
-      setProgress(currentProgress);
-      setPhase(getAnalysisPhase(currentProgress));
+  if (!bag) return <EmptyState icon="database" title="Chưa chọn dữ liệu" description="Chọn và cấu hình một rosbag trước khi chạy phân tích.">
+    <Button to="/bags">Về danh sách rosbag</Button>
+  </EmptyState>;
 
-      if (currentProgress === 100) {
-        window.clearInterval(interval);
+  if (!canAnalyze) return <EmptyState icon="shield" title="Không có quyền phân tích" description="Chức năng này dành cho Engineer và Admin.">
+    <Button to="/dashboard">Về tổng quan</Button>
+  </EmptyState>;
 
-        const newSession = {
-          id: resultSessionId,
-          bagId: bag.id,
-          name: (bag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
-          duration: bag.duration ?? bag.durationSec ?? 120,
-          topics: bag.topics ?? bag.topicCount ?? 12,
-          messages: bag.totalMessages ?? 350000,
-          status: 'complete',
-          createdAt: new Date().toISOString(),
-          processingSeconds: 20,
-          isDemo: false,
-          healthScore: bag.healthScore ?? 100,
-          realTopics: bag.realTopics || null,
-          realTimeline: bag.realTimeline || null,
-        };
-
-        dispatch({
-          type: 'COMPLETE_ANALYSIS',
-          session: newSession,
-          findings: bag.realAnomalies && bag.realAnomalies.length > 0
-            ? bag.realAnomalies.map((a, idx) => ({
-                id: `A-${resultSessionId}-${idx + 1}`,
-                sessionId: resultSessionId,
-                title: a.issueTitle || a.title || 'Bất thường ghi nhận',
-                kind: (a.anomalyType || 'frequency').toLowerCase(),
-                topic: a.topic || 'Hệ thống',
-                severity: (a.severity || 'medium').toLowerCase(),
-                interval: a.timeRange || '00:00 - 00:05',
-                observation: a.description || 'Ghi nhận bất thường trong luồng log.',
-                hypothesis: a.suggestedFix || 'Cần kiểm tra node phát và cấu hình QoS.',
-                steps: [a.suggestedFix || 'Kiểm tra log node.', 'Đối chiếu tần số mẫu.'],
-                revision: 1,
-                analystNote: '',
-                review: { status: 'pending', note: '', by: null, at: null },
-              }))
-            : [],
-        });
-
-        completionTimer = window.setTimeout(() => {
-          notify('Đã hoàn tất tiến trình phân tích.', 'success');
-          navigate(`/sessions/${resultSessionId}/overview`, { replace: true });
-        }, 800);
-      }
-    }, 280);
-
-    return () => {
-      window.clearInterval(interval);
-      window.clearTimeout(completionTimer);
-    };
-  }, [bag, dispatch, navigate, notify, resultSessionId, state.role]);
-
-  if (!bag) {
-    return (
-      <EmptyState
-        icon="database"
-        title="Chưa chọn dữ liệu"
-        description="Chọn và cấu hình một rosbag trước khi chạy tiến trình phân tích."
-      >
-        <Button to="/bags">Về danh sách rosbag</Button>
-      </EmptyState>
-    );
-  }
-
-  if (state.role !== ROLES.ENGINEERING) {
-    return (
-      <EmptyState
-        icon="shield"
-        title="Chức năng dành cho Kỹ sư Robotics"
-        description="Vai trò hiện tại không có quyền chạy tiến trình phân tích."
-      >
-        <Button to="/dashboard">Về tổng quan</Button>
-      </EmptyState>
-    );
-  }
-
-  return (
-    <div className="analysis-processing-page">
-      <PageHeader title="Đang phân tích rosbag" subtitle={bag.name} />
-
-      <Card className="processing-card">
-        <div className="scan-visual" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <span><Icon name="activity" size={46} /></span>
-        </div>
-
-        <h2>Đang tìm các bất thường</h2>
-        <p aria-live="polite">{phase}</p>
-
-        <AnalysisProgress value={progress} label="Tiến độ mô phỏng" />
-
-        <div className="processing-steps">
-          {ANALYSIS_PROCESSING_STEPS.map((step, index) => {
-            const stepStarted = progress >= index * 25;
-            const stepComplete = progress >= (index + 1) * 25;
-            return (
-              <span key={step} className={stepStarted ? 'done' : ''}>
-                <Icon name={stepComplete ? 'check' : 'clock'} size={15} />
-                {step}
-              </span>
-            );
-          })}
-        </div>
-
-        <div className="button-row">
-          <Button to={`/sessions/${resultSessionId}/overview`} icon="arrow">
-            Xem kết quả mẫu đã có
-          </Button>
-          <Button to="/analysis/configure" variant="ghost">
-            Hủy mô phỏng
-          </Button>
-        </div>
-
-        <small>Không có tác vụ ROS2 hay AI thực đang chạy.</small>
-      </Card>
-    </div>
-  );
+  const running = result.status === 'running';
+  const complete = result.status === 'complete';
+  return <div className="analysis-processing-page">
+    <PageHeader title={running ? 'Đang phân tích rosbag' : complete ? 'Phân tích hoàn tất' : 'Chưa hoàn tất phân tích'} subtitle={bag.name} />
+    <Card className="processing-card">
+      {running ? <div className="scan-visual" aria-hidden="true"><i /><i /><i /><span><Icon name="activity" size={46} /></span></div>
+        : <Icon name={complete ? 'check' : 'alert'} size={48} />}
+      <h2>{running ? 'Máy chủ đang xử lý dữ liệu' : complete ? 'Đã có phiên phân tích' : 'Không thể hoàn tất yêu cầu'}</h2>
+      <p role={result.status === 'error' ? 'alert' : 'status'} style={{ maxWidth: 680, margin: '16px auto', lineHeight: 1.8 }}>
+        {running ? 'Đang đọc rosbag, kiểm tra bất thường và lưu phiên phân tích. Chỉ hiển thị kết quả sau khi backend xác nhận.'
+          : complete ? `Phiên ${result.sessionId} đã được lưu trên máy chủ.` : result.message}
+      </p>
+      {running && <p><Icon name="loader" className="spin" size={18} /> Đang chờ phản hồi từ backend…</p>}
+      <div className="button-row">
+        {complete && <Button to={`/sessions/${encodeURIComponent(result.sessionId)}/overview`} icon="arrow">Xem kết quả phân tích</Button>}
+        <Button to="/bags" variant="secondary">Về danh sách rosbag</Button>
+      </div>
+      <small>{running ? 'Rời trang không đồng nghĩa hủy tác vụ trên máy chủ. Không có phần trăm tiến độ giả lập.'
+        : 'Phiên phân tích chỉ được tạo bởi backend, không dùng ID rosbag thay cho ID phiên.'}</small>
+    </Card>
+  </div>;
 }

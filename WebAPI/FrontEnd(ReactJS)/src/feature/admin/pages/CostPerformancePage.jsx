@@ -4,24 +4,16 @@ import { PageHeader, Icon } from '../../../components/common/UIComponents';
 import { getAiUsageApi, getBagsApi } from '../../../service';
 import './CostPerformancePage.css';
 
-// Helper to calculate realistic metric if specific log isn't directly in ledger payload
+// Missing ledger entries remain unknown instead of generating usage numbers.
 function getSessionMetric(session, sessionMetricsMap) {
   const direct = sessionMetricsMap[session.id] || sessionMetricsMap[session.bagId];
   if (direct) return direct;
 
-  // Realistic telemetry mapping based on session parameters & deterministic seed
-  const seed = String(session.id || session.name || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-  const dur = session.duration || 85;
-  const promptTokens = 1500 + Math.round(dur * 16) + (seed % 350);
-  const completionTokens = 420 + (seed % 280);
-  const totalTokens = promptTokens + completionTokens;
-  const cost = Number(((promptTokens * 0.00000015) + (completionTokens * 0.00000060)).toFixed(4));
   return {
-    tokens: totalTokens,
-    cost: Math.max(cost, 0.0007),
-    model: seed % 2 === 0 ? 'qwen-2.5-coder-32b' : 'gpt-4o-mini',
-    latencyMs: 700 + (seed % 650),
-    isEstimated: false,
+    tokens: null,
+    cost: null,
+    model: null,
+    latencyMs: null,
   };
 }
 
@@ -41,13 +33,13 @@ export default function CostPerformancePage() {
     if (!state.bags || state.bags.length === 0) {
       getBagsApi()
         .then((bags) => {
-          if (Array.isArray(bags) && bags.length > 0) {
+          if (Array.isArray(bags)) {
             dispatch({ type: 'SET_BAGS', bags });
           }
         })
         .catch(() => {});
     }
-  }, [state.bags, dispatch]);
+  }, [dispatch]);
 
   // Map AI Usage logs by sessionId if available from backend
   const sessionMetricsMap = useMemo(() => {
@@ -69,13 +61,7 @@ export default function CostPerformancePage() {
 
   // Deduplicate and sanitize sessions from store to prevent duplicate rows & UI overflow
   const allSessions = useMemo(() => {
-    const rawSessions = (state.sessions && state.sessions.length > 0)
-      ? state.sessions
-      : [
-          { id: 'sess-0417b73e', name: 'scen_10', processingSeconds: 85, duration: 86 },
-          { id: 'sess-10ad562c', name: 'scen_08_parent_switch', processingSeconds: 85, duration: 86 },
-          { id: 'sess-2e5e03f5', name: 'case_15_compound_hardware', processingSeconds: 85, duration: 86 },
-        ];
+    const rawSessions = state.sessions || [];
 
     const seen = new Set();
     const result = [];
@@ -89,14 +75,7 @@ export default function CostPerformancePage() {
       // Clean display name (strip extension like .db3/.mcap if present)
       const cleanDisplayName = nameStr.replace(/\.[^/.]+$/, '');
 
-      // Realistic processing seconds: prefer s.processingSeconds, then s.executionTimeSec, then s.duration, or realistic fallback
-      const seed = String(s.id || '').split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-      const fallbackTime = Math.max(16, (seed % 45) + 22);
-      const procSec = (s.processingSeconds && s.processingSeconds > 0)
-        ? s.processingSeconds
-        : (s.executionTimeSec && s.executionTimeSec > 0)
-        ? s.executionTimeSec
-        : (s.duration && s.duration > 0 ? Math.min(Math.round(s.duration), 85) : fallbackTime);
+      const procSec = s.processingSeconds ?? s.executionTimeSec ?? null;
 
       result.push({
         ...s,
@@ -114,30 +93,33 @@ export default function CostPerformancePage() {
   }, [allSessions, filterSessionId]);
 
   const totalProcessingSeconds = useMemo(() => {
+    if (filteredSessions.some((session) => session.processingSeconds == null)) return null;
     return filteredSessions.reduce((acc, cur) => acc + (cur.processingSeconds || 0), 0);
   }, [filteredSessions]);
 
   // Total cost and token calculations from TiDB ledger with session metric summation fallback
   const totalCostDisplay = useMemo(() => {
-    if (aiUsage?.totalCostUsd && Number(aiUsage.totalCostUsd) > 0) {
+    if (filterSessionId === 'all' && aiUsage?.totalCostUsd != null) {
       return `$${Number(aiUsage.totalCostUsd).toFixed(4)}`;
     }
+    if (!aiUsage || filteredSessions.some((s) => getSessionMetric(s, sessionMetricsMap).cost == null)) return '—';
     const sum = filteredSessions.reduce((acc, s) => {
       const m = getSessionMetric(s, sessionMetricsMap);
       return acc + (m.cost || 0);
     }, 0);
     return `$${sum.toFixed(4)}`;
-  }, [aiUsage, filteredSessions, sessionMetricsMap]);
+  }, [aiUsage, filteredSessions, sessionMetricsMap, filterSessionId]);
 
   const totalTokensDisplay = useMemo(() => {
-    if (aiUsage?.totalTokens && Number(aiUsage.totalTokens) > 0) {
+    if (filterSessionId === 'all' && aiUsage?.totalTokens != null) {
       return Number(aiUsage.totalTokens);
     }
+    if (!aiUsage || filteredSessions.some((s) => getSessionMetric(s, sessionMetricsMap).tokens == null)) return null;
     return filteredSessions.reduce((acc, s) => {
       const m = getSessionMetric(s, sessionMetricsMap);
       return acc + (m.tokens || 0);
     }, 0);
-  }, [aiUsage, filteredSessions, sessionMetricsMap]);
+  }, [aiUsage, filteredSessions, sessionMetricsMap, filterSessionId]);
 
   // Dynamic scale limit for visual bars (at least 30s)
   const maxProcessingSeconds = useMemo(() => {
@@ -157,7 +139,7 @@ export default function CostPerformancePage() {
       <div className="notice blue" style={{ marginBottom: '24px' }}>
         <Icon name="check-circle" />
         <div>
-          Dữ liệu chi phí và hiệu suất đã được kết nối thực tế từ LLM Usage Ledger (TiDB Cloud). Token và thời gian suy luận được đối soát và ghi nhận theo từng phiên phân tích.
+          Chỉ hiển thị số liệu đã ghi nhận từ máy chủ. Dấu “—” thể hiện số liệu chưa có.
         </div>
       </div>
 
@@ -187,7 +169,7 @@ export default function CostPerformancePage() {
           <span className="stat-icon">
             <Icon name="clock" size={16} />
           </span>
-          <strong>{totalProcessingSeconds}s</strong>
+          <strong>{totalProcessingSeconds == null ? '—' : `${totalProcessingSeconds}s`}</strong>
           <small>Thời gian suy luận & chẩn đoán thực tế</small>
           <svg className="spark" viewBox="0 0 64 32" aria-hidden="true">
             <path
@@ -206,7 +188,7 @@ export default function CostPerformancePage() {
             <Icon name="trending-up" size={16} />
           </span>
           <strong>{totalCostDisplay}</strong>
-          <small>{totalTokensDisplay.toLocaleString()} tokens đã tiêu thụ (TiDB Ledger)</small>
+          <small>{totalTokensDisplay == null ? 'Chưa có dữ liệu token' : `${totalTokensDisplay.toLocaleString()} tokens đã tiêu thụ`}</small>
           <svg className="spark" viewBox="0 0 64 32" aria-hidden="true">
             <path
               d="M2 16 Q 16 16, 32 16 T 62 16"
@@ -290,7 +272,7 @@ export default function CostPerformancePage() {
                       </td>
                       <td>
                         <div className="time-metric-cell">
-                          <span className="time-metric-value">{val} giây</span>
+                          <span className="time-metric-value">{session.processingSeconds == null ? '—' : `${val} giây`}</span>
                           <div className="time-metric-bar">
                             <div
                               className="time-metric-fill"
@@ -302,7 +284,7 @@ export default function CostPerformancePage() {
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <span className="status-pill blue">
-                            {logMetric.tokens.toLocaleString()} tokens
+                            {logMetric.tokens == null ? 'Chưa có dữ liệu' : `${logMetric.tokens.toLocaleString()} tokens`}
                           </span>
                           {logMetric.model && (
                             <span style={{ fontSize: '10px', color: '#64748b', paddingLeft: '4px' }}>
@@ -313,7 +295,7 @@ export default function CostPerformancePage() {
                       </td>
                       <td>
                         <span className="status-pill green">
-                          ${Number(logMetric.cost).toFixed(4)}
+                          {logMetric.cost == null ? '—' : `$${Number(logMetric.cost).toFixed(4)}`}
                         </span>
                       </td>
                     </tr>
@@ -361,7 +343,7 @@ export default function CostPerformancePage() {
                     />
                   </div>
                   <div className="usage-bar-value">
-                    <span>{val}</span>
+                    <span>{session.processingSeconds == null ? '—' : val}</span>
                     <small>giây</small>
                   </div>
                 </div>

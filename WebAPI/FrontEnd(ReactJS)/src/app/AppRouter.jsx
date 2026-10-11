@@ -100,6 +100,12 @@ const AdminOverviewPage = lazy(() => import('../feature/admin/pages/AdminOvervie
 const SettingsPage = lazy(() => import('../feature/admin/pages/SettingsPage'));
 const AiConfigPage = lazy(() => import('../feature/admin/pages/AiConfigPage'));
 const ProfileEditPage = lazy(() => import('../feature/profile/pages/ProfileEditPage'));
+const BagSubmissionsPage = lazy(() => import('../feature/bags/pages/BagSubmissionsPage'));
+
+function RoleUploadPage() {
+  const { state } = useApp();
+  return String(state.role).toLowerCase() === 'user' ? <BagSubmissionsPage /> : <UploadPage />;
+}
 
 function ProtectedRoute({ children }) {
   const { state } = useApp();
@@ -152,7 +158,8 @@ export default function AppRouter() {
           <Route path="/analysis" element={<AnalysisPage />} />
           <Route path="/sessions/:id" element={<SessionDetailPage />} />
           <Route path="/sessions/:id/:tab" element={<SessionDetailPage />} />
-          <Route path="/upload" element={<UploadPage />} />
+          <Route path="/upload" element={<RoleUploadPage />} />
+          <Route path="/bag-submissions" element={<BagSubmissionsPage />} />
           <Route path="/reports" element={<ReportsListPage />} />
           <Route path="/reports/:id" element={<ReportDetailPage />} />
           <Route path="/reviews" element={<ReviewsListPage />} />

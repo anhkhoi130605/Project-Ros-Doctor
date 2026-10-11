@@ -43,6 +43,33 @@ namespace Domain.Entities.RosbagAnalysis
 		[Column("is_published")]
 		public bool IsPublished { get; set; } = false;
 
+		[Column("review_status")]
+		public RosbagReviewStatus ReviewStatus { get; set; } = RosbagReviewStatus.Approved;
+
+		[Column("description")]
+		[MaxLength(2000)]
+		public string? Description { get; set; }
+
+		[Column("reviewer_id")]
+		[MaxLength(36)]
+		public string? ReviewerId { get; set; }
+
+		[ForeignKey(nameof(ReviewerId))]
+		public virtual User? Reviewer { get; set; }
+
+		[Column("review_note")]
+		[MaxLength(2000)]
+		public string? ReviewNote { get; set; }
+
+		[Column("reviewed_at")]
+		public DateTime? ReviewedAt { get; set; }
+
+		public void EnsureApprovedForAnalysis()
+		{
+			if (ReviewStatus != RosbagReviewStatus.Approved)
+				throw new InvalidOperationException("Rosbag chưa được duyệt. Chỉ phân tích file đã được Engineer/Admin chấp nhận.");
+		}
+
 		public virtual ICollection<AnalysisSession> AnalysisSessions { get; set; } = new HashSet<AnalysisSession>();
 	}
 }
