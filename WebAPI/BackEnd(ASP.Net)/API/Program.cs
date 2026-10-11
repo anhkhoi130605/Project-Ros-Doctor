@@ -40,17 +40,12 @@ builder.Services.AddControllers()
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
 
-if (!builder.Environment.IsDevelopment() &&
-	(allowedOrigins is null || allowedOrigins.Length == 0))
-{
-	throw new InvalidOperationException(
-		"Cors:AllowedOrigins must be configured in production.");
-}
-
 allowedOrigins ??=
 [
 	"http://localhost:5173",
-	"https://localhost:5173"
+	"https://localhost:5173",
+	"http://localhost:80",
+	"http://localhost"
 ];
 
 
