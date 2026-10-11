@@ -16,7 +16,11 @@ DEFAULT_HEADERS_TO_SPLIT_ON = [
 
 
 def generate_document_hash_id(document: Document, fallback_index: int = 0) -> str:
-    """Generate a deterministic SHA-256 ID based on metadata and content snippet."""
+    """Generate a stable ID from the source, section, and complete chunk content.
+
+    ``fallback_index`` remains accepted for backwards compatibility, but is not
+    part of the ID: changing document/chunk ordering must not change IDs.
+    """
     meta = document.metadata
     source_key = (
         meta.get("source_file")
@@ -25,9 +29,31 @@ def generate_document_hash_id(document: Document, fallback_index: int = 0) -> st
         or meta.get("source_type")
         or "unknown_source"
     )
-    section_key = meta.get("section") or meta.get("Header_2") or meta.get("Header_1") or str(fallback_index)
-    hash_payload = f"{source_key}::{section_key}::{fallback_index}::{document.page_content[:100]}"
+    section_key = (
+        meta.get("section")
+        or meta.get("Header_3")
+        or meta.get("Header_2")
+        or meta.get("Header_1")
+        or "root"
+    )
+    hash_payload = "\0".join((str(source_key), str(section_key), document.page_content))
     return hashlib.sha256(hash_payload.encode("utf-8")).hexdigest()
+
+
+def _resolve_chunk_settings(
+    chunk_size: int | None,
+    chunk_overlap: int | None,
+    settings: Settings,
+) -> tuple[int, int]:
+    resolved_size = settings.rag_chunk_size if chunk_size is None else chunk_size
+    resolved_overlap = settings.rag_chunk_overlap if chunk_overlap is None else chunk_overlap
+    if resolved_size <= 0:
+        raise ValueError("chunk_size must be greater than 0")
+    if resolved_overlap < 0:
+        raise ValueError("chunk_overlap cannot be negative")
+    if resolved_overlap >= resolved_size:
+        raise ValueError("chunk_overlap must be smaller than chunk_size")
+    return resolved_size, resolved_overlap
 
 
 class MarkdownHeaderChunker:
@@ -41,9 +67,12 @@ class MarkdownHeaderChunker:
         settings: Settings | None = None,
     ) -> None:
         active_settings = settings or get_settings()
-        self.headers_to_split_on = headers_to_split_on or DEFAULT_HEADERS_TO_SPLIT_ON
-        self.chunk_size = chunk_size or active_settings.rag_chunk_size
-        self.chunk_overlap = chunk_overlap or active_settings.rag_chunk_overlap
+        self.headers_to_split_on = (
+            DEFAULT_HEADERS_TO_SPLIT_ON if headers_to_split_on is None else headers_to_split_on
+        )
+        self.chunk_size, self.chunk_overlap = _resolve_chunk_settings(
+            chunk_size, chunk_overlap, active_settings
+        )
 
         self._header_splitter = MarkdownHeaderTextSplitter(
             headers_to_split_on=self.headers_to_split_on,
@@ -113,8 +142,9 @@ class StandardTextChunker:
         settings: Settings | None = None,
     ) -> None:
         active_settings = settings or get_settings()
-        self.chunk_size = chunk_size or active_settings.rag_chunk_size
-        self.chunk_overlap = chunk_overlap or active_settings.rag_chunk_overlap
+        self.chunk_size, self.chunk_overlap = _resolve_chunk_settings(
+            chunk_size, chunk_overlap, active_settings
+        )
         self._splitter = RecursiveCharacterTextSplitter(
             chunk_size=self.chunk_size,
             chunk_overlap=self.chunk_overlap,

@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     rag_top_k: int = Field(default=5, ge=1, le=20)
     rag_max_documents_per_collection: int = Field(default=5000, ge=1, le=50000)
     rag_chunk_size: int = Field(default=1200, ge=200, le=8000)
-    rag_chunk_overlap: int = Field(default=150, ge=0, le=1000)
+    rag_chunk_overlap: int = Field(default=300, ge=0, le=1000)
 
 
 @lru_cache
