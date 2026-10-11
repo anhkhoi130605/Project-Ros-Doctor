@@ -273,7 +273,7 @@ class MarkdownHeaderChunker(StandardTextChunker):
             title = " > ".join(value for value in section.headings.values() if value)
             if title:
                 section_meta.update(section=title, markdown_section=title)
-            
+
             prefix = ""
             if self.prefix_section_context and title:
                 max_prefix_len = self._effective_size // 4
