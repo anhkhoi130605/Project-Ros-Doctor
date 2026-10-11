@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from pathlib import Path
@@ -9,6 +10,7 @@ import yaml
 from langchain_core.documents import Document
 from pymongo import MongoClient
 
+from src.agents.chunking.source import make_source_id
 from src.config import Settings, get_settings
 
 FRONTMATTER_REGEX = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
@@ -47,8 +49,9 @@ def parse_inline_metadata(text: str) -> dict[str, str]:
 class MarkdownPlaybookLoader:
     """Loader for ROS2 diagnostic playbooks and specification Markdown files."""
 
-    def __init__(self, directory_path: str | Path | None = None) -> None:
+    def __init__(self, directory_path: str | Path | None = None, namespace: str | None = None) -> None:
         self.directory_path = Path(directory_path) if directory_path else self._resolve_default_dir()
+        self.namespace = namespace or self.directory_path.resolve().as_uri()
 
     @staticmethod
     def _resolve_default_dir() -> Path:
@@ -71,7 +74,8 @@ class MarkdownPlaybookLoader:
         documents: list[Document] = []
         for file_path in sorted(self.directory_path.rglob("*.md")):
             try:
-                raw_text = file_path.read_text(encoding="utf-8")
+                with file_path.open(encoding="utf-8", newline="") as source:
+                    raw_text = source.read()
             except Exception:
                 continue
 
@@ -84,17 +88,21 @@ class MarkdownPlaybookLoader:
             metadata: dict[str, Any] = {
                 "source_type": "playbook",
                 "source_file": rel_path,
+                "source_id": make_source_id("markdown", self.namespace, rel_path),
+                "source_offset": len(raw_text) - len(body),
+                "source_revision": hashlib.sha256(raw_text.encode("utf-8")).hexdigest(),
                 "folder_category": folder_category,
                 "title": frontmatter.get("title") or file_path.stem,
                 "source": frontmatter.get("source", "ROS2 Diagnostic Playbook"),
                 "primary_fault_type": frontmatter.get("primary_fault_type") or inline_meta.get("fault_type", "Unknown"),
                 "primary_layer": frontmatter.get("primary_layer") or inline_meta.get("layer", "Unknown"),
-                "primary_action_type": frontmatter.get("primary_action_type") or inline_meta.get("action_type", "Unknown"),
+                "primary_action_type": frontmatter.get("primary_action_type")
+                or inline_meta.get("action_type", "Unknown"),
             }
 
             documents.append(
                 Document(
-                    page_content=body.strip(),
+                    page_content=body,
                     metadata=metadata,
                 )
             )
@@ -145,6 +153,14 @@ class MongoDatasetLoader:
                             page_content=summary_content,
                             metadata={
                                 "source_type": "benchmark_summary",
+                                "source_id": make_source_id(
+                                    "mongo",
+                                    self._settings.rag_source_namespace,
+                                    self._settings.mongo_database_name,
+                                    "benchmark_datasets",
+                                    code,
+                                    "summary",
+                                ),
                                 "source_collection": "benchmark_datasets",
                                 "dataset_code": code,
                                 "dataset_name": name,
@@ -174,6 +190,15 @@ class MongoDatasetLoader:
                                 page_content=tc_content,
                                 metadata={
                                     "source_type": "benchmark_case",
+                                    "source_id": make_source_id(
+                                        "mongo",
+                                        self._settings.rag_source_namespace,
+                                        self._settings.mongo_database_name,
+                                        "benchmark_datasets",
+                                        code,
+                                        "case",
+                                        str(tc_code),
+                                    ),
                                     "source_collection": "benchmark_datasets",
                                     "dataset_code": code,
                                     "test_case_code": tc_code,

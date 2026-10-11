@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 from langchain_core.documents import Document
 
+from src.agents.vectordb.revisions import RevisionedChroma
 from src.agents.vectordb.stores import (
     ChromaVectorStore,
     create_chroma_store,
@@ -28,17 +29,19 @@ def test_create_and_get_chroma_store():
         )
 
         mock_chroma_cls.assert_called_once_with(
-            collection_name="custom_col",
+            collection_name="custom_col_chunks_v3",
             embedding_function=mock_embeddings,
             persist_directory="./data/custom_chroma",
         )
-        assert store is mock_instance
+        assert isinstance(store, RevisionedChroma)
+        assert store._store is mock_instance
 
         store2 = get_chroma_store(
             settings=settings,
             embedding_function=mock_embeddings,
         )
-        assert store2 is mock_instance
+        assert isinstance(store2, RevisionedChroma)
+        assert store2._store is mock_instance
 
 
 def test_chroma_vector_store_delegation():

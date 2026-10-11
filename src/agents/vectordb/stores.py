@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
 from typing import Any
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
+from src.agents.chunking.strategies import CHUNKING_VERSION
 from src.agents.embedding.models import get_embedding_model
+from src.agents.vectordb.indexing import sync_source_chunks
+from src.agents.vectordb.revisions import RevisionedChroma
 from src.config import Settings, get_settings
 
 
@@ -15,24 +20,30 @@ def create_chroma_store(
     persist_directory: str | None = None,
     embedding_function: Embeddings | None = None,
     settings: Settings | None = None,
-) -> Chroma:
-    """Create a persistent Chroma vector store instance."""
+) -> RevisionedChroma:
+    """Create a persistent Chroma store with guarded revision publication."""
     active_settings = settings or get_settings()
     resolved_collection = collection_name or active_settings.chroma_collection_name
+    # Keep legacy chunks intact and prevent retrieval from mixing algorithm versions.
+    suffix = f"_chunks_v{CHUNKING_VERSION}"
+    if not resolved_collection.endswith(suffix):
+        resolved_collection += suffix
     resolved_persist_dir = persist_directory or active_settings.chroma_persist_dir
     resolved_embeddings = embedding_function or get_embedding_model(active_settings)
 
-    return Chroma(
+    raw = Chroma(
         collection_name=resolved_collection,
         embedding_function=resolved_embeddings,
         persist_directory=resolved_persist_dir,
     )
+    manifest_name = hashlib.sha256(resolved_collection.encode()).hexdigest() + ".json"
+    return RevisionedChroma(raw, Path(resolved_persist_dir).resolve() / "revision_manifests" / manifest_name)
 
 
 def get_chroma_store(
     settings: Settings | None = None,
     embedding_function: Embeddings | None = None,
-) -> Chroma:
+) -> RevisionedChroma:
     """Get the configured Chroma vector store."""
     return create_chroma_store(settings=settings, embedding_function=embedding_function)
 
@@ -42,27 +53,33 @@ class ChromaVectorStore:
 
     def __init__(
         self,
-        store: Chroma | None = None,
+        store: Chroma | RevisionedChroma | None = None,
         settings: Settings | None = None,
         embedding_function: Embeddings | None = None,
     ) -> None:
         self._store = store or get_chroma_store(settings=settings, embedding_function=embedding_function)
 
     @property
-    def store(self) -> Chroma:
-        """Access the underlying Chroma instance."""
+    def store(self) -> Chroma | RevisionedChroma:
+        """Access the underlying store or managed publication adapter."""
         return self._store
 
     def count(self) -> int:
-        """Return the number of documents in the collection."""
+        """Administrative count, including any staged/stale chunks awaiting cleanup."""
         return self._store._collection.count()
+
+    def sync_sources(self, sources: list[Document], chunks: list[Document], batch_size: int = 50) -> int:
+        """Replace complete source snapshots, publishing only after validation succeeds."""
+        return sync_source_chunks(self._store, sources, chunks, batch_size)
 
     def add_documents(
         self,
         documents: list[Document],
         ids: list[str] | None = None,
     ) -> list[str]:
-        """Add documents to the vector store with optional unique IDs."""
+        """Legacy raw-store write; managed stores require complete source snapshots."""
+        if isinstance(self._store, RevisionedChroma):
+            raise ValueError("Use sync_sources(sources, chunks) to publish complete source snapshots")
         return self._store.add_documents(documents, ids=ids)
 
     def similarity_search(
@@ -91,9 +108,10 @@ class ChromaVectorStore:
 
     def delete(self, ids: list[str] | None = None) -> bool | None:
         """Delete documents by their IDs."""
+        if isinstance(self._store, RevisionedChroma):
+            raise ValueError("Use sync_sources with an empty source snapshot to remove a logical source")
         return self._store.delete(ids=ids)
 
     def reset_collection(self) -> None:
         """Delete all documents and reset the collection."""
         self._store.reset_collection()
-
