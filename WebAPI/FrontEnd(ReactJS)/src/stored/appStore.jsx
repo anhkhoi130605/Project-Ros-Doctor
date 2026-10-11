@@ -90,43 +90,15 @@ function loadSavedState(savedJson) {
   const savedRole = localStorage.getItem('userRole');
   const token = localStorage.getItem('accessToken');
   try {
-    const parsed = JSON.parse(savedJson);
-    const parsedFindings = (parsed.findings || []).filter((f) => !String(f.id).startsWith('A-00'));
-    // Filter out old mock bags and demo sessions
-    const parsedBags = (parsed.bags || []).filter(
-      (b) => !b.isSample && !['bag-024', 'bag-023', 'bag-022', 'bag-021'].includes(b.id)
-    );
-    const parsedSessions = (parsed.sessions || []).filter(
-      (s) =>
-        !s.isDemo &&
-        !['024', '023', 'sess-fb47cf31', 'sess-736dabd1', 'sess-91332c3b', 'sess-05355333', 'SESS-5064'].includes(s.id) &&
-        !String(s.id).startsWith('sess-fb47') &&
-        !String(s.id).startsWith('sess-736d') &&
-        !String(s.id).startsWith('sess-9133') &&
-        !String(s.id).startsWith('sess-0535') &&
-        !String(s.id).startsWith('SESS-5064')
-    );
-    const parsedReports = (parsed.reports || []).filter(
-      (r) => !r.isDemo && !['RPT-023'].includes(r.id)
-    );
-
-    const stateObj = parsed
-      ? {
-        ...initial,
-        ...parsed,
-        bags: parsedBags,
-        sessions: parsedSessions,
-        reports: parsedReports,
-        findings: parsedFindings,
-        reviewsLoaded: false,
-        settings: { ...initial.settings, ...parsed.settings },
-        profile: { ...initial.profile, ...parsed.profile },
-        signedIn: !!parsed.signedIn || !!token,
-      }
-      : {
-        ...initial,
-        signedIn: !!token,
-      };
+    const parsed = JSON.parse(savedJson) || {};
+    // Restore preferences and identity only. Database records must be fetched again.
+    const stateObj = {
+      ...initial,
+      currentUserId: token ? parsed.currentUserId : null,
+      settings: { ...initial.settings, ...parsed.settings },
+      profile: token ? { ...initial.profile, ...parsed.profile } : initial.profile,
+      signedIn: Boolean(token),
+    };
 
     if (savedRole) {
       const norm = savedRole.toLowerCase();
@@ -147,23 +119,28 @@ function appReducer(state, action) {
   switch (action.type) {
     case 'LOGIN':
       return {
-        ...state,
+        ...getInitialState(),
+        settings: state.settings,
         signedIn: true,
         currentUserId: action.userId || null,
         role: action.role || ROLES.ENGINEER,
         profile: {
-          ...state.profile,
-          name: action.userName || state.profile.name,
-          email: action.email || state.profile.email,
+          ...getInitialState().profile,
+          name: action.userName || '',
+          email: action.email || '',
         },
       };
 
     case 'LOGOUT':
       return {
-        ...state,
+        ...getInitialState(),
+        settings: state.settings,
         signedIn: false,
         reviewsLoaded: false,
       };
+
+    case 'RESET_REMOTE_DATA':
+      return { ...state, bags: [], sessions: [], findings: [], reports: [], audit: [], reviewsLoaded: false };
 
     case 'UPDATE_PROFILE': {
       const updatedProfile = {
@@ -224,16 +201,16 @@ function appReducer(state, action) {
         id: bagSessionId,
         bagId: importedBag.id,
         name: (importedBag.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
-        duration: importedBag.duration ?? importedBag.durationSec ?? 120,
-        topics: importedBag.topics ?? importedBag.topicCount ?? 12,
-        messages: importedBag.totalMessages ?? 350000,
+        duration: importedBag.duration ?? importedBag.durationSec ?? 0,
+        topics: importedBag.topics ?? importedBag.topicCount ?? 0,
+        messages: importedBag.totalMessages ?? 0,
         status: 'pending',
         createdAt: new Date().toISOString(),
-        processingSeconds: 15,
+        processingSeconds: importedBag.processingSeconds ?? null,
         isDemo: false,
         realTopics: action.bag.realTopics || null,
         realTimeline: action.bag.realTimeline || null,
-        healthScore: action.bag.healthScore ?? 100,
+        healthScore: action.bag.healthScore ?? null,
       };
 
       return {
@@ -334,6 +311,7 @@ function appReducer(state, action) {
       // Clean out any stale fake mock sessions
       const currentSessions = (state.sessions || []).filter(
         (s) =>
+          incomingBags.some((bag) => bag.id === s.bagId || bag.sessionId === s.id || bag.id === s.id) &&
           !['024', '023', 'sess-fb47cf31', 'sess-736dabd1', 'sess-91332c3b', 'sess-05355333', 'SESS-5064'].includes(s.id) &&
           !String(s.id).startsWith('sess-fb47') &&
           !String(s.id).startsWith('sess-736d') &&
@@ -351,13 +329,13 @@ function appReducer(state, action) {
             bagId: b.id,
             name: (b.name || 'Rosbag').replace(/\.[^/.]+$/, ''),
             duration: b.duration ?? b.durationSec ?? 0,
-            topics: b.topics ?? b.topicCount ?? 2,
+            topics: b.topics ?? b.topicCount ?? 0,
             messages: b.totalMessages ?? 0,
             status: b.status || 'complete',
             createdAt: b.date || new Date().toISOString(),
-            processingSeconds: b.processingSeconds || (b.duration && b.duration > 0 ? Math.min(Math.round(b.duration), 85) : 24),
+            processingSeconds: b.processingSeconds ?? null,
             isDemo: false,
-            healthScore: b.healthScore ?? 100,
+            healthScore: b.healthScore ?? null,
             realTopics: b.realTopics || [],
             realTimeline: b.realTimeline || null,
           });
@@ -373,7 +351,7 @@ function appReducer(state, action) {
 
     case 'SET_REAL_SESSIONS': {
       const incoming = Array.isArray(action.sessions) ? action.sessions : [];
-      if (incoming.length === 0) return state;
+      if (incoming.length === 0) return { ...state, sessions: [] };
       const incomingIds = new Set(incoming.map((s) => s.id));
       const remaining = (state.sessions || []).filter(
         (s) =>
@@ -498,7 +476,14 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          schema: state.schema,
+          signedIn: state.signedIn,
+          currentUserId: state.currentUserId,
+          role: state.role,
+          profile: state.profile,
+          settings: state.settings,
+        }));
       } catch {
         // Ignore quota errors
       }

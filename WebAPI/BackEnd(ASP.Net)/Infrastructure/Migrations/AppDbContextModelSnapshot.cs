@@ -1004,6 +1004,20 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Rosbag", b =>
                 {
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired().ValueGeneratedOnAdd()
+                        .HasMaxLength(20).HasColumnType("varchar(20)")
+                        .HasDefaultValue("Approved").HasColumnName("review_status");
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000).HasColumnType("varchar(2000)").HasColumnName("description");
+                    b.Property<string>("ReviewerId")
+                        .HasMaxLength(36).HasColumnType("varchar(36)").HasColumnName("reviewer_id");
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(2000).HasColumnType("varchar(2000)").HasColumnName("review_note");
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)").HasColumnName("reviewed_at");
+                    b.HasIndex("ReviewerId");
+
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -1084,6 +1098,7 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ReviewStatus", "CreatedAt");
                     b.ToTable("rosbags", (string)null);
                 });
 
@@ -1361,7 +1376,12 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Rosbag", b =>
                 {
-                    b.HasOne("Domain.Entities.Identity.User", "User")
+                    b.HasOne("Domain.Entities.AboutUser.User", "Reviewer")
+                        .WithMany().HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+                    b.Navigation("Reviewer");
+
+                    b.HasOne("Domain.Entities.AboutUser.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)

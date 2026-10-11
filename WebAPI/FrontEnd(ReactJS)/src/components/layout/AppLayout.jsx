@@ -7,7 +7,9 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
-import { getReviewsApi } from '../../service';
+import { apiClient } from '../../service';
+import useWorkspaceData from './useWorkspaceData';
+import DataConnectionState from '../common/DataConnectionState';
 import './SidebarAutohide.css';
 
 function getUserInitials(name) {
@@ -21,12 +23,19 @@ function getUserInitials(name) {
 
 export default function AppLayout() {
   const { state, dispatch, notify } = useApp();
-  const { t } = useTranslation(['common', 'navigation']);
+  const { t, i18n } = useTranslation(['common', 'navigation']);
   const navigate = useNavigate();
   const location = useLocation();
+  const connection = useWorkspaceData(`${location.pathname}:${localStorage.getItem('accessToken') || ''}`, dispatch);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const isCostPath = ['/usage', '/admin/cost', '/settings/cost'].includes(location.pathname);
+  const [costMenuOpen, setCostMenuOpen] = useState(isCostPath);
+
+  useEffect(() => {
+    setCostMenuOpen(isCostPath);
+  }, [location.pathname, isCostPath]);
 
   const [isPinned, setIsPinned] = useState(() => {
     return localStorage.getItem('sidebar_pinned') === 'true';
@@ -97,36 +106,14 @@ export default function AppLayout() {
     ? t('common:roles.user')
     : t('common:roles.engineering');
 
-  // Preload review findings if not loaded yet so badge count is accurate from start
-  useEffect(() => {
-    if (!state.findings || state.findings.length === 0) {
-      getReviewsApi()
-        .then((res) => {
-          const rawList = Array.isArray(res) ? res : (res?.data || res?.Data || []);
-          if (Array.isArray(rawList) && rawList.length > 0) {
-            const mapped = rawList.map((r) => ({
-              ...r,
-              review: {
-                status: r.status || 'pending',
-                note: r.note || '',
-                by: r.reviewedBy || null,
-                at: r.reviewedAt || null,
-              },
-            }));
-            dispatch({ type: 'SET_REVIEWS', findings: mapped });
-          }
-        })
-        .catch(() => {});
-    }
-  }, [dispatch, state.findings]);
-
-  const pendingReviewsCount = (state.findings || []).filter(
+  const pendingReviewsCount = connection.status === 'ready' ? (state.findings || []).filter(
     (f) => (f.review?.status || f.status || 'pending') === 'pending'
-  ).length;
+  ).length : 0;
 
   const navItems = [
     ['/dashboard', t('navigation:items.dashboard'), 'grid', ['Admin', 'Engineering', 'User']],
     ['/bags', isUserRole ? t('navigation:items.sharedBags') : t('navigation:items.bags'), 'database', ['Admin', 'Engineering', 'User']],
+    ['/bag-submissions', t(isUserRole ? 'navigation:items.mySubmissions' : 'navigation:items.submissions'), 'upload', ['Admin', 'Engineering', 'User']],
     ['/analysis', t('navigation:items.analysis'), 'activity', ['Engineering']],
     ['/chat', t('navigation:items.chat'), 'message-square', ['Engineering']],
     ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewsCount > 0 ? pendingReviewsCount : undefined],
@@ -145,10 +132,11 @@ export default function AppLayout() {
       return false;
     })
   );
-  const rosbagChildPaths = ['/bags', '/analysis', '/reviews', '/reports', '/benchmark'];
+  const rosbagChildPaths = ['/bags', '/bag-submissions', '/analysis', '/reviews', '/reports', '/benchmark'];
   const rosbagChildren = filteredNav.filter(([to]) => rosbagChildPaths.includes(to));
 
   const getPageTitle = (pathname) => {
+    if (pathname.startsWith('/bag-submissions')) return t(isUserRole ? 'navigation:items.mySubmissions' : 'navigation:items.submissions');
     if (pathname.startsWith('/dashboard')) return t('navigation:pageTitles.dashboard');
     if (pathname.startsWith('/bags')) return t('navigation:pageTitles.bags');
     if (pathname.startsWith('/analysis')) return t('navigation:pageTitles.analysis');
@@ -157,9 +145,9 @@ export default function AppLayout() {
     if (pathname.startsWith('/reviews')) return t('navigation:pageTitles.reviews');
     if (pathname.startsWith('/chat')) return t('navigation:pageTitles.chat');
     if (pathname.startsWith('/benchmark')) return t('navigation:pageTitles.benchmark');
-    if (pathname.startsWith('/usage')) return t('navigation:pageTitles.usage');
+    if (pathname.startsWith('/usage')) return t('navigation:cost.sessions');
     if (pathname === '/admin/ai-config') return t('navigation:pageTitles.aiConfig');
-    if (pathname === '/admin/cost') return t('navigation:pageTitles.usage');
+    if (pathname === '/admin/cost' || pathname === '/settings/cost') return t('navigation:cost.model');
     if (pathname === '/admin/analysis-config') return t('navigation:pageTitles.analysisConfig');
     if (pathname === '/admin/members') return t('navigation:pageTitles.members');
     if (pathname === '/admin/system-logs') return t('navigation:pageTitles.systemLogs');
@@ -238,10 +226,48 @@ export default function AppLayout() {
             );
             const isAnalysisActiveRoute = to === '/analysis' && location.pathname.startsWith('/analysis');
 
-            const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/admin/cost', '/settings/ai-config', '/settings/analysis-config', '/settings/cost'];
+            const configPaths = ['/admin/ai-config', '/admin/analysis-config', '/settings/ai-config', '/settings/analysis-config'];
             const isCurrentConfigPath = configPaths.includes(location.pathname);
-            const isCurrentAdminPath = location.pathname.startsWith('/admin') && !isCurrentConfigPath;
-            const isCurrentSettingsPath = (location.pathname.startsWith('/settings') || isCurrentConfigPath);
+            const isCurrentAdminPath = location.pathname.startsWith('/admin') && !isCurrentConfigPath && !isCostPath;
+            const isCurrentSettingsPath = (location.pathname.startsWith('/settings') || isCurrentConfigPath) && !isCostPath;
+
+            if (to === '/usage') {
+              return (
+                <div key={to} className={`nav-item-wrapper cost-nav-group ${isCostPath ? 'is-active-route' : ''}`}>
+                  <button
+                    type="button"
+                    className={`nav-item cost-nav-toggle ${isCostPath ? 'active' : ''}`}
+                    aria-expanded={costMenuOpen}
+                    aria-controls="cost-navigation"
+                    onClick={() => setCostMenuOpen((open) => !open)}
+                  >
+                    <Icon name={icon} size={18} />
+                    <span className="nav-item-label">{label}</span>
+                    <Icon name="down" size={14} className="nav-chevron" />
+                  </button>
+                  <div id="cost-navigation" className={`sub-nav-group ${costMenuOpen ? 'open' : ''}`} hidden={!costMenuOpen}>
+                    {currentRole === 'admin' && (
+                      <NavLink
+                        to="/admin/cost"
+                        className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/settings/cost' ? 'active' : ''}`}
+                        onClick={closeNavIfAuto}
+                      >
+                        <Icon name="cpu" size={14} />
+                        <span>{t('navigation:cost.model')}</span>
+                      </NavLink>
+                    )}
+                    <NavLink
+                      to="/usage"
+                      className={({ isActive }) => `sub-nav-item ${isActive ? 'active' : ''}`}
+                      onClick={closeNavIfAuto}
+                    >
+                      <Icon name="clock" size={14} />
+                      <span>{t('navigation:cost.sessions')}</span>
+                    </NavLink>
+                  </div>
+                </div>
+              );
+            }
 
             if (isRosbagRoute) {
               const isCurrentRosbagPath = rosbagChildPaths.some((path) =>
@@ -295,7 +321,7 @@ export default function AppLayout() {
                     to={to}
                     end={false}
                     className={({ isActive }) =>
-                      `nav-item ${isActive && !isCurrentConfigPath ? 'active' : ''}`
+                      `nav-item ${isActive && !isCurrentConfigPath && !isCostPath ? 'active' : ''}`
                     }
                     onClick={closeNavIfAuto}
                   >
@@ -352,7 +378,7 @@ export default function AppLayout() {
                     to={to}
                     end={false}
                     className={({ isActive }) =>
-                      `nav-item ${isActive || isCurrentSettingsPath ? 'active' : ''}`
+                      `nav-item ${(isActive || isCurrentSettingsPath) && !isCostPath ? 'active' : ''}`
                     }
                     onClick={closeNavIfAuto}
                   >
@@ -377,14 +403,6 @@ export default function AppLayout() {
                     >
                       <Icon name="sliders" size={14} />
                       <span>{t('navigation:settings.analysis')}</span>
-                    </NavLink>
-                    <NavLink
-                      to="/admin/cost"
-                      className={({ isActive }) => `sub-nav-item ${isActive || location.pathname === '/settings/cost' ? 'active' : ''}`}
-                      onClick={closeNavIfAuto}
-                    >
-                      <Icon name="trending-up" size={14} />
-                      <span>{t('navigation:settings.cost')}</span>
                     </NavLink>
                     <NavLink
                       to="/settings"
@@ -694,7 +712,11 @@ export default function AppLayout() {
           <div className="topbar-actions">
             <LanguageSwitcher />
             <span className="demo-tag">
-              <Badge tone="green">LIVE DB</Badge>
+              <Badge tone={connection.status === 'ready' ? 'green' : 'amber'}>
+                {connection.status === 'ready' ? (i18n.language.startsWith('en') ? 'Connected' : 'Đã kết nối')
+                  : connection.status === 'loading' ? (i18n.language.startsWith('en') ? 'Connecting…' : 'Đang kết nối…')
+                  : (i18n.language.startsWith('en') ? 'Data unavailable' : 'Không có kết nối dữ liệu')}
+              </Badge>
             </span>
             <div
               style={{
@@ -725,7 +747,7 @@ export default function AppLayout() {
         <main id="main-content" className="page-content" tabIndex={-1}>
           <SmoothReveal key={location.pathname} duration={320} distance={8}>
             <div className="route-transition">
-              <Outlet />
+              {connection.status === 'ready' ? <Outlet /> : <DataConnectionState {...connection} />}
             </div>
           </SmoothReveal>
         </main>

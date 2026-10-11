@@ -6,6 +6,8 @@
   "items": {
     "dashboard": "Overview",
     "bags": "Records",
+    "submissions": "Rosbag review queue",
+    "mySubmissions": "Submit & track rosbags",
     "rosbagGroup": "RosBag",
     "sharedBags": "Shared Rosbags",
     "analysis": "Analysis",
@@ -18,6 +20,10 @@
     "admin": "System Administration",
     "settings": "Settings",
     "about": "About"
+  },
+  "cost": {
+    "model": "Cost by Model",
+    "sessions": "Cost by Session"
   },
   "admin": {
     "members": "Accounts & Permissions",

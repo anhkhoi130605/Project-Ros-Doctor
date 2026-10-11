@@ -9,17 +9,18 @@ export default function useEngineeringDashboard() {
   const [topicStats, setTopicStats] = useState([]);
 
   useEffect(() => {
+    let active = true;
     // 1. Tải thống kê tổng thể từ Backend Database
     getDashboardStatsApi()
       .then((data) => {
-        if (data) setDbStats(data);
+        if (active && data) setDbStats(data);
       })
       .catch((err) => console.warn('Could not load dashboard stats:', err));
 
     // 2. Tải danh sách Rosbag thực tế từ Database
     getBagsApi()
       .then(async (bags) => {
-        if (Array.isArray(bags) && bags.length > 0) {
+        if (active && Array.isArray(bags)) {
           dispatch({ type: 'SET_BAGS', bags });
 
           // Lấy top 6 rosbag mới nhất có sessionId để nạp chi tiết phiên phân tích thực tế từ DB
@@ -33,34 +34,19 @@ export default function useEngineeringDashboard() {
                   bagName: s.name || b.name,
                   bagId: b.id,
                   timestamp: s.createdAt || b.date,
-                  topicsCount: s.topics || b.topics || 2,
+                  topicsCount: s.topics ?? b.topics ?? 0,
                   warningsCount: (s.issues || []).length,
                   healthScore: s.healthScore,
                   status: s.status || 'complete',
                   statusText: s.status === 'complete' ? 'Hoàn tất' : 'Chờ duyệt',
                   issues: s.issues || [],
-                  duration: s.duration || b.duration || 85,
-                  processingSeconds: s.processingSeconds || b.processingSeconds || 85,
-                }))
-                .catch(() => ({
-                  id: b.sessionId,
-                  title: `Phiên #${b.sessionId}`,
-                  bagName: b.name,
-                  bagId: b.id,
-                  timestamp: b.date,
-                  topicsCount: b.topics || 2,
-                  warningsCount: 0,
-                  healthScore: 85,
-                  status: b.status || 'complete',
-                  statusText: 'Hoàn tất',
-                  issues: [],
-                  duration: b.duration || 85,
-                  processingSeconds: b.processingSeconds || 85,
+                  duration: s.duration ?? b.duration ?? 0,
+                  processingSeconds: s.processingSeconds ?? b.processingSeconds ?? null,
                 }))
             )
           );
 
-          if (loadedSessions.length > 0) {
+          if (active) {
             setRealSessions(loadedSessions);
             dispatch({ type: 'SET_REAL_SESSIONS', sessions: loadedSessions });
 
@@ -80,21 +66,17 @@ export default function useEngineeringDashboard() {
               color: name.includes('tf') ? '#3b82f6' : name.includes('imu') ? '#f59e0b' : '#ef4444',
             }));
 
-            // Đảm bảo các topic chính của dataset luôn hiển thị đúng trọng số thực
-            if (!topicCounts['/tf']) topicsArray.push({ name: '/tf', label: 'TF Frame', count: 48, color: '#3b82f6' });
-            if (!topicCounts['/ouster/imu']) topicsArray.push({ name: '/ouster/imu', label: 'IMU Sensor', count: 34, color: '#f59e0b' });
-            if (!topicCounts['/clock']) topicsArray.push({ name: '/clock', label: 'Sim Clock', count: 18, color: '#10b981' });
-
             setTopicStats(topicsArray.sort((a, b) => b.count - a.count));
           }
         }
       })
       .catch((err) => console.warn('Could not load bags:', err));
+    return () => { active = false; };
   }, [dispatch]);
 
   const pendingCount = useMemo(() => {
-    return dbStats?.totalIssues ?? (state.findings || []).filter((f) => f.review?.status === 'pending').length ?? 149;
-  }, [dbStats, state.findings]);
+    return (state.findings || []).filter((f) => f.review?.status === 'pending').length;
+  }, [state.findings]);
 
   const bagsCount = useMemo(() => {
     return dbStats?.totalBags ?? (state.bags || []).length;
@@ -105,7 +87,7 @@ export default function useEngineeringDashboard() {
   }, [dbStats, state.sessions]);
 
   const highWarningsCount = useMemo(() => {
-    return dbStats?.highSeverityIssues ?? (state.findings || []).filter((f) => f.severity === 'high').length ?? 110;
+    return dbStats?.highSeverityIssues ?? (state.findings || []).filter((f) => f.severity === 'high').length;
   }, [dbStats, state.findings]);
 
   const recentSessions = useMemo(() => {

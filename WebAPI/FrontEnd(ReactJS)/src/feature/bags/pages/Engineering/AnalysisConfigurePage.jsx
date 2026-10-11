@@ -90,7 +90,7 @@ export default function AnalysisConfigurePage() {
     }
 
     dispatch({ type: 'CONFIG', config });
-    notify('Đã lưu cấu hình phân tích.', 'success');
+    notify('Đang chuyển sang phân tích bằng backend.', 'info');
     navigate('/analysis/processing');
   };
 
@@ -105,6 +105,8 @@ export default function AnalysisConfigurePage() {
       />
 
       <AnalysisStepper currentStep={3} />
+
+      <Notice>API phân tích hiện sử dụng cấu hình phía máy chủ. Các tùy chọn bên dưới chỉ được lưu ở giao diện, chưa áp dụng vào kết quả phân tích.</Notice>
 
       <form onSubmit={handleSubmit} noValidate>
         <div className="two-column wide-left">
@@ -223,7 +225,7 @@ export default function AnalysisConfigurePage() {
             <Card className="launch-card">
               <Icon name="activity" size={34} />
               <h3>Sẵn sàng phân tích</h3>
-              <p>Thử pipeline và nhận bộ kết quả mẫu để kiểm tra luồng duyệt.</p>
+              <p>Phân tích file đã lưu bằng backend và tạo phiên kết quả thật. API hiện dùng cấu hình phía máy chủ; các tùy chọn trên trang này chưa được gửi vào bộ phân tích.</p>
               {error && <p role="alert" className="field-error">{error}</p>}
               <Button type="submit" icon="activity">Bắt đầu phân tích</Button>
               <Button to="/upload/validate" variant="ghost">Quay lại kiểm tra</Button>

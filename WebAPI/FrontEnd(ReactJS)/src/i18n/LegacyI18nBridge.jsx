@@ -5,6 +5,12 @@ import { useTranslation } from 'react-i18next';
 // Only explicitly listed UI copy is translated. Unknown text (including values
 // returned by APIs/database such as rosbag names, topic names and IDs) is kept.
 const ENGLISH_UI_TEXT = new Map([
+  ['Dữ liệu đã tải từ máy chủ', 'Data loaded from the server'],
+  ['Cảnh báo mức cao đã ghi nhận', 'Recorded high-severity alerts'],
+  ['Dữ liệu chẩn đoán', 'Diagnostic data'],
+  ['Chưa có dữ liệu để hiển thị biểu đồ.', 'No data available to display charts.'],
+  ['Chỉ hiển thị số liệu đã ghi nhận từ máy chủ. Dấu “—” thể hiện số liệu chưa có.', 'Only recorded server data is displayed. “—” indicates unavailable data.'],
+  ['Chưa có dữ liệu token', 'Token data is not available'],
   ['Phân bổ theo Topic', 'By topic'],
   ['5 Phiên gần đây', '5 recent sessions'],
   ['Xem góc nhìn Người xem (V01)', 'Switch to Viewer view (V01)'],

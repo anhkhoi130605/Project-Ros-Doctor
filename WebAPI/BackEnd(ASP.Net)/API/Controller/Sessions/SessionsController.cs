@@ -36,13 +36,18 @@ namespace API.Controller.Sessions
 			return Ok(result);
 		}
 
-		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost("start")]
 		public async Task<IActionResult> StartAnalysis([FromBody] StartAnalysisRequestDto request, CancellationToken cancellationToken)
 		{
 			var userId = CurrentUserId ?? "usr-guest";
-			var result = await _mediator.Send(new StartAnalysisCommand(request, userId), cancellationToken);
-			return Ok(result);
+			try
+			{
+				var result = await _mediator.Send(new StartAnalysisCommand(request, userId), cancellationToken);
+				return Ok(result);
+			}
+			catch (System.InvalidOperationException e) { return Conflict(new { message = e.Message }); }
+			catch (System.Collections.Generic.KeyNotFoundException e) { return NotFound(new { message = e.Message }); }
 		}
 	}
 }

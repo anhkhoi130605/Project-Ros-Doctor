@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PageHeader, Badge, Card, Button, FormField, Icon, Pagination } from '../../../../components/common/UIComponents';
 import useEngineeringBags from '../../hooks/useEngineeringBags';
+import { formatBytes } from '../../../../stored/appStore';
 
 export default function EngineeringBagsListPage() {
   const {
@@ -34,6 +35,7 @@ export default function EngineeringBagsListPage() {
         <Button to="/upload" icon="plus">
           Nạp tệp mới
         </Button>
+        <Button to="/bag-submissions" variant="secondary">Duyệt rosbag gửi lên</Button>
       </PageHeader>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
@@ -110,20 +112,21 @@ export default function EngineeringBagsListPage() {
                   <td>
                     <code>{bag.format || 'db3'}</code>
                   </td>
-                  <td>{bag.sizeMb} MB</td>
-                  <td>{bag.topicCount || 12} topics</td>
-                  <td>{bag.durationSec || 120}s</td>
+                  <td>{formatBytes(bag.size)}</td>
+                  <td>{bag.topics ?? bag.topicCount ?? '—'} topics</td>
+                  <td>{(bag.duration ?? bag.durationSec) > 0 ? `${bag.duration ?? bag.durationSec}s` : '—'}</td>
                   <td>
-                    <Badge status={bag.status || 'complete'} />
+                    <Badge status={bag.status} />
                   </td>
                   <td>
                     <Button
-                      to={bag.sessionId ? `/sessions/${bag.sessionId}/overview` : `/sessions/${bag.id}`}
+                      to={bag.sessionId ? `/sessions/${encodeURIComponent(bag.sessionId)}/overview` : `/bags/${encodeURIComponent(bag.id)}`}
                       variant="ghost"
                       icon="arrow"
                     >
-                      Xem chẩn đoán
+                      {bag.sessionId ? 'Xem chẩn đoán' : 'Xem rosbag'}
                     </Button>
+                    {!bag.sessionId && <small style={{ display: 'block', marginTop: 6, color: '#61758a' }}>Chưa có phiên phân tích</small>}
                   </td>
                 </tr>
               ))}
