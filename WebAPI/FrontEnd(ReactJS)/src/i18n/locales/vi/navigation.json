@@ -6,6 +6,8 @@
   "items": {
     "dashboard": "Tổng quan",
     "bags": "Bản ghi",
+    "submissions": "Duyệt rosbag gửi lên",
+    "mySubmissions": "Gửi rosbag & theo dõi",
     "rosbagGroup": "RosBag",
     "sharedBags": "Rosbag được chia sẻ",
     "analysis": "Phân tích",
@@ -18,6 +20,10 @@
     "admin": "Quản trị hệ thống",
     "settings": "Cài đặt",
     "about": "Trang giới thiệu"
+  },
+  "cost": {
+    "model": "Chi phí theo Model",
+    "sessions": "Chi phí theo phiên"
   },
   "admin": {
     "members": "Tài khoản & quyền",

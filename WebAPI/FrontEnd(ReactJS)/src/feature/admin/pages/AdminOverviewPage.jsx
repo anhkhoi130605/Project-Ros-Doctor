@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore.jsx';
 import { PageHeader, Card } from '../../../components/common/UIComponents.jsx';
+import { readCostReport, printCostReport } from '../utils/costReport';
 import {
   fetchAdminActivityLogsApi,
   fetchAdminMembersApi,
@@ -159,6 +160,21 @@ export default function AdminOverviewPage() {
   const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
 
   const activeTab = (!tab || tab === 'overview') ? 'members' : tab;
+  const costReportRef = useRef(null);
+  const [exportingCost, setExportingCost] = useState(false);
+  const handleExportCost = async () => {
+    if (exportingCost) return;
+    setExportingCost(true);
+    try {
+      await printCostReport(readCostReport(costReportRef.current), { isEnglish });
+    } catch (error) {
+      notify(error.message === 'POPUP_BLOCKED'
+        ? (isEnglish ? 'Allow pop-ups for this site, then try exporting again.' : 'Vui lòng cho phép cửa sổ bật lên cho trang này rồi xuất lại.')
+        : (isEnglish ? 'Could not open the cost report. Please try again.' : 'Không thể mở báo cáo chi phí. Vui lòng thử lại.'), 'error');
+    } finally {
+      setExportingCost(false);
+    }
+  };
 
   // Members state
   const [members, setMembers] = useState([]);
@@ -581,8 +597,8 @@ export default function AdminOverviewPage() {
     cost: {
       title: 'Chi phí & hiệu suất',
       subtitle: 'Theo dõi tài nguyên tiêu thụ, chi phí API và hiệu năng Agent.',
-      actionLabel: 'Xuất báo cáo chi phí',
-      onAction: () => notify('Đã tải xuống báo cáo chi phí dạng PDF!', 'info'),
+      actionLabel: isEnglish ? 'Export cost report (PDF)' : 'Xuất báo cáo chi phí (PDF)',
+      onAction: handleExportCost,
     },
     'system-logs': {
       title: 'Nhật ký hệ thống',
@@ -621,6 +637,7 @@ export default function AdminOverviewPage() {
             type="button"
             className="button primary"
             onClick={currentHeader.onAction}
+            disabled={activeTab === 'cost' && exportingCost}
             style={{ minHeight: 40 }}
           >
             {currentHeader.actionLabel}
@@ -2071,7 +2088,12 @@ export default function AdminOverviewPage() {
 
       {/* Cost & Performance Tab Content */}
       {activeTab === 'cost' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div ref={costReportRef} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <p role="note" style={{ padding: '12px 16px', background: '#fff7e6', color: '#805313', border: '1px solid #efd49a', borderRadius: 8, margin: 0 }}>
+            {isEnglish
+              ? 'Illustrative data: this Model cost page uses sample figures, not actual database costs. Export opens a print preview; choose Save as PDF.'
+              : 'Dữ liệu minh họa: trang chi phí theo Model đang dùng số liệu mẫu, không phải chi phí thực tế từ database. Khi xuất, chọn Lưu dưới dạng PDF trong hộp thoại in.'}
+          </p>
           <div className="stats-grid">
             <div className="card stat blue">
               <span className="stat-label">TỔNG CHI PHÍ THÁNG NÀY</span>
@@ -2099,7 +2121,7 @@ export default function AdminOverviewPage() {
             <Card title="Phân bổ chi phí API theo Mô hình">
               <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                  <div data-cost-model style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--text)', fontWeight: 500 }}>GPT-4o (Reasoning & Diagnostics)</span>
                     <strong>$18.20 (71.6%)</strong>
                   </div>
@@ -2109,7 +2131,7 @@ export default function AdminOverviewPage() {
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                  <div data-cost-model style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--text)', fontWeight: 500 }}>Text Embedding 3 (Vector Retrieval)</span>
                     <strong>$4.80 (18.9%)</strong>
                   </div>
@@ -2119,7 +2141,7 @@ export default function AdminOverviewPage() {
                 </div>
 
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
+                  <div data-cost-model style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
                     <span style={{ color: 'var(--text)', fontWeight: 500 }}>Dịch vụ OCR & Parse Log</span>
                     <strong>$2.40 (9.5%)</strong>
                   </div>

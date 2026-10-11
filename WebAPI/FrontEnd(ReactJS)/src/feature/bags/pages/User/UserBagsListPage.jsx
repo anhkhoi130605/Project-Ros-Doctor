@@ -17,7 +17,7 @@ export default function UserBagsListPage() {
         title="Rosbag được chia sẻ"
         subtitle="Danh sách các bản ghi log và phiên chẩn đoán đã được kỹ sư kiểm tra, công bố."
       >
-        <Badge tone="blue">• Quyền Người xem (Chỉ đọc)</Badge>
+        <Button to="/bag-submissions" icon="upload">Gửi rosbag & theo dõi</Button>
       </PageHeader>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>

@@ -44,10 +44,10 @@ namespace Application.Features.Dashboard.Queries
 				}
 
 				// Execute direct SQL aggregations instead of loading full tables into RAM
-				var totalBags = await _unitOfWork.Rosbags.CountAsync(null, cancellationToken);
-				var completeBags = await _unitOfWork.Rosbags.CountAsync(b => b.Status == RosbagStatus.Complete, cancellationToken);
-				var processingBags = await _unitOfWork.Rosbags.CountAsync(b => b.Status == RosbagStatus.Processing, cancellationToken);
-				var pendingBags = await _unitOfWork.Rosbags.CountAsync(b => b.Status == RosbagStatus.Ready, cancellationToken);
+				var totalBags = await _unitOfWork.Rosbags.CountAsync(b => b.ReviewStatus == RosbagReviewStatus.Approved && b.DeletedAt == null, cancellationToken);
+				var completeBags = await _unitOfWork.Rosbags.CountAsync(b => b.ReviewStatus == RosbagReviewStatus.Approved && b.DeletedAt == null && b.Status == RosbagStatus.Complete, cancellationToken);
+				var processingBags = await _unitOfWork.Rosbags.CountAsync(b => b.ReviewStatus == RosbagReviewStatus.Approved && b.DeletedAt == null && b.Status == RosbagStatus.Processing, cancellationToken);
+				var pendingBags = await _unitOfWork.Rosbags.CountAsync(b => b.ReviewStatus == RosbagReviewStatus.Approved && b.DeletedAt == null && b.Status == RosbagStatus.Ready, cancellationToken);
 
 				var totalSessions = await _unitOfWork.AnalysisSessions.CountAsync(null, cancellationToken);
 				var healthAvg = (int)await _unitOfWork.AnalysisSessions.AverageDoubleAsync(s => s.HealthScore, null, 95, cancellationToken);

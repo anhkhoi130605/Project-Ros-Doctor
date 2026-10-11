@@ -47,7 +47,7 @@ namespace Application.Features.Rosbags.Queries
 					Date = b.CreatedAt.ToString("o"),
 					b.UserId
 				},
-				null,
+				b => b.ReviewStatus == Domain.Enums.RosbagReviewStatus.Approved && b.DeletedAt == null,
 				q => q.OrderByDescending(b => b.CreatedAt),
 				skip,
 				take,

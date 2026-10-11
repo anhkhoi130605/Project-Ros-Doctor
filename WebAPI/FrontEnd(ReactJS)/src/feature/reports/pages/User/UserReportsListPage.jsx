@@ -10,7 +10,7 @@ export default function UserReportsListPage() {
   useEffect(() => {
     getReportsApi()
       .then((reports) => {
-        if (Array.isArray(reports) && reports.length > 0) {
+        if (Array.isArray(reports)) {
           dispatch({ type: 'SET_REPORTS', reports });
         }
       })

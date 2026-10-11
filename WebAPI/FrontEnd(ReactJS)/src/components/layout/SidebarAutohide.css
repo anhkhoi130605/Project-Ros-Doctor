@@ -362,6 +362,29 @@
   }
 }
 
+/* Cost navigation uses explicit click/keyboard expansion, not hover expansion. */
+.app-shell .sidebar .cost-nav-toggle {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.app-shell .sidebar .cost-nav-toggle:not(.active):not(:hover) {
+  background: transparent;
+}
+
+.app-shell .sidebar .cost-nav-group .sub-nav-group[hidden] {
+  display: none;
+}
+
+.app-shell .sidebar .cost-nav-toggle[aria-expanded="false"] .nav-chevron {
+  transform: rotate(0deg);
+}
+
+.app-shell .sidebar .cost-nav-toggle[aria-expanded="true"] .nav-chevron {
+  transform: rotate(180deg);
+}
+
 /* Mobile Adjustments (<=800px) */
 @media (max-width: 800px) {
   .app-shell .sidebar .sidebar-pin-btn {

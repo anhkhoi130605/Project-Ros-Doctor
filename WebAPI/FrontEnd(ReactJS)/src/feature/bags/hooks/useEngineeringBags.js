@@ -12,11 +12,11 @@ export default function useEngineeringBags() {
     try {
       setLoading(true);
       const apiBags = await getBagsApi();
-      if (Array.isArray(apiBags) && apiBags.length > 0) {
+      if (Array.isArray(apiBags)) {
         dispatch({ type: 'SET_BAGS', bags: apiBags });
       }
-    } catch {
-      // Keep existing/local bags if offline
+    } catch (error) {
+      if (error.name !== 'AbortError') dispatch({ type: 'SET_BAGS', bags: [] });
     } finally {
       setLoading(false);
     }
@@ -31,7 +31,8 @@ export default function useEngineeringBags() {
   const filteredBags = useMemo(() => {
     return bags.filter((bag) => {
       const matchSearch = (bag.name || '').toLowerCase().includes(searchTerm.toLowerCase());
-      const matchStatus = statusFilter === 'all' || bag.status === statusFilter;
+      const matchStatus = statusFilter === 'all' || bag.status === statusFilter
+        || (statusFilter === 'pending' && bag.status === 'ready');
       return matchSearch && matchStatus;
     });
   }, [bags, searchTerm, statusFilter]);
@@ -53,8 +54,9 @@ export default function useEngineeringBags() {
   const deleteBag = async (id) => {
     try {
       await deleteBagApi(id);
-    } catch {
-      // Local delete fallback
+    } catch (error) {
+      notify(error.message || 'Không thể xóa rosbag. Vui lòng thử lại.', 'error');
+      return;
     }
     dispatch({ type: 'DELETE_BAG', id });
     notify('Đã xóa rosbag.', 'info');

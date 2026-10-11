@@ -15,7 +15,7 @@ using MediatR;
 
 namespace Application.Features.Rosbags.Commands
 {
-	public record InspectRosbagCommand(string? BagPath, string? SampleName) : IRequest<RosbagInspectionReportDto>;
+	public record InspectRosbagCommand(string? BagPath, string? SampleName, string? EngineerId = null) : IRequest<RosbagInspectionReportDto>;
 
 	public class InspectRosbagCommandHandler : IRequestHandler<InspectRosbagCommand, RosbagInspectionReportDto>
 	{
@@ -33,8 +33,19 @@ namespace Application.Features.Rosbags.Commands
 		public async Task<RosbagInspectionReportDto> Handle(InspectRosbagCommand request, CancellationToken cancellationToken)
 		{
 			RosbagInspectionReportDto report;
+			Rosbag? existingBag = null;
 			if (!string.IsNullOrWhiteSpace(request.BagPath))
 			{
+				// Use the existing RosbagId when inspecting a submitted file. Check before reading or analyzing it.
+				var fullPath = System.IO.Path.GetFullPath(request.BagPath);
+				var storedBags = await _unitOfWork.Rosbags.GetAllAsync(b => b.StorageUrl != null, null, cancellationToken);
+				var matchingBags = storedBags.Where(b => PathsMatch(b.StorageUrl!, fullPath)).ToList();
+				foreach (var match in matchingBags)
+				{
+					if (match.DeletedAt != null) throw new InvalidOperationException("Rosbag đã bị xóa.");
+					match.EnsureApprovedForAnalysis();
+				}
+				existingBag = matchingBags.FirstOrDefault();
 				report = await _inspectorService.InspectBagAsync(request.BagPath, cancellationToken);
 			}
 			else
@@ -46,9 +57,9 @@ namespace Application.Features.Rosbags.Commands
 			try
 			{
 				var users = await _unitOfWork.User.GetAllAsync(null, null, cancellationToken);
-				var userId = users.FirstOrDefault()?.Id ?? "usr-system";
+				var userId = existingBag?.UserId ?? users.FirstOrDefault()?.Id ?? "usr-system";
 
-				var bagId = "bag-" + Guid.NewGuid().ToString("N")[..8];
+				var bagId = existingBag?.Id ?? "bag-" + Guid.NewGuid().ToString("N")[..8];
 				var rosbag = new Rosbag
 				{
 					Id = bagId,
@@ -62,14 +73,22 @@ namespace Application.Features.Rosbags.Commands
 					Status = RosbagStatus.Complete,
 					CreatedAt = DateTime.UtcNow
 				};
-				await _unitOfWork.Rosbags.CreateAsync(rosbag, cancellationToken);
+				if (existingBag == null)
+					await _unitOfWork.Rosbags.CreateAsync(rosbag, cancellationToken);
+				else
+				{
+					existingBag.Status = RosbagStatus.Complete;
+					existingBag.DurationSec = rosbag.DurationSec;
+					existingBag.TopicCount = rosbag.TopicCount;
+					await _unitOfWork.Rosbags.UpdateAsync(existingBag, cancellationToken);
+				}
 
 				var sessionId = "sess-" + Guid.NewGuid().ToString("N")[..8];
 				var session = new AnalysisSession
 				{
 					Id = sessionId,
 					RosbagId = rosbag.Id,
-					EngineerId = userId,
+					EngineerId = existingBag != null ? request.EngineerId ?? userId : userId,
 					Status = SessionStatus.Complete,
 					HealthScore = report.HealthScore,
 					ExecutionTimeSec = (int)Math.Max(1, Math.Round(report.ProcessingTimeSec)),
@@ -168,10 +187,22 @@ namespace Application.Features.Rosbags.Commands
 			}
 			catch (Exception ex)
 			{
+				if (existingBag != null) throw;
 				Console.WriteLine($"[Warning] Failed to persist inspection to DB: {ex.Message}");
 			}
 
 			return report;
+		}
+
+		private static bool PathsMatch(string storedPath, string fullPath)
+		{
+			try
+			{
+				return string.Equals(System.IO.Path.GetFullPath(storedPath), fullPath,
+					OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+			}
+			catch (ArgumentException) { return false; }
+			catch (NotSupportedException) { return false; }
 		}
 	}
 }
