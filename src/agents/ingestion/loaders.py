@@ -13,6 +13,7 @@ from pymongo import MongoClient
 
 from src.agents.chunking.source import make_source_id
 from src.config import Settings, get_settings
+from src.services.benchmark_publication import PUBLISHED_FILTER, official_benchmark
 
 logger = logging.getLogger("src.agents.ingestion")
 
@@ -149,10 +150,11 @@ class MongoDatasetLoader:
 
             collection = database["benchmark_datasets"]
             # Deterministic ascending sort by code prevents index instability across runs
-            cursor = collection.find({}).sort("code", 1).limit(self._settings.rag_max_documents_per_collection)
+            cursor = collection.find(PUBLISHED_FILTER).sort("code", 1).limit(self._settings.rag_max_documents_per_collection)
 
             for doc in cursor:
-                if not isinstance(doc, dict):
+                doc = official_benchmark(doc)
+                if doc is None:
                     continue
 
                 code = str(doc.get("code", "unknown")).strip()

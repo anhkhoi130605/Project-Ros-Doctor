@@ -23,6 +23,56 @@ namespace Domain.Entities.NoSql
 
 		[BsonElement("created_at")]
 		public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+		// Legacy datasets without these fields remain published at version 1.
+		[BsonElement("is_published")]
+		public bool IsPublished { get; set; } = true;
+
+		[BsonElement("version")]
+		public int Version { get; set; } = 1;
+
+		[BsonElement("updated_at")]
+		public DateTime? UpdatedAt { get; set; }
+
+		[BsonElement("change_request")]
+		public BenchmarkChangeRequest? ChangeRequest { get; set; }
+
+		[BsonElement("provenance")]
+		public string? Provenance { get; set; }
+	}
+
+	public class BenchmarkContent
+	{
+		[BsonElement("name")]
+		public string Name { get; set; } = "";
+		[BsonElement("provenance")]
+		public string? Provenance { get; set; }
+		[BsonElement("test_cases")]
+		public List<BenchmarkTestCaseItem> TestCases { get; set; } = new();
+	}
+
+	public class BenchmarkChangeRequest
+	{
+		[BsonElement("request_id")]
+		public string RequestId { get; set; } = "";
+		[BsonElement("request_type")]
+		public string RequestType { get; set; } = "";
+		[BsonElement("proposed_data")]
+		public BenchmarkContent ProposedData { get; set; } = new();
+		[BsonElement("status")]
+		public string Status { get; set; } = "Pending";
+		[BsonElement("requested_by")]
+		public string RequestedBy { get; set; } = "";
+		[BsonElement("requested_at")]
+		public DateTime RequestedAt { get; set; }
+		[BsonElement("reviewed_by")]
+		public string? ReviewedBy { get; set; }
+		[BsonElement("reviewed_at")]
+		public DateTime? ReviewedAt { get; set; }
+		[BsonElement("review_note")]
+		public string? ReviewNote { get; set; }
+		[BsonElement("base_version")]
+		public int BaseVersion { get; set; }
 	}
 
 	[BsonIgnoreExtraElements]

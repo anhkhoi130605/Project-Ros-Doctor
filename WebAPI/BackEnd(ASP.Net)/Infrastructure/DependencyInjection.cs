@@ -88,6 +88,7 @@ public static class DependencyInjection
 		services.AddScoped<IUnitOfWork, UnitOfWork>();
 		services.AddScoped<IJWTTokenGenerator, JWTTokenGenerator>();
 		services.AddScoped<IEmailService, SmtpEmailService>();
+		services.AddScoped<IBenchmarkService, BenchmarkService>();
 		services.AddScoped<IStorageService, CloudinaryStorageService>();
 		services.AddSingleton<IUserActivityLogQueue, UserActivityLogQueue>();
 		services.AddHostedService<UserActivityLogBackgroundService>();

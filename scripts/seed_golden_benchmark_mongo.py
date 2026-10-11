@@ -199,12 +199,13 @@ def main():
         print(f"\nBuilding dataset {code}...")
         suite = builder()
         if suite:
-            result = col.replace_one(
+            result = col.update_one(
                 {"code": suite["code"]},
-                suite,
+                {"$setOnInsert": {**suite, "is_published": True, "version": 1,
+                                  "updated_at": suite["created_at"], "change_request": None}},
                 upsert=True,
             )
-            status = "Updated" if result.matched_count > 0 else "Inserted"
+            status = "Kept existing (use review workflow to update)" if result.matched_count > 0 else "Inserted"
             print(f"[{status}] {suite['code']} with {suite['total_cases']} test cases.")
 
     print("\n" + "=" * 60)

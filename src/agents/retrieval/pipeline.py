@@ -17,6 +17,7 @@ from src.agents.ingestion.loaders import MarkdownPlaybookLoader
 from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.stores import get_chroma_store
 from src.config import Settings, get_settings
+from src.services.benchmark_publication import PUBLISHED_FILTER, official_benchmark
 
 
 class MongoRAGPipeline:
@@ -73,7 +74,12 @@ class MongoRAGPipeline:
         documents: list[Document] = []
         for collection_name in sorted(self._database.list_collection_names()):
             collection = self._database[collection_name]
-            for raw_document in collection.find({}).limit(self._settings.rag_max_documents_per_collection):
+            query = PUBLISHED_FILTER if collection_name == "benchmark_datasets" else {}
+            for raw_document in collection.find(query).limit(self._settings.rag_max_documents_per_collection):
+                if collection_name == "benchmark_datasets":
+                    raw_document = official_benchmark(raw_document)
+                    if raw_document is None:
+                        continue
                 document_id = str(raw_document.get("_id", "unknown"))
                 raw_document.pop("_id", None)
                 import json

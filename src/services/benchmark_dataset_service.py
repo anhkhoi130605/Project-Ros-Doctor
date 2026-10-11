@@ -8,6 +8,7 @@ from pymongo.collection import Collection
 
 from src.config import Settings, get_settings
 from src.models.schemas import BenchmarkDatasetResponse, BenchmarkDatasetSummary
+from src.services.benchmark_publication import PUBLISHED_FILTER
 
 
 class BenchmarkDatasetService:
@@ -55,7 +56,7 @@ class BenchmarkDatasetService:
     def list_datasets(self, limit: int = 50) -> list[BenchmarkDatasetSummary]:
         """Return lightweight summaries; test cases are intentionally excluded."""
         cursor = (
-            self._collection.find({}, self._SUMMARY_PROJECTION)
+            self._collection.find(PUBLISHED_FILTER, self._SUMMARY_PROJECTION)
             .sort("code", ASCENDING)
             .limit(limit)
         )
@@ -64,7 +65,7 @@ class BenchmarkDatasetService:
     def get_dataset(self, code: str) -> BenchmarkDatasetResponse | None:
         """Return one dataset, using the indexed ``code`` field when available."""
         document: dict[str, Any] | None = self._collection.find_one(
-            {"code": code},
+            {"code": code, **PUBLISHED_FILTER},
             self._DETAIL_PROJECTION,
         )
         if document is None:

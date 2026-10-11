@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Icon } from '../../../components/common/UIComponents';
 import { getAiUsageApi, getBagsApi } from '../../../service';
@@ -19,6 +20,8 @@ function getSessionMetric(session, sessionMetricsMap) {
 
 export default function CostPerformancePage() {
   const { state, dispatch } = useApp();
+  const { i18n } = useTranslation();
+  const locale = (i18n.resolvedLanguage || i18n.language || 'vi').startsWith('en') ? 'en-US' : 'vi-VN';
   const [filterSessionId, setFilterSessionId] = useState('all');
   const [aiUsage, setAiUsage] = useState(null);
 
@@ -188,7 +191,7 @@ export default function CostPerformancePage() {
             <Icon name="trending-up" size={16} />
           </span>
           <strong>{totalCostDisplay}</strong>
-          <small>{totalTokensDisplay == null ? 'Chưa có dữ liệu token' : `${totalTokensDisplay.toLocaleString()} tokens đã tiêu thụ`}</small>
+          <small>{totalTokensDisplay == null ? 'Chưa có dữ liệu token' : `${totalTokensDisplay.toLocaleString(locale)} tokens đã tiêu thụ`}</small>
           <svg className="spark" viewBox="0 0 64 32" aria-hidden="true">
             <path
               d="M2 16 Q 16 16, 32 16 T 62 16"
@@ -284,7 +287,7 @@ export default function CostPerformancePage() {
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                           <span className="status-pill blue">
-                            {logMetric.tokens == null ? 'Chưa có dữ liệu' : `${logMetric.tokens.toLocaleString()} tokens`}
+                            {logMetric.tokens == null ? 'Chưa có dữ liệu' : `${logMetric.tokens.toLocaleString(locale)} tokens`}
                           </span>
                           {logMetric.model && (
                             <span style={{ fontSize: '10px', color: '#64748b', paddingLeft: '4px' }}>

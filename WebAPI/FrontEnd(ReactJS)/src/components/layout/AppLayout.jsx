@@ -551,6 +551,7 @@ export default function AppLayout() {
             )}
             <div className="sidebar-account-details" style={{ flex: 1, minWidth: 0 }}>
               <strong
+                translate={state.profile?.name ? 'no' : undefined}
                 style={{
                   fontSize: 13,
                   display: 'block',
@@ -704,7 +705,7 @@ export default function AppLayout() {
           </button>
 
           <div className="breadcrumbs">
-            <span>Workspace</span>
+            <span>{t('navigation:pageTitles.workspace')}</span>
             <Icon name="chevron" size={14} />
             <strong>{currentPageTitle}</strong>
           </div>
@@ -833,7 +834,7 @@ export default function AppLayout() {
                 </div>
               )}
               <div style={{ minWidth: 0 }}>
-                <strong style={{ fontSize: '16px', color: '#0f172a', display: 'block' }}>
+                <strong translate={state.profile?.name ? 'no' : undefined} style={{ fontSize: '16px', color: '#0f172a', display: 'block' }}>
                   {state.profile?.name || ROLE_NAMES[state.role] || 'An Nguyễn'}
                 </strong>
                 <span style={{ fontSize: '12px', color: '#64748b', wordBreak: 'break-all' }}>
@@ -845,7 +846,7 @@ export default function AppLayout() {
             <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
                 <span style={{ color: '#64748b', fontWeight: 600 }}>{t('common:profile.fullName')}</span>
-                <strong style={{ color: '#0f172a' }}>{state.profile?.name || ROLE_NAMES[state.role] || 'An Nguyễn'}</strong>
+                <strong translate={state.profile?.name ? 'no' : undefined} style={{ color: '#0f172a' }}>{state.profile?.name || ROLE_NAMES[state.role] || 'An Nguyễn'}</strong>
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', alignItems: 'center' }}>
