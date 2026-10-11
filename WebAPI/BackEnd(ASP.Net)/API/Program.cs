@@ -171,15 +171,16 @@ app.Use(async (context, next) =>
 	// sử dụng cross-domain policy file
 	headers["X-Permitted-Cross-Domain-Policies"] = "none";
 
-	// API không cần được nhúng vào iframe.
-	// Nếu API chỉ trả JSON, có thể dùng CSP chặt hơn.
+	// Cho phép load tài nguyên cho React SPA giao diện
 	headers["Content-Security-Policy"] =
-		"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+		"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; frame-ancestors 'none';";
 
 	await next();
 });
 
 app.UseCors("Frontend");
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseRequestResponseLogging();
 
 // 4. Auth & Limiting pipeline
@@ -190,5 +191,6 @@ app.UseAuthorization();
 app.UseMiddleware<UserActivityAuditMiddleware>();
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 app.Run();
