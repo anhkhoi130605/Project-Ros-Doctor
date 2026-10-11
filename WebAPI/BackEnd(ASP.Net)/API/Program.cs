@@ -40,17 +40,12 @@ builder.Services.AddControllers()
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
 
-if (!builder.Environment.IsDevelopment() &&
-	(allowedOrigins is null || allowedOrigins.Length == 0))
-{
-	throw new InvalidOperationException(
-		"Cors:AllowedOrigins must be configured in production.");
-}
-
 allowedOrigins ??=
 [
 	"http://localhost:5173",
-	"https://localhost:5173"
+	"https://localhost:5173",
+	"http://localhost:80",
+	"http://localhost"
 ];
 
 
@@ -176,15 +171,16 @@ app.Use(async (context, next) =>
 	// sử dụng cross-domain policy file
 	headers["X-Permitted-Cross-Domain-Policies"] = "none";
 
-	// API không cần được nhúng vào iframe.
-	// Nếu API chỉ trả JSON, có thể dùng CSP chặt hơn.
+	// Cho phép load tài nguyên cho React SPA giao diện
 	headers["Content-Security-Policy"] =
-		"default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+		"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https:; frame-ancestors 'none';";
 
 	await next();
 });
 
 app.UseCors("Frontend");
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseRequestResponseLogging();
 
 // 4. Auth & Limiting pipeline
@@ -195,5 +191,6 @@ app.UseAuthorization();
 app.UseMiddleware<UserActivityAuditMiddleware>();
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapFallbackToFile("index.html");
 
 app.Run();
