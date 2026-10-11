@@ -2,7 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card } from '../../../components/common/UIComponents';
-import { sendChatMessageApi, streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../service';
+import { streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../service';
+import { useTranslation } from 'react-i18next';
+import { useChatHistory } from '../useChatHistory';
+import ChatHistorySidebar from '../components/ChatHistorySidebar';
+import '../chat-history.css';
 import robotPearlImg from '../../../assets/robot-pearl.png';
 
 const SEVERITY_COLORS = {
@@ -53,7 +57,16 @@ function storeDailyCalls(userKey, count) {
 }
 
 export default function ChatPage() {
+  const { state } = useApp();
+  const [searchParams] = useSearchParams();
+  const owner = state.currentUserId || state.profile?.id || (state.signedIn ? state.profile?.email : '') || '';
+  return <ChatWorkspace key={`${owner}:${searchParams.get('session') || ''}:${searchParams.get('bag') || ''}`} owner={owner} />;
+}
+
+function ChatWorkspace({ owner }) {
   const { state, notify } = useApp();
+  const { i18n } = useTranslation();
+  const english = i18n.language?.startsWith('en');
   const [searchParams] = useSearchParams();
   const urlSessionId = searchParams.get('session') || '';
   const urlBagId = searchParams.get('bag') || '';
@@ -71,8 +84,9 @@ export default function ChatPage() {
   const isLimitReached = maxDailyRequests > 0 && dailyCallsUsed >= maxDailyRequests;
 
   const [bags, setBags] = useState([]);
-  const [selectedBagId, setSelectedBagId] = useState(urlBagId);
-  const [selectedSessionId, setSelectedSessionId] = useState(urlSessionId);
+  const { conversations, active, setMessages, setContext, openConversation, newConversation, storageFailed } = useChatHistory(owner, urlBagId, urlSessionId);
+  const selectedBagId = active.bagId;
+  const selectedSessionId = active.sessionId;
   const [expandedLogs, setExpandedLogs] = useState({});
 
   const toggleLog = (key) => {
@@ -82,7 +96,7 @@ export default function ChatPage() {
     }));
   };
 
-  const [messages, setMessages] = useState([
+  const messages = active.messages.length ? active.messages : [
     {
       id: 1,
       sender: 'agent',
@@ -90,52 +104,47 @@ export default function ChatPage() {
       analysis: 'Cơ sở tri thức ROS2 Playbook & Backend Telemetry sẵn sàng.',
       at: 'Hôm nay',
     },
-  ]);
+  ];
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Load available rosbags & sessions from Backend
   useEffect(() => {
+    let cancelled = false;
     getBagsApi()
       .then((res) => {
         const list = Array.isArray(res) ? res : (res?.data || []);
-        setBags(list);
-        if (urlSessionId) {
-          setSelectedSessionId(urlSessionId);
-          const found = list.find((b) => b.sessionId === urlSessionId);
-          if (found) setSelectedBagId(found.id);
-        } else if (urlBagId) {
-          setSelectedBagId(urlBagId);
-          const found = list.find((b) => b.id === urlBagId);
-          if (found && found.sessionId) setSelectedSessionId(found.sessionId);
-        }
+        if (!cancelled) setBags(list);
       })
       .catch((err) => console.warn('Could not load rosbags for chat context:', err));
+    return () => { cancelled = true; };
   }, [urlSessionId, urlBagId]);
+
+  useEffect(() => {
+    if (selectedSessionId && !selectedBagId) {
+      const found = bags.find((bag) => bag.sessionId === selectedSessionId);
+      if (found) setContext(found.id, selectedSessionId);
+    } else if (selectedBagId && !selectedSessionId) {
+      const found = bags.find((bag) => bag.id === selectedBagId);
+      if (found?.sessionId) setContext(selectedBagId, found.sessionId);
+    }
+  }, [bags, selectedBagId, selectedSessionId]);
 
   const handleBagChange = (e) => {
     const bId = e.target.value;
-    setSelectedBagId(bId);
-    if (!bId) {
-      setSelectedSessionId('');
-      return;
-    }
     const found = bags.find((b) => b.id === bId);
-    if (found && found.sessionId) {
-      setSelectedSessionId(found.sessionId);
-    } else {
-      setSelectedSessionId('');
-    }
+    setContext(bId, found?.sessionId || '');
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const area = messagesEndRef.current?.parentElement;
+    if (area) area.scrollTop = area.scrollHeight;
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [active.messages, isLoading]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -251,6 +260,10 @@ export default function ChatPage() {
       );
       notify('Không thể kết nối đến Python AI Agent', 'error');
       setIsLoading(false);
+    } finally {
+      setIsLoading(false);
+      setMessages((previous) => previous.map((message) => message.id === agentMsgId && message.isStreaming
+        ? { ...message, isStreaming: false, interrupted: true } : message));
     }
   };
 
@@ -297,7 +310,21 @@ export default function ChatPage() {
         </div>
       </section>
 
+      <div className="chat-workspace">
+      <ChatHistorySidebar
+        conversations={conversations} activeId={active.id} disabled={isLoading}
+        onNew={() => { newConversation(); setInputText(''); setExpandedLogs({}); }}
+        onOpen={(id) => { openConversation(id); setInputText(''); setExpandedLogs({}); }}
+      />
       <Card className="chat-card-panel">
+        <div className="chat-conversation-heading" translate="no">
+          <div><span>{english ? 'CONVERSATION' : 'CUỘC TRÒ CHUYỆN'}</span>
+            <h3>{active.title || (english ? 'New conversation' : 'Cuộc trò chuyện mới')}</h3></div>
+          <span className="chat-history-local">{english ? 'Saved on this browser' : 'Lưu trên trình duyệt này'}</span>
+        </div>
+        {storageFailed && <p className="chat-history-warning" role="status" translate="no">
+          {english ? 'Unable to save history on this browser. Messages may be lost when you leave.' : 'Không thể lưu lịch sử trên trình duyệt này. Tin nhắn có thể mất khi bạn rời trang.'}
+        </p>}
         {/* Context Selector Bar */}
         <div className="chat-context-bar">
           <div className="chat-context-main">
@@ -307,11 +334,13 @@ export default function ChatPage() {
             </span>
             <select
               value={selectedBagId}
+              disabled={isLoading || active.messages.length > 0}
               onChange={handleBagChange}
               className="chat-context-select"
               aria-label="Chọn Rosbag làm ngữ cảnh chẩn đoán"
             >
               <option value="">🌐 Không chọn Rosbag cụ thể (Trò chuyện & Hỏi đáp chung)</option>
+              {selectedBagId && !bags.some((bag) => bag.id === selectedBagId) && <option value={selectedBagId}>{selectedBagId}</option>}
               {bags.map((b) => (
                 <option key={b.id} value={b.id}>
                   📦 {b.name} ({b.duration}s, {b.topics} topics)
@@ -358,6 +387,9 @@ export default function ChatPage() {
             )}
           </div>
         </div>
+        {active.messages.length > 0 && <p className="chat-context-note" translate="no">
+          {english ? 'Start a new conversation to change the rosbag context.' : 'Tạo cuộc trò chuyện mới để đổi ngữ cảnh rosbag.'}
+        </p>}
 
         <div className="chat-messages-area" aria-live="polite">
           {messages.map((m) => (
@@ -385,6 +417,9 @@ export default function ChatPage() {
                       <span className="streaming-cursor" />
                     </span>
                   ) : null}
+                  {m.interrupted && <p className="chat-history-warning" translate="no">
+                    {english ? 'This response was interrupted. Please send your question again.' : 'Phản hồi này đã bị gián đoạn. Vui lòng gửi lại câu hỏi.'}
+                  </p>}
                 </div>
 
                 {/* Structured Diagnostic Cards if report is present */}
@@ -654,6 +689,7 @@ export default function ChatPage() {
           </button>
         </form>
       </Card>
+      </div>
     </div>
   );
 }
