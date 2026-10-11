@@ -1,0 +1,35 @@
+.chat-workspace { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 18px; align-items: start; }
+.chat-history { display: flex; flex-direction: column; padding: 18px 12px 12px; background: #f8fbff; border: 1px solid #d7e3ef; border-radius: 18px; min-width: 0; }
+.chat-history-header { display: flex; gap: 10px; align-items: center; padding: 0 6px 18px; }
+.chat-history-header h2 { margin: 0; font-size: 16px; color: #0f2c46; }
+.chat-history-header p { margin: 4px 0 0; font-size: 11px; color: #64748b; }
+.chat-history-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #e0f2fe; color: #0369a1; font-size: 23px; }
+.chat-history-count { margin-left: auto; padding: 3px 8px; border-radius: 20px; background: #e7eef7; color: #475569; font-size: 11px; }
+.chat-history-new { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 42px; border: 1px solid #0e557b; border-radius: 10px; background: #0f2c46; color: white; font-size: 12px; font-weight: 700; cursor: pointer; }
+.chat-history-new > span { font-size: 21px; font-weight: 400; }
+.chat-history-search { margin: 14px 0 6px; box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid #d7e3ef; border-radius: 9px; background: #fff; color: #17324d; font: inherit; font-size: 12px; }
+.chat-history-list { max-height: 510px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #bfd1e2 transparent; }
+.chat-history-group h3 { padding: 0 10px; margin: 18px 0 8px; color: #64748b; font-size: 11px; font-weight: 600; }
+.chat-history-item { display: block; width: 100%; padding: 11px 10px; margin-bottom: 4px; text-align: left; border: 1px solid transparent; border-radius: 10px; background: transparent; color: #25435c; cursor: pointer; }
+.chat-history-item:hover { background: #eef4fc; }
+.chat-history-item.is-active { background: #e6f2ff; border-color: #b7d9fb; color: #075985; box-shadow: inset 3px 0 #0284c7; }
+.chat-history-item-title { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; font-weight: 600; line-height: 1.7; }
+.chat-history-item-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 4px; font-size: 10px; color: #627b91; }
+.chat-history-footnote { margin: 16px 6px 0; padding-top: 12px; border-top: 1px solid #dce8f4; font-size: 11px; line-height: 1.7; color: #64748b; }
+.chat-history-empty { padding: 30px 10px; text-align: center; color: #64748b; font-size: 12px; }
+.chat-history-empty > span { display: block; font-size: 28px; color: #91a8bd; margin-bottom: 10px; }
+.chat-history-empty p { font-size: 11px; line-height: 1.7; }
+.chat-history button:disabled { cursor: wait; opacity: .6; }
+.chat-history button:focus-visible, .chat-history-search:focus-visible { outline: 2px solid #0284c7; outline-offset: 2px; }
+.chat-workspace > .chat-card-panel { min-width: 0; margin: 0; }
+.chat-workspace .chat-context-select { min-width: 0; max-width: 100%; width: 100%; }
+.chat-workspace .chat-context-main { flex: 1; min-width: 0; }
+.chat-conversation-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 18px 20px; border-bottom: 1px solid #dce8f4; }
+.chat-conversation-heading > div { min-width: 0; flex: 1; }
+.chat-conversation-heading > div > span { font-size: 9px; color: #71869b; letter-spacing: .1em; font-weight: 700; }
+.chat-conversation-heading h3 { margin: 5px 0 0; font-size: 16px; color: #0f2c46; overflow-wrap: anywhere; }
+.chat-history-local { color: #64748b; font-size: 10px; }
+.chat-context-note { margin: 0; padding: 8px 18px; font-size: 11px; color: #64748b; background: #f8fbff; }
+.chat-history-warning { color: #92400e; background: #fffbeb; padding: 10px 14px; font-size: 12px; line-height: 1.6; }
+@media (max-width: 1100px) { .chat-workspace { grid-template-columns: 220px minmax(0, 1fr); gap: 12px; } .chat-workspace .chat-input-hint { display: none; } }
+@media (max-width: 800px) { .chat-workspace { grid-template-columns: minmax(0, 1fr); } .chat-history-list { max-height: 220px; } .chat-history { padding: 14px; } .chat-history-header { padding-bottom: 12px; } .chat-history-footnote { margin-top: 10px; } }
