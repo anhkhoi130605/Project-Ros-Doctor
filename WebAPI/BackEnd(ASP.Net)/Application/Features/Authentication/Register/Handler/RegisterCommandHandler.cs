@@ -18,19 +18,27 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
     private readonly IJWTTokenGenerator _jwtTokenGenerator;
 	private readonly IPasswordHasher _passwordHasher;
 	private readonly IUserActivityLogService _userActivityLogService;
-	public RegisterCommandHandler(IUnitOfWork unitOfWork, IJWTTokenGenerator jwtTokenGenerator, IPasswordHasher passwordHasher, IUserActivityLogService userActivityLogService)
+	private readonly Domain.Entities.Identity.IAccountRegistrationPolicy _accountRegistrationPolicy;
+
+	public RegisterCommandHandler(
+		IUnitOfWork unitOfWork,
+		IJWTTokenGenerator jwtTokenGenerator,
+		IPasswordHasher passwordHasher,
+		IUserActivityLogService userActivityLogService,
+		Domain.Entities.Identity.IAccountRegistrationPolicy accountRegistrationPolicy)
 	{
 		_unitOfWork = unitOfWork;
 		_jwtTokenGenerator = jwtTokenGenerator;
 		_passwordHasher = passwordHasher;
 		_userActivityLogService = userActivityLogService;
+		_accountRegistrationPolicy = accountRegistrationPolicy;
 	}
 
     public async Task<RegisterResponse> Handle(RegisterCommand request, CancellationToken cancellationToken)
 	{
         // 1. Lấy dữ liệu từ DTO
         var dto = request.Request;
-        var requestedRole = Domain.Entities.Identity.AccountRegistrationPolicy.ParseRole(dto.Role);
+        var requestedRole = _accountRegistrationPolicy.ParseRole(dto.Role);
 		var email = dto.Email?.Trim();
 		var name = dto.FullName;
 		if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(dto.Password))
@@ -71,7 +79,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 				Gender = dto.Gender,
 				DateOfBirth = dto.DateOfBirth,
 				Bio = dto.Bio,
-				Status = Domain.Entities.Identity.AccountRegistrationPolicy.InitialStatus(requestedRole),
+				Status = _accountRegistrationPolicy.InitialStatus(requestedRole),
 				IsBanned = false,
 			};
 

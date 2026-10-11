@@ -2,7 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Domain.Entities.Identity;
-using Domain.Entities.Config;
+using Domain.Common;
 using Domain.Enums;
 
 namespace Domain.Entities.RosbagAnalysis

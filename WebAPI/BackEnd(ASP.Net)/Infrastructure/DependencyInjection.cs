@@ -184,7 +184,8 @@ public static class DependencyInjection
                     var user = await unitOfWork.User.GetAsync(u => u.Id == userId,
                         cancellationToken: context.HttpContext.RequestAborted);
                     if (user == null) { context.Fail("Account not found."); return; }
-                    try { AccountRegistrationPolicy.EnsureCanSignIn(user); }
+                    var registrationPolicy = context.HttpContext.RequestServices.GetRequiredService<IAccountRegistrationPolicy>();
+                    try { registrationPolicy.EnsureCanSignIn(user); }
                     catch (UnauthorizedAccessException ex) { context.Fail(ex.Message); }
                 }
             };

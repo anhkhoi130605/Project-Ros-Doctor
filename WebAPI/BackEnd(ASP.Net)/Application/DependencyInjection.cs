@@ -1,4 +1,5 @@
 using AutoMapper;
+using Domain.Entities.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Application;
@@ -14,6 +15,10 @@ public static class DependencyInjection
 		// 2. Register AutoMapper: scan Application assembly for all Mapping Profiles
 		services.AddAutoMapper(cfg =>
 			cfg.AddMaps(typeof(DependencyInjection).Assembly));
+
+		// 3. Register Policies
+		services.AddScoped<IAccountRegistrationPolicy, AccountRegistrationPolicy>();
+
 		return services;
 	}
 }

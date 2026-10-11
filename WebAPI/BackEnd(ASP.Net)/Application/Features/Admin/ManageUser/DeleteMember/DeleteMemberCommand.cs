@@ -8,7 +8,7 @@ namespace Application.Features.Admin.ManageUser.DeleteMember;
 
 public record DeleteMemberCommand(string UserId, string ActorUserId) : IRequest<bool>;
 
-public class DeleteMemberCommandHandler(IUnitOfWork unitOfWork) : IRequestHandler<DeleteMemberCommand, bool>
+public class DeleteMemberCommandHandler(IUnitOfWork unitOfWork, IAccountRegistrationPolicy accountRegistrationPolicy) : IRequestHandler<DeleteMemberCommand, bool>
 {
     public async Task<bool> Handle(DeleteMemberCommand request, CancellationToken cancellationToken)
     {
@@ -18,7 +18,7 @@ public class DeleteMemberCommandHandler(IUnitOfWork unitOfWork) : IRequestHandle
         {
             var actor = await unitOfWork.User.GetAsync(u => u.Id == request.ActorUserId, cancellationToken: cancellationToken)
                 ?? throw new UnauthorizedAccessException("Không tìm thấy tài khoản người thực hiện.");
-            AccountRegistrationPolicy.EnsureCanSignIn(actor);
+            accountRegistrationPolicy.EnsureCanSignIn(actor);
             var actorRole = await unitOfWork.Roles.GetAsync(r => r.Id == actor.RoleId, cancellationToken: cancellationToken);
             if (actorRole?.RoleName != RoleEnum.Admin)
                 throw new UnauthorizedAccessException("Chỉ Admin được xóa thành viên.");

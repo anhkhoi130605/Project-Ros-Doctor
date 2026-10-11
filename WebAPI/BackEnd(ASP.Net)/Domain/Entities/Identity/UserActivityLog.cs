@@ -17,7 +17,7 @@ namespace Domain.Entities.Identity
 		public string? HttpMethod { get; set; }
 		public string? IpAddress { get; set; }
 		public string? UserAgent { get; set; }
-		public Guid LogId { get; set; }
+		public Guid LogId { get; set; } //Idempotency key for the log entry
 		public HttpStatusCode StatusSystemResponse { get; set; } = HttpStatusCode.OK;
 	}
 }

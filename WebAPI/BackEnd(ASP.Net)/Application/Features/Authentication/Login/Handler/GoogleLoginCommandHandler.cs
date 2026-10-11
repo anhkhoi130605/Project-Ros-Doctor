@@ -21,12 +21,20 @@ namespace Application.Features.Authentication.Login.Handler
         private readonly IJWTTokenGenerator _jwtTokenGenerator;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IUserActivityLogService _userActivityLogService;
-        public GoogleLoginCommandHandler(IUnitOfWork unitOfWork, IJWTTokenGenerator jwtTokenGenerator, IPasswordHasher passwordHasher, IUserActivityLogService userActivityLogService)
+        private readonly Domain.Entities.Identity.IAccountRegistrationPolicy _accountRegistrationPolicy;
+
+        public GoogleLoginCommandHandler(
+            IUnitOfWork unitOfWork,
+            IJWTTokenGenerator jwtTokenGenerator,
+            IPasswordHasher passwordHasher,
+            IUserActivityLogService userActivityLogService,
+            Domain.Entities.Identity.IAccountRegistrationPolicy accountRegistrationPolicy)
         {
             _unitOfWork = unitOfWork;
             _jwtTokenGenerator = jwtTokenGenerator;
             _passwordHasher = passwordHasher;
             _userActivityLogService = userActivityLogService;
+            _accountRegistrationPolicy = accountRegistrationPolicy;
 		}
 
         public async Task<LoginResponseDTO> Handle(GoogleLoginCommand request, CancellationToken cancellationToken)
@@ -48,7 +56,7 @@ namespace Application.Features.Authentication.Login.Handler
                 if (user == null)
                 {
                     var registrationRole = request.IsRegistration ? request.RegistrationRole : RoleEnum.User;
-                    var initialStatus = Domain.Entities.Identity.AccountRegistrationPolicy.InitialStatus(registrationRole);
+                    var initialStatus = _accountRegistrationPolicy.InitialStatus(registrationRole);
                     // Create default role if missing
                     var roleEntity = await _unitOfWork.Roles.GetAsync(r => r.RoleName == registrationRole, null, cancellationToken);
                     if (roleEntity == null)
@@ -92,7 +100,7 @@ namespace Application.Features.Authentication.Login.Handler
                         FullName = user.FullName, Role = RoleEnum.Engineering.ToString() }
                 };
             }
-            Domain.Entities.Identity.AccountRegistrationPolicy.EnsureCanSignIn(user);
+            _accountRegistrationPolicy.EnsureCanSignIn(user);
             var roleName = user.Role?.RoleName?.ToString() ?? RoleEnum.User.ToString();
             var accessToken = _jwtTokenGenerator.GenerateToken(user.Id, user.Email, new List<string> { roleName });
 
