@@ -638,8 +638,25 @@ class ResilientEmbeddingModel(OpenAIEmbeddings):
                         self._store_cache(k, immutable)
                         self._finish_flight(k, owned_futures[k], vector=immutable)
 
-                batch_task = asyncio.create_task(_batch_worker())
-                self._register_background_task(batch_task)
+                batch_task = None
+
+                try:
+                    batch_task = asyncio.create_task(_batch_worker())
+                    self._register_background_task(batch_task)
+
+                except BaseException as exc:
+                    if batch_task is not None:
+                        batch_task.cancel()
+
+                    with self._drain_condition:
+                        if self._reserved_workers > 0:
+                            self._reserved_workers -= 1
+                        self._drain_condition.notify_all()
+
+                    self._finish_owned_flights_with_error(
+                        owned_futures, exc
+                    )
+                    raise
             except BaseException as exc:
                 with self._drain_condition:
                     if self._reserved_workers > 0:
@@ -720,6 +737,7 @@ class ResilientEmbeddingModel(OpenAIEmbeddings):
                     fut = Future()
                     self._shutdown_future = fut
                     is_owner = True
+
 
         if not is_owner:
             fut.result(timeout=timeout)

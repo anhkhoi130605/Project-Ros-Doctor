@@ -248,8 +248,10 @@ class MongoDatasetLoader:
                             },
                         )
                     )
-        except Exception as exc:
-            logger.error("Failed to load benchmark datasets from MongoDB: %s", exc)
+        except Exception:
+            logger.exception(
+                 "Failed to load benchmark datasets from MongoDB"
+                )
             raise
         finally:
             if client is not None:
