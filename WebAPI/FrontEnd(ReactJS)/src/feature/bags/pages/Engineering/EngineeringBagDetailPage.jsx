@@ -122,13 +122,13 @@ export default function EngineeringBagDetailPage() {
       <div className="two-column">
         <Card title="Metadata bản ghi">
           <dl className="detail-list">
-            <dt>Storage ID</dt>
+            <dt>Mã lưu trữ</dt>
             <dd>{getStorageId(bag.format)}</dd>
             <dt>Thời điểm bắt đầu mẫu</dt>
             <dd>{metadata.startedAt}</dd>
             <dt>Thời điểm kết thúc mẫu</dt>
             <dd>{metadata.endedAt}</dd>
-            <dt>Message count</dt>
+            <dt>Số lượng message</dt>
             <dd>{metadata.messageCount}</dd>
             <dt>Phiên phân tích</dt>
             <dd>{bag.sessionId ? `#${bag.sessionId}` : 'Chưa phân tích'}</dd>

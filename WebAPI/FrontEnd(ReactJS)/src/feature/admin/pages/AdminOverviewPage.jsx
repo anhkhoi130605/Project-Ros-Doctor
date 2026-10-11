@@ -917,9 +917,9 @@ export default function AdminOverviewPage() {
                                 }}
                                 title="Chọn để thay đổi vai trò thành viên"
                               >
-                                <option value="Admin">Admin</option>
-                                <option value="Engineering">Engineering</option>
-                                <option value="User">User</option>
+                                <option value="Admin">{isEnglish ? 'Administrator' : 'Quản trị viên'}</option>
+                                <option value="Engineering">{isEnglish ? 'Engineer' : 'Kỹ sư'}</option>
+                                <option value="User">{isEnglish ? 'User' : 'Người dùng'}</option>
                               </select>
                             )}
                           </td>
@@ -1213,7 +1213,7 @@ export default function AdminOverviewPage() {
                   <div style={{ padding: '10px 14px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', gridColumn: '1 / -1' }}>
                     <div style={{ color: '#64748b', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}>Lần hoạt động gần nhất</div>
                     <div style={{ color: '#0f172a', fontWeight: 600, marginTop: '2px' }}>
-                      {formatRelativeTime(viewingMember.lastActiveAt)} {viewingMember.lastActiveAt ? `(${new Date(viewingMember.lastActiveAt).toLocaleString('vi-VN')})` : ''}
+                      {formatRelativeTime(viewingMember.lastActiveAt)} {viewingMember.lastActiveAt ? `(${new Date(viewingMember.lastActiveAt).toLocaleString(isEnglish ? 'en-US' : 'vi-VN')})` : ''}
                     </div>
                   </div>
 
@@ -1328,7 +1328,7 @@ export default function AdminOverviewPage() {
                     </span>
                   </div>
                   <time style={{ fontSize: 12, color: '#94a3b8' }}>
-                    {item.createdAt ? new Date(item.createdAt).toLocaleString('vi-VN') : 'N/A'}
+                    {item.createdAt ? new Date(item.createdAt).toLocaleString(isEnglish ? 'en-US' : 'vi-VN') : 'N/A'}
                   </time>
                 </div>
               );
@@ -1493,7 +1493,7 @@ export default function AdminOverviewPage() {
                           <tr style={{ borderBottom: '1px solid #f1f5f9', background: isExpanded ? '#f8fafc' : 'transparent', transition: 'background 0.15s ease' }}>
                             {/* Column 1: THỜI ĐIỂM */}
                             <td style={{ padding: '14px', color: '#475569', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                              {new Date(log.createdAt).toLocaleString('vi-VN')}
+                              {new Date(log.createdAt).toLocaleString(isEnglish ? 'en-US' : 'vi-VN')}
                             </td>
 
                             {/* Column 2: NGƯỜI THỰC HIỆN */}

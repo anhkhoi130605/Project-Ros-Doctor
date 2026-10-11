@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { additionalEnglishUiText } from './legacyAdditions';
 
 // Translation boundary for legacy screens that still render literal Vietnamese.
 // Only explicitly listed UI copy is translated. Unknown text (including values
@@ -1249,7 +1250,11 @@ const ENGLISH_UI_TEXT = new Map([
   ['message mẫu trong phiên. Chọn một thời điểm để đối chiếu với timeline.', 'sample messages in this session. Select a time to correlate with the timeline.'],
 ]);
 
+additionalEnglishUiText.forEach(([source, target]) => ENGLISH_UI_TEXT.set(source, target));
+
 const DYNAMIC_TRANSLATIONS = [
+  [/^Phiên (.+) đã được lưu trên máy chủ\.$/, 'Session $1 has been saved on the server.'],
+  [/^([\d,.]+) tokens đã tiêu thụ$/, '$1 tokens consumed'],
   [/^RAV-13 \/ Lỗi đã biết · (\d+) trường hợp có nhãn$/, 'RAV-13 / Known issues · $1 labeled cases'],
   [/^\/imu\s+03:09\.98\s+message received\s+03:10\.00 ── 03:16\.00\s+NO MESSAGE \(6 giây\)\s+03:16\.02\s+message received\s+Ngưỡng silent: 3 giây\. Chưa đủ bằng chứng về node crash\.$/, '/imu  03:09.98  message received\n03:10.00 ── 03:16.00  NO MESSAGE (6 seconds)\n03:16.02  message received\nSilent threshold: 3 seconds. Insufficient evidence of a node crash.'],
   [/^Topic: \/camera\/image\s+header\.stamp:\s+(.+)\s+bag timestamp:\s+(.+)\s+Độ trễ ghi:\s+(.+) ms\s+Ngưỡng:\s+(.+) ms$/, 'Topic: /camera/image\nheader.stamp:   $1\nbag timestamp:  $2\nRecording latency: $3 ms\nThreshold: $4 ms'],
@@ -1367,7 +1372,7 @@ const DYNAMIC_TRANSLATIONS = [
   [/^(\d+) phiên \((\d+)%\)$/, '$1 sessions ($2%)'],
 ];
 
-function translateUiText(source) {
+export function translateUiText(source) {
   const leading = source.match(/^\s*/)?.[0] || '';
   const trailing = source.match(/\s*$/)?.[0] || '';
   const value = source.trim();
@@ -1388,7 +1393,7 @@ function translateUiText(source) {
 
 function isIgnoredTextNode(node) {
   const parent = node.parentElement;
-  return !parent || Boolean(parent.closest('script, style, code, pre, [data-i18n-ignore="true"]'));
+  return !parent || Boolean(parent.closest('script, style, code, pre, textarea, [translate="no"], [data-i18n-ignore="true"]'));
 }
 
 export default function LegacyI18nBridge() {
@@ -1403,11 +1408,16 @@ export default function LegacyI18nBridge() {
 
     const restoreVietnamese = () => {
       textRecords.forEach((source, node) => {
-        if (node.isConnected) node.nodeValue = source;
+        // React may have rendered a new value since the last observer callback.
+        // Restore only text still owned by this bridge, never stale UI/data.
+        if (node.isConnected && node.nodeValue === translateUiText(source) && !isIgnoredTextNode(node)) node.nodeValue = source;
       });
       attributeRecords.forEach((attributes, element) => {
         if (!element.isConnected) return;
-        Object.entries(attributes).forEach(([name, source]) => element.setAttribute(name, source));
+        if (element.closest('[translate="no"], [data-i18n-ignore="true"]')) return;
+        Object.entries(attributes).forEach(([name, source]) => {
+          if (element.getAttribute(name) === translateUiText(source)) element.setAttribute(name, source);
+        });
       });
       textRecords.clear();
       attributeRecords.clear();
@@ -1419,7 +1429,7 @@ export default function LegacyI18nBridge() {
     }
 
     const translateTextNode = (node) => {
-      if (isIgnoredTextNode(node)) return;
+      if (isIgnoredTextNode(node)) { textRecords.delete(node); return; }
       const current = node.nodeValue || '';
       const recordedSource = textRecords.get(node);
       const previousEnglish = recordedSource ? translateUiText(recordedSource) : null;
@@ -1435,7 +1445,10 @@ export default function LegacyI18nBridge() {
     };
 
     const translateAttributes = (element) => {
-      if (!(element instanceof HTMLElement) || element.closest('[data-i18n-ignore="true"]')) return;
+      if (!(element instanceof HTMLElement) || element.closest('[translate="no"], [data-i18n-ignore="true"]')) {
+        attributeRecords.delete(element);
+        return;
+      }
       const tracked = attributeRecords.get(element) || {};
       const nextTracked = { ...tracked };
 
@@ -1480,6 +1493,9 @@ export default function LegacyI18nBridge() {
     scan(document.body);
 
     const observer = new MutationObserver((mutations) => {
+      // Detached screens must not be retained after navigation or pagination.
+      for (const node of textRecords.keys()) if (!node.isConnected) textRecords.delete(node);
+      for (const element of attributeRecords.keys()) if (!element.isConnected) attributeRecords.delete(element);
       mutations.forEach((mutation) => {
         if (mutation.type === 'characterData') translateTextNode(mutation.target);
         if (mutation.type === 'attributes') translateAttributes(mutation.target);
