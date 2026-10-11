@@ -8,10 +8,7 @@ namespace Domain.Entities.Configuration
 	public class AiSetting : BaseEntity
 	{
 		[Required]
-		[Column("user_id")]
 		public string UserId { get; set; } = null!;
-
-		[ForeignKey(nameof(UserId))]
 		public virtual User User { get; set; } = null!;
 
 		[Column("daily_call_limit")]

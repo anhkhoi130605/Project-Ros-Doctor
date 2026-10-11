@@ -126,13 +126,10 @@ var app = builder.Build();
 // 2. Forwarded Headers cho Docker / Reverse Proxy
 var forwardedOptions = new ForwardedHeadersOptions
 {
-	ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-	ForwardLimit = 1
+	ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
 };
-// Thay bằng IP thật của reverse proxy trong môi trường deploy.
-forwardedOptions.KnownProxies.Add(IPAddress.Parse("10.0.0.10"));
-
-
+forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownProxies.Clear();
 app.UseForwardedHeaders(forwardedOptions);
 app.UseGlobalExceptionMiddleware();
 
@@ -196,6 +193,7 @@ app.UseRateLimiter();
 app.UseAuthorization();
 
 app.UseMiddleware<UserActivityAuditMiddleware>();
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();

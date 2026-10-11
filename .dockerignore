@@ -9,8 +9,8 @@ __pycache__
 docs/
 presentation/
 eval/
-*.md
-!requirements.txt
+tests/
+WebAPI/
 .dockerignore
 Dockerfile
 docker-compose.yml
