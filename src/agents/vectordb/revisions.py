@@ -24,6 +24,7 @@ class RevisionedChroma:
     def __init__(self, store, manifest_path: str | Path):
         self._store = store
         self.manifest_path = Path(manifest_path)
+        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = FileLock(str(self.manifest_path) + ".lock")
 
     @property
@@ -63,8 +64,8 @@ class RevisionedChroma:
                 Path(temporary).unlink(missing_ok=True)
 
     def publish_sources(self, groups: dict[str, list[tuple[str, Document]]], batch_size: int) -> int:
-        self._prepare_directory()
         with self._lock:
+            self._prepare_directory()
             active = self._read_active()
             updated = dict(active)
             obsolete: list[str] = []
@@ -103,8 +104,8 @@ class RevisionedChroma:
             return sum(len(chunks) for chunks in groups.values())
 
     def _search(self, method: str, query: str, k: int, filter: dict | None, **kwargs):
-        self._prepare_directory()
         with self._lock:
+            self._prepare_directory()
             active = list(self._read_active().values())
             if not active:
                 return []
@@ -120,12 +121,12 @@ class RevisionedChroma:
 
     def get(self, **kwargs):
         """Administrative inspection includes staged/stale records; never use for retrieval."""
-        self._prepare_directory()
         with self._lock:
+            self._prepare_directory()
             return self._store.get(**kwargs)
 
     def reset_collection(self):
-        self._prepare_directory()
         with self._lock:
+            self._prepare_directory()
             self._store.reset_collection()
             self._publish({})
