@@ -14,7 +14,6 @@ public static class DependencyInjection
 		// 2. Register AutoMapper: scan Application assembly for all Mapping Profiles
 		services.AddAutoMapper(cfg =>
 			cfg.AddMaps(typeof(DependencyInjection).Assembly));
-
 		return services;
 	}
 }

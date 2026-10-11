@@ -1,3 +1,4 @@
+import pytest
 from langchain_core.documents import Document
 
 from src.agents.chunking.strategies import (
@@ -53,4 +54,26 @@ def test_generate_document_hash_id_deterministic():
     id3 = generate_document_hash_id(doc, fallback_index=1)
 
     assert id1 == id2
-    assert id1 != id3
+    assert id1 == id3
+
+
+def test_generate_document_hash_id_uses_full_content():
+    prefix = "A" * 150
+    first = Document(page_content=f"{prefix} first", metadata={"source_file": "file1.md"})
+    second = Document(page_content=f"{prefix} second", metadata={"source_file": "file1.md"})
+
+    assert generate_document_hash_id(first) != generate_document_hash_id(second)
+
+
+def test_chunkers_accept_zero_overlap():
+    markdown_chunker = MarkdownHeaderChunker(chunk_size=500, chunk_overlap=0)
+    text_chunker = StandardTextChunker(chunk_size=500, chunk_overlap=0)
+
+    assert markdown_chunker.chunk_overlap == 0
+    assert text_chunker.chunk_overlap == 0
+
+
+@pytest.mark.parametrize("chunker_type", [MarkdownHeaderChunker, StandardTextChunker])
+def test_chunkers_reject_overlap_not_smaller_than_size(chunker_type):
+    with pytest.raises(ValueError, match="smaller than chunk_size"):
+        chunker_type(chunk_size=100, chunk_overlap=100)

@@ -17,22 +17,24 @@ namespace Infrastructure.Services.Logging
             _logger = logger;
         }
 
-        public Task LogActivityAsync(LogActivityRequest request)
+        public async Task LogActivityAsync(LogActivityRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.UserId))
             {
-                return Task.CompletedTask;
+                return ;
             }
-
-            _logger.LogInformation(
+			// Đảm bảo request có LogId để dùng lại khi retry
+			if (request.LogId is null)
+			{
+				request = request with { LogId = Guid.NewGuid() };
+			}
+			_logger.LogInformation(
                 "UserActivity | UserId={UserId} Action={Action} TargetType={TargetType} TargetId={TargetId} Description={Description} Path={RequestPath}",
                 request.UserId, request.ActionType, request.TargetType, request.TargetId, request.Description, request.RequestPath);
 
             // Ghi vào hàng đợi bất đồng bộ Channel<T>, không block HTTP request và được xử lý tuần tự/an toàn bởi BackgroundService
-            _queue.EnqueueAsync(request);
-
-            return Task.CompletedTask;
-        }
+			await _queue.EnqueueAsync(request);
+		}
 
         public Task LogActivityAsync(
             string userId,

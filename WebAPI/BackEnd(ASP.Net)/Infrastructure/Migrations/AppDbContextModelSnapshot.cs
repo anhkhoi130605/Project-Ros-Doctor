@@ -24,350 +24,6 @@ namespace Infrastructure.Migrations
             MySqlModelBuilderExtensions.HasCharSet(modelBuilder, "utf8mb4");
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
-            modelBuilder.Entity("Domain.Entities.AboutUser.AccountPolicy", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("PolicyName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("policy_name");
-
-                    b.Property<string>("PolicyRule")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("policy_rule");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(36)
-                        .HasColumnType("varchar(36)")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "PolicyName");
-
-                    b.ToTable("AccountPolicies", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.Role", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RoleName")
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasDefaultValue("User");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Roles");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.User", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("AvatarUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Bio")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("GoogleId")
-                        .HasColumnType("longtext");
-
-                    b.Property<bool?>("IsBanned")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Phone")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("ReactivateAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasDefaultValue("Active");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.UserActivityLog", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.Property<string>("EntityId")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("EntityType")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("HttpMethod")
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
-
-                    b.Property<string>("IpAddress")
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
-
-                    b.Property<string>("RequestPath")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<int>("StatusSystemResponse")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UserAgent")
-                        .HasMaxLength(500)
-                        .HasColumnType("varchar(500)");
-
-                    b.Property<string>("UserId")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("UserName")
-                        .HasMaxLength(200)
-                        .HasColumnType("varchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("UserId", "CreatedAt");
-
-                    b.ToTable("UserActivityLogs", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.Workspace", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("description");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("owner_id");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("workspaces", (string)null);
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.WorkspaceMember", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("role_id");
-
-                    b.Property<DateTime>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("timestamp(6)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("user_id");
-
-                    b.Property<string>("WorkspaceId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("workspace_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("WorkspaceId");
-
-                    b.ToTable("members", (string)null);
-                });
-
             modelBuilder.Entity("Domain.Entities.Configuration.AiSetting", b =>
                 {
                     b.Property<string>("Id")
@@ -657,6 +313,356 @@ namespace Infrastructure.Migrations
                     b.ToTable("topic_threshold_rules", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Identity.AccountPolicy", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("PolicyName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("policy_name");
+
+                    b.Property<string>("PolicyRule")
+                        .IsRequired()
+                        .HasColumnType("longtext")
+                        .HasColumnName("policy_rule");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "PolicyName");
+
+                    b.ToTable("AccountPolicies", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.Role", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RoleName")
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("User");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.User", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Bio")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DateOfBirth")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Gender")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("GoogleId")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool?>("IsBanned")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Phone")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReactivateAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Active");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserName")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.UserActivityLog", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("EntityId")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("EntityType")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("HttpMethod")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<Guid>("LogId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("RequestPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<int>("StatusSystemResponse")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserAgent")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("LogId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "CreatedAt");
+
+                    b.ToTable("UserActivityLogs", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.Workspace", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("description");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("owner_id");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("workspaces", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.WorkspaceMember", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RoleId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("role_id");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("user_id");
+
+                    b.Property<string>("WorkspaceId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)")
+                        .HasColumnName("workspace_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("WorkspaceId");
+
+                    b.ToTable("members", (string)null);
+                });
+
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.AiUsageLog", b =>
                 {
                     b.Property<string>("Id")
@@ -713,9 +719,11 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("SessionId");
 
-                    b.ToTable("ai_usage_logs", (string)null);
+                    b.ToTable("llm_usage_ledger", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.AnalysisSession", b =>
@@ -790,6 +798,8 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("RosbagId");
 
+                    b.HasIndex("StartedAt");
+
                     b.ToTable("analysis_sessions", (string)null);
                 });
 
@@ -848,7 +858,11 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("SessionId");
+
+                    b.HasIndex("SessionId", "Severity");
 
                     b.ToTable("diagnostic_issues", (string)null);
                 });
@@ -913,10 +927,14 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("ReviewerId");
 
                     b.HasIndex("SessionId")
                         .IsUnique();
+
+                    b.HasIndex("Status");
 
                     b.ToTable("reports", (string)null);
                 });
@@ -973,7 +991,11 @@ namespace Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedAt");
+
                     b.HasIndex("FindingId");
+
+                    b.HasIndex("ReviewedAt");
 
                     b.HasIndex("ReviewerId");
 
@@ -1055,6 +1077,10 @@ namespace Infrastructure.Migrations
                         .HasColumnName("user_id");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
@@ -1143,79 +1169,9 @@ namespace Infrastructure.Migrations
                     b.ToTable("SystemErrorLogs", (string)null);
                 });
 
-            modelBuilder.Entity("Domain.Entities.AboutUser.AccountPolicy", b =>
-                {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
-                        .WithMany("AccountPolicies")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.User", b =>
-                {
-                    b.HasOne("Domain.Entities.AboutUser.Role", "Role")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.UserActivityLog", b =>
-                {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.Workspace", b =>
-                {
-                    b.HasOne("Domain.Entities.AboutUser.User", "Owner")
-                        .WithMany()
-                        .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("Domain.Entities.AboutUser.WorkspaceMember", b =>
-                {
-                    b.HasOne("Domain.Entities.AboutUser.Role", "Role")
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.AboutUser.Workspace", "Workspace")
-                        .WithMany("Members")
-                        .HasForeignKey("WorkspaceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Role");
-
-                    b.Navigation("User");
-
-                    b.Navigation("Workspace");
-                });
-
             modelBuilder.Entity("Domain.Entities.Configuration.AiSetting", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
+                    b.HasOne("Domain.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1226,7 +1182,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Configuration.AnalysisConfig", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
+                    b.HasOne("Domain.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1237,7 +1193,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Configuration.SystemThresholdConfig", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
+                    b.HasOne("Domain.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1257,6 +1213,76 @@ namespace Infrastructure.Migrations
                     b.Navigation("SystemThresholdConfig");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Identity.AccountPolicy", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.User", "User")
+                        .WithMany("AccountPolicies")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.User", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.UserActivityLog", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.Workspace", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.WorkspaceMember", b =>
+                {
+                    b.HasOne("Domain.Entities.Identity.Role", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Identity.Workspace", "Workspace")
+                        .WithMany("Members")
+                        .HasForeignKey("WorkspaceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+
+                    b.Navigation("Workspace");
+                });
+
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.AiUsageLog", b =>
                 {
                     b.HasOne("Domain.Entities.RosbagAnalysis.AnalysisSession", "Session")
@@ -1270,7 +1296,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.AnalysisSession", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "Engineer")
+                    b.HasOne("Domain.Entities.Identity.User", "Engineer")
                         .WithMany()
                         .HasForeignKey("EngineerId");
 
@@ -1298,7 +1324,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Report", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "Reviewer")
+                    b.HasOne("Domain.Entities.Identity.User", "Reviewer")
                         .WithMany()
                         .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.SetNull);
@@ -1322,7 +1348,7 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.AboutUser.User", "Reviewer")
+                    b.HasOne("Domain.Entities.Identity.User", "Reviewer")
                         .WithMany()
                         .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1335,7 +1361,7 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Rosbag", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
+                    b.HasOne("Domain.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -1344,24 +1370,24 @@ namespace Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Domain.Entities.AboutUser.Role", b =>
+            modelBuilder.Entity("Domain.Entities.Configuration.SystemThresholdConfig", b =>
+                {
+                    b.Navigation("TopicThresholdRules");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Identity.Role", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("Domain.Entities.AboutUser.User", b =>
+            modelBuilder.Entity("Domain.Entities.Identity.User", b =>
                 {
                     b.Navigation("AccountPolicies");
                 });
 
-            modelBuilder.Entity("Domain.Entities.AboutUser.Workspace", b =>
+            modelBuilder.Entity("Domain.Entities.Identity.Workspace", b =>
                 {
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Configuration.SystemThresholdConfig", b =>
-                {
-                    b.Navigation("TopicThresholdRules");
                 });
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.AnalysisSession", b =>

@@ -30,67 +30,106 @@ namespace Infrastructure.Services.Logging
 
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string Name, string Email, DateTime Expiry)> _userCache = new();
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("UserActivityLogBackgroundService đang lắng nghe hàng đợi log (chế độ gom mẻ Batching)...");
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+		{
+			_logger.LogInformation(
+				"UserActivityLogBackgroundService đang chạy.");
 
-            var buffer = new List<LogActivityRequest>(50);
+			var buffer = new List<LogActivityRequest>(50);
 
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                try
-                {
-                    // Đọc theo mẻ (lên đến 50 log hoặc sau 500ms)
-                    var timeoutTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
-                    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeoutTokenSource.Token);
+			try
+			{
+				while (!stoppingToken.IsCancellationRequested)
+				{
+					using var timeoutCts =
+						new CancellationTokenSource(
+							TimeSpan.FromMilliseconds(500));
 
-                    try
-                    {
-                        await foreach (var request in _queue.ReadAllAsync(linkedCts.Token))
-                        {
-                            buffer.Add(request);
-                            if (buffer.Count >= 50)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    catch (OperationCanceledException) when (timeoutTokenSource.IsCancellationRequested)
-                    {
-                        // Hết thời gian chờ 500ms -> tiến hành xả buffer hiện tại
-                    }
+					using var linkedCts =
+						CancellationTokenSource.CreateLinkedTokenSource(
+							stoppingToken,
+							timeoutCts.Token);
 
-                    if (buffer.Count > 0)
-                    {
-                        await FlushBatchAsync(buffer, stoppingToken);
-                        buffer.Clear();
-                    }
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Lỗi xảy ra trong vòng lặp batching của UserActivityLogBackgroundService.");
-                }
-            }
+					try
+					{
+						await foreach (
+							var request in _queue.ReadAllAsync(linkedCts.Token))
+						{
+							buffer.Add(request);
 
-            // Xả nốt các log còn tồn đọng trước khi dừng dịch vụ
-            if (buffer.Count > 0)
-            {
-                try
-                {
-                    await FlushBatchAsync(buffer, CancellationToken.None);
-                }
-                catch
-                {
-                    // Ignored on shutdown
-                }
-            }
-        }
+							if (buffer.Count >= 50)
+								break;
+						}
+					}
+					catch (OperationCanceledException)
+						when (timeoutCts.IsCancellationRequested
+							  && !stoppingToken.IsCancellationRequested)
+					{
+						// Timeout 500ms: flush batch hiện tại.
+					}
 
-        private async Task FlushBatchAsync(List<LogActivityRequest> batch, CancellationToken cancellationToken)
+					if (buffer.Count == 0)
+						continue;
+
+					var retryDelay = TimeSpan.FromSeconds(1);
+
+					while (buffer.Count > 0
+						   && !stoppingToken.IsCancellationRequested)
+					{
+						try
+						{
+							await FlushBatchAsync(buffer, stoppingToken);
+
+							// Chỉ xóa khi ghi DB thành công.
+							buffer.Clear();
+							break;
+						}
+						catch (OperationCanceledException)
+							when (stoppingToken.IsCancellationRequested)
+						{
+							throw;
+						}
+						catch (Exception ex)
+						{
+							_logger.LogError(
+								ex,
+								"Ghi thất bại {Count} activity logs. Sẽ thử lại sau {Delay}s.",
+								buffer.Count,
+								retryDelay.TotalSeconds);
+
+							await Task.Delay(retryDelay, stoppingToken);
+
+							retryDelay = TimeSpan.FromSeconds(
+								Math.Min(retryDelay.TotalSeconds * 2, 30));
+						}
+					}
+				}
+			}
+			catch (OperationCanceledException)
+				when (stoppingToken.IsCancellationRequested)
+			{
+				_logger.LogInformation(
+					"UserActivityLogBackgroundService đang dừng.");
+			}
+
+			if (buffer.Count > 0)
+			{
+				try
+				{
+					await FlushBatchAsync(buffer, CancellationToken.None);
+					buffer.Clear();
+				}
+				catch (Exception ex)
+				{
+					_logger.LogCritical(
+						ex,
+						"Không thể ghi {Count} activity logs khi shutdown.",
+						buffer.Count);
+				}
+			}
+		}
+
+		private async Task FlushBatchAsync(List<LogActivityRequest> batch, CancellationToken cancellationToken)
         {
             try
             {
@@ -142,7 +181,8 @@ namespace Infrastructure.Services.Logging
                         IpAddress = req.IpAddress,
                         UserAgent = req.UserAgent,
                         StatusSystemResponse = HttpStatusCode.OK,
-                    });
+						LogId = (Guid)req.LogId,
+					});
                 }
 
                 foreach (var entity in entities)
@@ -155,7 +195,8 @@ namespace Infrastructure.Services.Logging
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi ghi batch {Count} UserActivityLogs vào Database.", batch.Count);
-            }
+				throw;
+			}
         }
     }
 }

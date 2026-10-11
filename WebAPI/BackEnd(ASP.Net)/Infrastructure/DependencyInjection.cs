@@ -30,8 +30,8 @@ using Infrastructure.Services.Storage;
 using Infrastructure.Repository;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-
-
+using StackExchange.Redis;
+using Microsoft.Extensions.Options;
 namespace Infrastructure;
 
 public static class DependencyInjection
@@ -53,7 +53,25 @@ public static class DependencyInjection
 
 		// 1. Bind configuration sections
 		// JWTConfiguration is a POCO used by infrastructure JwtTokenGenerator
-		var jwtConfig = configuration.GetSection("Jwt").Get<JWTConfiguration>() ?? new JWTConfiguration();
+		services.AddOptions<JWTConfiguration>()
+				.Bind(configuration.GetSection("Jwt"))
+				.Validate(options => !string.IsNullOrWhiteSpace(options.Issuer),"Jwt:Issuer is required.")
+				.Validate(options => !string.IsNullOrWhiteSpace(options.Audience),"Jwt:Audience is required.")
+				.Validate(options => !string.IsNullOrWhiteSpace(options.Key)&& Encoding.UTF8.GetByteCount(options.Key) >= 32,"Jwt:Key must contain at least 32 bytes.")
+				.ValidateOnStart();
+
+		// Keep compatibility with services currently injecting JWTConfiguration.
+		var jwtConfig = configuration.GetSection("Jwt").Get<JWTConfiguration>()?? throw new InvalidOperationException("Jwt configuration is missing.");
+
+		if (string.IsNullOrWhiteSpace(jwtConfig.Issuer)|| string.IsNullOrWhiteSpace(jwtConfig.Audience)
+													   || string.IsNullOrWhiteSpace(jwtConfig.Key)
+													   || System.Text.Encoding.UTF8.GetByteCount(jwtConfig.Key) < 32
+													   || jwtConfig.ExpiresMinutes is < 1 or > 1440)
+		{
+			throw new InvalidOperationException(
+				"Jwt configuration is invalid.");
+		}
+
 		services.AddSingleton(jwtConfig);
 
 		// Use Options pattern for other settings consumed via IOptions<T>
@@ -97,35 +115,37 @@ public static class DependencyInjection
 		services.AddScoped<Application.Interfaces.Repositories.ISessionEvidenceRepository, global::Infrastructure.Persistence.Mongo.Repositories.SessionEvidenceRepository>();
 
 		// 3. Configure Redis Cache & Services
-		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
-		if (redisSettings != null && !string.IsNullOrEmpty(redisSettings.Configuration))
-		{
-			services.AddStackExchangeRedisCache(options =>
-			{
-				options.Configuration = redisSettings.Configuration;
-				options.InstanceName = redisSettings.InstanceName;
-			});
 
-			try
-			{
-				var redisMultiplexer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisSettings.Configuration);
-				services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMultiplexer);
-				services.AddScoped<Application.Interfaces.Common.IRedisService, global::Infrastructure.Services.Redis.RedisService>();
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"[Warning] Failed to connect to Redis Multiplexer: {ex.Message}");
-			}
-		}
-		else
+		// Redis settings
+		services.AddOptions<RedisSettings>().Bind(configuration.GetSection("Redis"))
+				.Validate(x => !string.IsNullOrWhiteSpace(x.Configuration),"Redis:Configuration is required.")
+				.ValidateOnStart();
+		var redisSettings = configuration.GetSection("Redis").Get<RedisSettings>();
+		if (redisSettings is null || string.IsNullOrWhiteSpace(redisSettings.Configuration))
 		{
-			services.AddDistributedMemoryCache();
+			throw new InvalidOperationException(
+				"Redis:Configuration is not configured.");
 		}
+		services.AddStackExchangeRedisCache(options =>{
+			options.Configuration = redisSettings.Configuration;
+			options.InstanceName = redisSettings.InstanceName;
+		});
+
+		services.AddSingleton<IConnectionMultiplexer>(_ =>ConnectionMultiplexer.Connect(redisSettings.Configuration));
+
+		services.AddScoped<Application.Interfaces.Common.IRedisService, Infrastructure.Services.Redis.RedisService>();
+
 
 
 		// 4. Authentication configuration (Google + JWT for APIs)
 		var googleSettings = configuration.GetSection("Authentication:Google");
-
+		var googleClientId = googleSettings["ClientId"];
+		var googleClientSecret = googleSettings["ClientSecret"];
+		if (string.IsNullOrWhiteSpace(googleClientId)|| string.IsNullOrWhiteSpace(googleClientSecret))
+		{
+			throw new InvalidOperationException(
+				"Google authentication is enabled but its credentials are missing.");
+		}
 		services.AddAuthentication(options =>
 		{
 			options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -150,8 +170,9 @@ public static class DependencyInjection
 				ValidIssuer = jwtConfig.Issuer,
 				ValidAudience = jwtConfig.Audience,
 				IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key ?? string.Empty)),
-				ClockSkew = TimeSpan.Zero
-			};
+				ClockSkew = TimeSpan.Zero,
+				NameClaimType = ClaimTypes.NameIdentifier
+			}; 
             options.Events = new JwtBearerEvents
             {
                 OnTokenValidated = async context =>
@@ -171,8 +192,8 @@ public static class DependencyInjection
 	   .AddGoogle(options =>
 	   {
 		   options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-		   options.ClientId = googleSettings["ClientId"]!;
-		   options.ClientSecret = googleSettings["ClientSecret"]!;
+		   options.ClientId = googleClientId;
+		   options.ClientSecret = googleClientSecret;
 		   options.CallbackPath = "/signin-google";
 		   options.CorrelationCookie.SameSite = SameSiteMode.None;
 		   options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;

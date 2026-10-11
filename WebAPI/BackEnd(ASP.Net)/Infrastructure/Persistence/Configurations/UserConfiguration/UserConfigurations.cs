@@ -44,6 +44,7 @@ namespace Infrastructure.Persistence.Configurations.UserConfiguration
 			builder.ToTable("UserActivityLogs");
 			builder.Property(x => x.Action).IsRequired().HasMaxLength(200);
 			builder.Property(x => x.RequestPath).HasMaxLength(500);
+			builder.HasIndex(x => x.LogId).IsUnique();
 			builder.Property(x => x.HttpMethod).HasMaxLength(20);
 			builder.Property(x => x.IpAddress).HasMaxLength(50);
 			builder.Property(x => x.UserAgent).HasMaxLength(500);
