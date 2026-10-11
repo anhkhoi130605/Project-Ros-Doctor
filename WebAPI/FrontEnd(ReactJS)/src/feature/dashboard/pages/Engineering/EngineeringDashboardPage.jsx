@@ -60,6 +60,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
         <DiagnosticPriorityPanel
           pendingCount={pendingCount}
           highWarningsCount={highWarningsCount}
+          incompleteCount={(state.bags || []).filter((bag) => bag.status === 'pending' || bag.status === 'ready').length}
         />
       </div>
 
@@ -83,7 +84,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
         <EngineeringStatWidget
           label="Rosbag đã nạp"
           value={bagsCount}
-          sublabel="Dữ liệu mẫu và tệp đã chọn"
+          sublabel="Dữ liệu đã tải từ máy chủ"
           icon="database"
           tone="blue"
           chartType="sparkline"
@@ -91,7 +92,7 @@ export default function EngineeringDashboardPage({ onSwitchToViewer }) {
         <EngineeringStatWidget
           label="Sự cố cần kiểm tra"
           value={highWarningsCount}
-          sublabel="3 mức cao trong dữ liệu mẫu"
+          sublabel="Cảnh báo mức cao đã ghi nhận"
           icon="alert"
           tone="red"
           detailTone="#dc2626"

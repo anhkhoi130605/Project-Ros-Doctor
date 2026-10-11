@@ -88,6 +88,7 @@ public static class DependencyInjection
 		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.ISensorPayloadAnalyzer, global::Infrastructure.Services.Rosbag.Analyzers.SensorPayloadAnalyzer>();
 		services.AddScoped<Application.Interfaces.Rosbag.Analyzers.IFindingAggregator, global::Infrastructure.Services.Rosbag.Analyzers.FindingAggregator>();
 		services.AddScoped<Application.Interfaces.Rosbag.IRosbagInspectorService, global::Infrastructure.Services.Rosbag.RosbagInspectorService>();
+		services.AddScoped<Application.Interfaces.Rosbag.IRosbagSubmissionService, global::Infrastructure.Services.Rosbag.RosbagSubmissionService>();
 		services.AddSingleton<Application.Interfaces.Rosbag.IRosbagJobQueue, global::Infrastructure.Services.Rosbag.RosbagJobQueue>();
 		services.AddHostedService<global::Infrastructure.Services.Rosbag.RosbagJobBackgroundService>();
 

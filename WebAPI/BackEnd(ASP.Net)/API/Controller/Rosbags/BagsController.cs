@@ -57,7 +57,7 @@ namespace API.Controller.Rosbags
 		/// <summary>
 		/// Background Job Upload: Lưu file tạm an toàn và đưa vào hàng đợi phân tích nền
 		/// </summary>
-		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost("upload")]
 		[Consumes("multipart/form-data")]
 		[RequestFormLimits(MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024)] // Giới hạn 2 GB thay vì 10 GB
@@ -149,16 +149,21 @@ namespace API.Controller.Rosbags
 		/// Nạp và phân tích rosbag trực tiếp theo đường dẫn tệp
 		/// </summary>
 		[HttpPost("inspect")]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		public async Task<IActionResult> InspectBag([FromBody] InspectRosbagRequestDto request, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new InspectRosbagCommand(request.BagPath, request.SampleName), cancellationToken);
-			return Ok(result);
+			try
+			{
+				var result = await _mediator.Send(new InspectRosbagCommand(request.BagPath, request.SampleName, CurrentUserId), cancellationToken);
+				return Ok(result);
+			}
+			catch (InvalidOperationException e) { return Conflict(new { message = e.Message }); }
 		}
 
 		/// <summary>
 		/// Upload trực tiếp file .db3 và tùy chọn metadata.yaml (hoặc file .zip) và nạp/phân tích ngay lập tức
 		/// </summary>
-		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost("upload-and-inspect")]
 		[Consumes("multipart/form-data")]
 		[RequestFormLimits(MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024)]
@@ -220,7 +225,7 @@ namespace API.Controller.Rosbags
 			return Ok(result);
 		}
 
-		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost]
 		public async Task<IActionResult> CreateBag([FromBody] CreateRosbagRequestDto request, CancellationToken cancellationToken)
 		{

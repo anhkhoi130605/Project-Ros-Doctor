@@ -282,3 +282,5 @@ src/config.py
 src/golden_dataset
 src/1_fault_type_scenarios
 .codegraphy/*
+WebAPI/BackEnd(ASP.Net)/API/App_Data/rosbag-submissions/
+/tmp/

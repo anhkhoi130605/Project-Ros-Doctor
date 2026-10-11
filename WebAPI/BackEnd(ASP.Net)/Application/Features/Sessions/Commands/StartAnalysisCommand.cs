@@ -32,6 +32,8 @@ namespace Application.Features.Sessions.Commands
 		{
 			var sessionId = "ses-" + Guid.NewGuid().ToString("N")[..8];
 			var bag = await _unitOfWork.Rosbags.GetByIdAsync(command.Request.BagId, cancellationToken);
+			if (bag == null || bag.DeletedAt != null) throw new KeyNotFoundException("Không tìm thấy rosbag.");
+			bag.EnsureApprovedForAnalysis();
 
 			string? validEngineerId = null;
 			if (!string.IsNullOrWhiteSpace(command.UserId) && command.UserId != "usr-guest")

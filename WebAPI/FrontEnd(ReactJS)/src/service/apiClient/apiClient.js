@@ -4,6 +4,13 @@ const API_URL = import.meta.env.VITE_API_URL || 'https://localhost:7149';
 const apiCache = new Map();
 const inFlightRequests = new Map();
 const CACHE_DELIMITER = '@@token:';
+const failureListeners = new Set();
+let sessionVersion = 0;
+
+export function subscribeApiFailures(listener) {
+  failureListeners.add(listener);
+  return () => failureListeners.delete(listener);
+}
 
 /**
  * Mapping các tài nguyên liên quan khi có thao tác mutation (POST, PUT, DELETE).
@@ -75,7 +82,8 @@ function invalidateCache(endpointOrPrefixes) {
   }
 }
 
-export async function request(endpoint, options = {}) {
+async function performRequest(endpoint, options = {}) {
+  const version = sessionVersion;
   const method = (options.method || 'GET').toUpperCase();
   const token = localStorage.getItem('accessToken');
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -89,6 +97,7 @@ export async function request(endpoint, options = {}) {
     ...options,
     headers,
   };
+  delete config.handleErrorLocally;
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_URL}${endpoint}`;
 
@@ -112,8 +121,8 @@ export async function request(endpoint, options = {}) {
 
     const fetchPromise = (async () => {
       try {
-        const response = await fetch(url, config);
-        const data = await response.json().catch(() => ({}));
+        const response = await checkedFetch(url, config, token);
+        const data = await readResponseData(response);
         if (!response.ok) {
           const errorMessage = data.message || data.title || `Lỗi kết nối máy chủ (${response.status})`;
           const error = new Error(errorMessage);
@@ -121,10 +130,13 @@ export async function request(endpoint, options = {}) {
           error.data = data;
           throw error;
         }
+        if (version !== sessionVersion || token !== localStorage.getItem('accessToken')) {
+          throw new DOMException('Request belongs to a previous session.', 'AbortError');
+        }
         apiCache.set(cacheKey, { data, timestamp: Date.now() });
         return data;
       } finally {
-        inFlightRequests.delete(cacheKey);
+        if (inFlightRequests.get(cacheKey) === fetchPromise) inFlightRequests.delete(cacheKey);
       }
     })();
 
@@ -132,8 +144,8 @@ export async function request(endpoint, options = {}) {
     return fetchPromise;
   }
 
-  const response = await fetch(url, config);
-  const data = await response.json().catch(() => ({}));
+  const response = await checkedFetch(url, config, token);
+  const data = await readResponseData(response);
 
   if (!response.ok) {
     const errorMessage = data.message || data.title || `Lỗi kết nối máy chủ (${response.status})`;
@@ -144,6 +156,52 @@ export async function request(endpoint, options = {}) {
   }
 
   return data;
+}
+
+async function readResponseData(response) {
+  if (response.status === 204) return {};
+  try {
+    return await response.json();
+  } catch {
+    if (!response.ok) return {};
+    const error = new Error('Máy chủ trả về dữ liệu không hợp lệ.');
+    error.status = 502;
+    throw error;
+  }
+}
+
+async function checkedFetch(url, config, token) {
+  const version = sessionVersion;
+  const response = await fetch(url, {
+    ...config,
+    cache: 'no-store',
+    signal: config.signal || ((config.method || 'GET') === 'GET' ? AbortSignal.timeout(12000) : undefined),
+  });
+  if (version !== sessionVersion || token !== localStorage.getItem('accessToken')) {
+    throw new DOMException('Request belongs to a previous session.', 'AbortError');
+  }
+  return response;
+}
+
+export async function request(endpoint, options = {}) {
+  const version = sessionVersion;
+  const token = localStorage.getItem('accessToken');
+  try {
+    const data = await performRequest(endpoint, options);
+    if (version !== sessionVersion || token !== localStorage.getItem('accessToken')) {
+      throw new DOMException('Request belongs to a previous session.', 'AbortError');
+    }
+    return data;
+  } catch (error) {
+    if (version !== sessionVersion || error.name === 'AbortError') throw error;
+    const method = (options.method || 'GET').toUpperCase();
+    // Validation errors stay with their form; failed reads must never look like live data.
+    if (!(options.handleErrorLocally && method !== 'GET') && (!error.status || method === 'GET' || error.status >= 500)) {
+      apiCache.clear();
+      failureListeners.forEach((listener) => listener(error));
+    }
+    throw error;
+  }
 }
 
 export const apiClient = {
@@ -166,5 +224,10 @@ export const apiClient = {
   },
   delete: (endpoint, options = {}) => request(endpoint, { ...options, method: 'DELETE' }),
   clearCache: (prefix) => invalidateCache(prefix),
+  resetSession: () => {
+    sessionVersion += 1;
+    apiCache.clear();
+    inFlightRequests.clear();
+  },
   baseUrl: API_URL,
 };

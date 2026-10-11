@@ -35,6 +35,14 @@ namespace Infrastructure.Persistence.Configurations.RosbagAnalysisConfig
 			builder.HasIndex(x => x.CreatedAt);
 			builder.HasIndex(x => x.UserId);
 			builder.HasIndex(x => x.Status);
+
+			builder.Property(x => x.ReviewStatus)
+				.HasConversion<string>().HasMaxLength(20)
+				.HasDefaultValue(Domain.Enums.RosbagReviewStatus.Approved)
+				.HasSentinel(Domain.Enums.RosbagReviewStatus.Approved).IsRequired();
+			builder.HasOne(x => x.Reviewer).WithMany()
+				.HasForeignKey(x => x.ReviewerId).OnDelete(DeleteBehavior.SetNull);
+			builder.HasIndex(x => new { x.ReviewStatus, x.CreatedAt });
 		}
 	}
 

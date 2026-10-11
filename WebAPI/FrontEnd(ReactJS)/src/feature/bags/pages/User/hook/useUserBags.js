@@ -11,7 +11,7 @@ export default function useUserBags() {
     setLoading(true);
     getBagsApi()
       .then((bags) => {
-        if (Array.isArray(bags) && bags.length > 0) {
+        if (Array.isArray(bags)) {
           dispatch({ type: 'SET_BAGS', bags });
         }
       })
@@ -24,7 +24,7 @@ export default function useUserBags() {
     return (state.bags || [])
       .map((b) => ({
         ...b,
-        sizeMb: Math.round((b.size || 0) / (1024 * 1024)) || 120,
+        sizeMb: Math.round((b.size || 0) / (1024 * 1024)),
       }))
       .filter((b) => b.status === 'complete' || b.status === 'ready' || b.id === 'bag-023' || b.id === 'bag-024');
   }, [state.bags]);

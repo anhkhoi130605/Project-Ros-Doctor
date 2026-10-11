@@ -5,6 +5,8 @@ using API.Middlewares;
 using API.Middlewares.Extentions;
 using Application;
 using Infrastructure;
+using Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -83,6 +85,23 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+// Local-development bootstrap only. Never run the unrelated pending EF migrations here.
+if (app.Environment.IsDevelopment() && !EF.IsDesignTime
+    && builder.Configuration.GetValue<bool>("RosbagReview:InitializeSchemaOnStartup", true))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    try
+    {
+        await RosbagReviewSchemaInitializer.EnsureAsync(db.Database.GetDbConnection(), app.Logger);
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Không thể khởi tạo 5 cột review của rosbags. Kiểm tra kết nối, quyền ALTER/INDEX/REFERENCES và schema. Không chạy lại toàn bộ script SQL nếu đã có một phần cột.");
+        throw;
+    }
+}
 
 app.UseResponseCompression();
 

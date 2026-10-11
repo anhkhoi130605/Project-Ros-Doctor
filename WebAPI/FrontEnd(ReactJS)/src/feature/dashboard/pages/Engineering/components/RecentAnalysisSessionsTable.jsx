@@ -91,7 +91,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
   });
 
   // 2. Data cho Biểu đồ cột (Mỗi phiên gồm số lượng Topic & Cảnh báo từ DB)
-  const maxTopic = Math.max(...displaySessions.map((s) => s.topicsCount || s.topics || 2), 6);
+  const maxTopic = Math.max(...displaySessions.map((s) => s.topicsCount ?? s.topics ?? 0), 6);
   const chartWidth = 520;
   const chartHeight = 190;
   const chartBottom = 150;
@@ -246,7 +246,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                   borderRadius: '10px',
                 }}
               >
-                ● {warningSessions > 0 ? `${warningSessions} phiên cần xử lý` : '100% An toàn'}
+                ● {displaySessions.length === 0 ? 'Chưa có dữ liệu' : warningSessions + errorSessions > 0 ? `${warningSessions + errorSessions} phiên cần xử lý` : '100% An toàn'}
               </span>
             </div>
 
@@ -390,7 +390,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
 
                 {/* Bars per session */}
                 {displaySessions.map((session, idx) => {
-                  const tCount = session.topicsCount || 2;
+                  const tCount = session.topicsCount ?? session.topics ?? 0;
                   const wCount = session.warningsCount || 0;
                   const highCount = (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length;
                   const cond = getHealthCondition(session.healthScore, wCount, highCount);
@@ -527,7 +527,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                     ).color,
                     fontWeight: 700
                   }}>
-                    {session.topicsCount || 2} Topics · {getHealthCondition(
+                    {session.topicsCount ?? session.topics ?? 0} Topics · {getHealthCondition(
                       session.healthScore,
                       session.warningsCount || 0,
                       (session.issues || []).filter((i) => i.severity === 'high' || i.severity === 'critical').length
@@ -610,7 +610,7 @@ export default function RecentAnalysisSessionsTable({ sessions = [] }) {
                         {formatSessionTime(session.timestamp)}
                       </td>
                       <td style={{ padding: '16px', fontSize: '13px', color: '#334155' }}>
-                        {session.topicsCount || 2}
+                        {session.topicsCount ?? session.topics ?? 0}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <span

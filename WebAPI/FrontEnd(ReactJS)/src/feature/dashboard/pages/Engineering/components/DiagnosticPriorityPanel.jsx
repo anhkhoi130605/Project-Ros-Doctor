@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '../../../../../components/common/UIComponents';
 
-export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarningsCount = 110 }) {
-  const incompleteCount = 1;
-  const total = (pendingCount || 149) + (highWarningsCount || 110) + incompleteCount;
+export default function DiagnosticPriorityPanel({ pendingCount = 0, highWarningsCount = 0, incompleteCount = 0 }) {
+  const total = pendingCount + highWarningsCount + incompleteCount;
 
   const [hoveredIdx, setHoveredIdx] = useState(null);
 
@@ -12,37 +11,37 @@ export default function DiagnosticPriorityPanel({ pendingCount = 149, highWarnin
   const radius = 38;
   const circumference = 2 * Math.PI * radius; // ~238.76
 
-  const pPending = (pendingCount || 149) / total;
-  const pHigh = (highWarningsCount || 110) / total;
-  const pIncomplete = incompleteCount / total;
+  const pPending = total ? pendingCount / total : 0;
+  const pHigh = total ? highWarningsCount / total : 0;
+  const pIncomplete = total ? incompleteCount / total : 0;
 
   const priorities = [
     {
       to: '/reviews',
       dotColor: '#d97706',
-      title: `${pendingCount || 149} kết luận chờ duyệt`,
+      title: `${pendingCount} kết luận chờ duyệt`,
       subtitle: 'Kỹ sư kiểm tra trước khi xuất',
       percent: Math.round(pPending * 100),
-      count: pendingCount || 149,
+      count: pendingCount,
       strokeDasharray: `${pPending * circumference} ${circumference * (1 - pPending)}`,
       strokeDashoffset: 0,
     },
     {
       to: '/reviews',
       dotColor: '#dc2626',
-      title: `${highWarningsCount || 110} cảnh báo mức cao`,
+      title: `${highWarningsCount} cảnh báo mức cao`,
       subtitle: 'Đối chiếu bằng chứng của phiên',
       percent: Math.round(pHigh * 100),
-      count: highWarningsCount || 110,
+      count: highWarningsCount,
       strokeDasharray: `${pHigh * circumference} ${circumference * (1 - pHigh)}`,
       strokeDashoffset: -(pPending * circumference),
     },
     {
       to: '/bags',
       dotColor: '#2563eb',
-      title: '1 bag chưa đủ dữ liệu',
+      title: `${incompleteCount} bag chưa đủ dữ liệu`,
       subtitle: 'Kiểm tra các phần đã ghi',
-      percent: Math.max(1, Math.round(pIncomplete * 100)),
+      percent: Math.round(pIncomplete * 100),
       count: incompleteCount,
       strokeDasharray: `${pIncomplete * circumference} ${circumference * (1 - pIncomplete)}`,
       strokeDashoffset: -((pPending + pHigh) * circumference),

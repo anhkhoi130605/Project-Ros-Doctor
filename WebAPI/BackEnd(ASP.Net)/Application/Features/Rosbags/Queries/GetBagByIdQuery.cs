@@ -21,7 +21,7 @@ namespace Application.Features.Rosbags.Queries
 		public async Task<BagDetailDto?> Handle(GetBagByIdQuery request, CancellationToken cancellationToken)
 		{
 			var bag = await _unitOfWork.Rosbags.GetByIdAsync(request.Id, cancellationToken);
-			if (bag == null) return null;
+			if (bag == null || bag.DeletedAt != null || bag.ReviewStatus != Domain.Enums.RosbagReviewStatus.Approved) return null;
 
 			var sessions = await _unitOfWork.AnalysisSessions.GetAllAsync(null, null, cancellationToken);
 			var session = sessions.Where(s => s.RosbagId == bag.Id).OrderByDescending(s => s.StartedAt).FirstOrDefault();
