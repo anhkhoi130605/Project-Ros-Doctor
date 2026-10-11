@@ -17,14 +17,30 @@ from pathlib import Path
 from filelock import FileLock
 from langchain_core.documents import Document
 
+from src.agents.embedding.models import ResilientEmbeddingModel
+
 logger = logging.getLogger(__name__)
 
 
 class RevisionedChroma:
-    def __init__(self, store, manifest_path: str | Path):
+    def __init__(
+        self,
+        store,
+        manifest_path: str | Path,
+        owned_embeddings: ResilientEmbeddingModel | None = None,
+    ):
         self._store = store
+        self._owned_embeddings = owned_embeddings
         self.manifest_path = Path(manifest_path)
         self._lock = FileLock(str(self.manifest_path) + ".lock")
+
+    def close(self) -> None:
+        if self._owned_embeddings is not None:
+            self._owned_embeddings.close()
+
+    async def aclose(self) -> None:
+        if self._owned_embeddings is not None:
+            await self._owned_embeddings.aclose()
 
     @property
     def _collection(self):

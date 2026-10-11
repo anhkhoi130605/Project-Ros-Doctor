@@ -136,7 +136,9 @@ async def analyze_node(state: AgentState) -> dict[str, Any]:
     context = ""
     try:
         retrieval_query = f"{query}\n{telemetry_str}" if telemetry_str else query
-        context, sources = await asyncio.to_thread(get_rag_pipeline().retrieve, retrieval_query)
+        context, sources = await asyncio.to_thread(
+            lambda: get_rag_pipeline().retrieve(retrieval_query)
+        )
     except Exception:
         context, sources = _search_local_playbooks(query)
 
