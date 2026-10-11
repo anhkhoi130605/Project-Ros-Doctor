@@ -10,7 +10,7 @@ namespace Infrastructure.Persistence.Configurations.ConfigurationConfig
 		{
 			builder.ToTable("ai_settings");
 
-			builder.Property(x => x.UserId).IsRequired().HasMaxLength(36);
+			builder.Property(x => x.UserId).HasColumnName("user_id").IsRequired().HasMaxLength(36);
 			builder.Property(x => x.VectorDbUrl).HasMaxLength(255).HasDefaultValue("http://localhost:8333");
 			builder.Property(x => x.DailyCallLimit).HasDefaultValue(100);
 			builder.Property(x => x.RateLimitPerMin).HasDefaultValue(10);
