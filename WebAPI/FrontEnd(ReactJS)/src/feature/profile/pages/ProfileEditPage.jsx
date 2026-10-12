@@ -34,12 +34,12 @@ export default function ProfileEditPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   // Form states
-  const [name, setName] = useState(state.profile?.name || ROLE_NAMES[state.role] || 'Phạm Hoàng Anh Khôi');
-  const [email, setEmail] = useState(state.profile?.email || 'kpham6488@gmail.com');
-  const [phone, setPhone] = useState(state.profile?.phone || '0987654321');
-  const [jobTitle, setJobTitle] = useState(state.profile?.jobTitle || (state.role === 'Admin' ? 'Quản trị viên Hệ thống' : 'Kỹ sư Robotics & ROS 2'));
-  const [workspace, setWorkspace] = useState(state.profile?.workspace || 'Robotics Lab');
-  const [bio, setBio] = useState(state.profile?.bio || 'Kỹ sư chịu trách nhiệm phân tích dữ liệu bag và giám sát hệ thống ROS 2.');
+  const [name, setName] = useState(state.profile?.name || (state.role ? ROLE_NAMES[state.role] : '') || '');
+  const [email, setEmail] = useState(state.profile?.email || '');
+  const [phone, setPhone] = useState(state.profile?.phone || '');
+  const [jobTitle, setJobTitle] = useState(state.profile?.jobTitle || '');
+  const [workspace, setWorkspace] = useState(state.profile?.workspace || '');
+  const [bio, setBio] = useState(state.profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(state.profile?.avatarUrl || '');
 
   // Password change states
@@ -472,7 +472,7 @@ export default function ProfileEditPage() {
                     className="profile-field-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="VD: Phạm Hoàng Anh Khôi"
+                    placeholder="VD: Nguyễn Văn A"
                     required
                   />
                 </div>
@@ -501,7 +501,7 @@ export default function ProfileEditPage() {
                     className="profile-field-input"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="VD: 0987654321"
+                    placeholder="VD: 0912345678"
                   />
                 </div>
 

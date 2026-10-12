@@ -21,15 +21,15 @@ export default function RegisterPage() {
   const { dispatch, notify } = useApp();
 
   const [formData, setFormData] = useState({
-    fullName: 'Nguyễn Văn A',
-    email: searchParams.get('email') || 'kpham6488@gmail.com',
-    phone: '0987654321',
+    fullName: '',
+    email: searchParams.get('email') || '',
+    phone: '',
     gender: '0', // 0: Nam (Male), 1: Nữ (Female), 2: Khác (Other)
-    dateOfBirth: '2000-01-15',
-    workspace: 'AGV-Lab',
-    bio: DEFAULT_BIO_VI,
-    password: 'demo123',
-    confirmPassword: 'demo123',
+    dateOfBirth: '',
+    workspace: '',
+    bio: '',
+    password: '',
+    confirmPassword: '',
     role: 'User',
   });
 
@@ -42,9 +42,7 @@ export default function RegisterPage() {
   }, [searchParams, dispatch]);
   const [error, setError] = useState('');
   const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
-  const displayedBio = formData.bio === DEFAULT_BIO_VI || formData.bio === DEFAULT_BIO_EN
-    ? isEnglish ? DEFAULT_BIO_EN : DEFAULT_BIO_VI
-    : formData.bio;
+  const displayedBio = formData.bio;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
