@@ -1,0 +1,143 @@
+# =============================================================================
+# GitLab CI/CD Pipeline - CtrlShiftN (Full Stack & Azure Web App Deployment)
+# Thay thế và đồng bộ logic từ 2 file GitHub Actions:
+#   1. .github/workflows/ci.yml (Build, Test, Lint, Bảo vệ nhánh)
+#   2. .github/workflows/main_ctrlshiftn.yml (Đóng gói & Deploy Azure Web App)
+# =============================================================================
+
+stages:
+  - test
+  - build
+  - deploy
+
+# Cấu hình workflow: Chạy trên Merge Request, nhánh main, develop và trigger thủ công
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+variables:
+  # Tên Web App và Slot trên Azure (khớp với main_ctrlshiftn.yml)
+  AZURE_APP_NAME: "CtrlShiftN"
+  AZURE_SLOT_NAME: "Production"
+
+  # Biến môi trường chung cho test
+  APP_ENV: "test"
+  OPENAI_API_KEY: "mock-test-key-ci"
+  MSBUILDDISABLENODEREUSE: "1"
+
+# =============================================================================
+# 1. AI SERVICE (PYTHON 3.11 / FASTAPI / LANGGRAPH)
+# =============================================================================
+test-python-ai:
+  stage: test
+  image: python:3.11
+  variables:
+    PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+  cache:
+    key: "python-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cache/pip
+  script:
+    - echo "=== 1.1 Cài đặt dependencies AI Service ==="
+    - python -m pip install --upgrade pip
+    - pip install --prefer-binary -r requirements.txt
+    - echo "=== 1.2 Kiểm tra Linting với Ruff ==="
+    - ruff check src/ tests/
+    - echo "=== 1.3 Xác minh khởi động ứng dụng Python AI ==="
+    - python -c "import src.main; print('Python AI application loaded successfully')"
+    - echo "=== 1.4 Chạy Unit Test với Pytest ==="
+    - pytest tests/ -v --tb=short
+
+package-python-ai:
+  stage: build
+  image: python:3.11
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  script:
+    - echo "=== Đóng gói Python AI Service ==="
+    - mkdir -p python-ai-publish
+    - cp -r src requirements.txt data python-ai-publish/ 2>/dev/null || cp -r src requirements.txt python-ai-publish/
+  artifacts:
+    name: "python-ai-package"
+    expire_in: 1 week
+    paths:
+      - python-ai-publish/
+
+# =============================================================================
+# 2. BACKEND ASP.NET CORE (.NET 10)
+# =============================================================================
+build-backend-dotnet:
+  stage: build
+  image: mcr.microsoft.com/dotnet/sdk:10.0
+  variables:
+    NUGET_PACKAGES: "$CI_PROJECT_DIR/.nuget/packages"
+  cache:
+    key: "dotnet-$CI_COMMIT_REF_SLUG"
+    paths:
+      - .nuget/packages
+  script:
+    - echo "=== 2.1 Restore & Build Backend (.NET 10) ==="
+    - cd "WebAPI/BackEnd(ASP.Net)"
+    - dotnet restore Backend.slnx
+    - dotnet build Backend.slnx --no-restore --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
+    - echo "=== 2.2 Chạy Backend Tests ==="
+    - dotnet test Backend.slnx --no-build --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
+    - echo "=== 2.3 Publish WebAPI ==="
+    - dotnet publish API/API.csproj -c Release -o ../../publish
+    - dotnet build-server shutdown || true
+  artifacts:
+    name: "backend-dotnet-package"
+    expire_in: 1 week
+    paths:
+      - publish/
+
+# =============================================================================
+# 3. FRONTEND (REACTJS / VITE)
+# =============================================================================
+build-frontend-react:
+  stage: build
+  image: node:20
+  cache:
+    key: "frontend-$CI_COMMIT_REF_SLUG"
+    paths:
+      - WebAPI/FrontEnd(ReactJS)/.npm
+  script:
+    - echo "=== 3.1 Cài đặt dependencies Frontend ==="
+    - cd "WebAPI/FrontEnd(ReactJS)"
+    - npm ci || npm install --prefer-offline --no-audit --no-fund
+    - echo "=== 3.2 Chạy Frontend Tests ==="
+    - npm test --if-present
+    - echo "=== 3.3 Build Vite Production Bundle ==="
+    - npm run build
+  artifacts:
+    name: "frontend-dist-package"
+    expire_in: 1 week
+    paths:
+      - WebAPI/FrontEnd(ReactJS)/dist/
+
+# =============================================================================
+# 4. DEPLOY TO AZURE WEB APP (CTRLSHIFTN)
+# =============================================================================
+deploy-azure:
+  stage: deploy
+  image: python:3.11-slim
+  dependencies:
+    - build-backend-dotnet
+    - build-frontend-react
+  environment:
+    name: Production
+    url: https://ctrlshiftn.azurewebsites.net
+  rules:
+    # Chỉ deploy tự động khi merge vào main hoặc kích hoạt thủ công trên GitLab
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  before_script:
+    - echo "Chuẩn bị deploy lên Azure Web App..."
+  script:
+    - echo "=== Tích hợp Frontend wwwroot vào Backend Publish & Zip Deploy lên Azure ==="
+    - python scripts/deploy_azure.py
