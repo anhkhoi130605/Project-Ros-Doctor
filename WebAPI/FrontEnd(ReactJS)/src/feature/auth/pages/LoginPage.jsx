@@ -138,12 +138,12 @@ export default function LoginPage() {
 
             <FormField label={t('auth:login.email')}>
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@ros2doctor.local"
-                autoComplete="email"
+                placeholder={t('auth:login.emailPlaceholder', 'Email hoặc tài khoản')}
+                autoComplete="username email"
               />
             </FormField>
 
