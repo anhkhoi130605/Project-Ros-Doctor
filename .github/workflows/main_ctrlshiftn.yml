@@ -110,7 +110,7 @@ jobs:
 
       - name: Run Python Automated Tests (pytest)
         env:
-          APP_ENV: testing
+          APP_ENV: test
           OPENAI_API_KEY: mock-verify-key
         run: |
           pytest tests/test_api tests/test_services tests/test_agents -q
