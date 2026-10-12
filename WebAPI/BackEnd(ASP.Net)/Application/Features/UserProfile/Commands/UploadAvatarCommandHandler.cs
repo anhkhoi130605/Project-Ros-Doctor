@@ -33,6 +33,7 @@ namespace Application.Features.UserProfile.Commands
 			// 2. Cập nhật AvatarUrl trong database
 			user.AvatarUrl = avatarUrl;
 			await _unitOfWork.User.UpdateAsync(user, cancellationToken);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
 			return avatarUrl;
 		}

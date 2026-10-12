@@ -7,7 +7,7 @@ import LanguageSwitcher from '../common/LanguageSwitcher';
 import { ROLE_NAMES } from '../../domain/appTypes';
 import robotHeroImg from '../../assets/robot-hero.jpg';
 import SmoothReveal from '../common/SmoothReveal';
-import { apiClient } from '../../service';
+import { apiClient, profileService } from '../../service';
 import useWorkspaceData from './useWorkspaceData';
 import DataConnectionState from '../common/DataConnectionState';
 import './SidebarAutohide.css';
@@ -36,6 +36,38 @@ export default function AppLayout() {
   useEffect(() => {
     setCostMenuOpen(isCostPath);
   }, [location.pathname, isCostPath]);
+
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  // Tự động đồng bộ thông tin hồ sơ và ảnh đại diện từ backend khi vào ứng dụng
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    let isMounted = true;
+    profileService.getMyProfile()
+      .then((data) => {
+        if (!isMounted || !data) return;
+        setAvatarLoadError(false);
+        dispatch({
+          type: 'UPDATE_PROFILE',
+          profile: {
+            name: data.fullName || state.profile?.name,
+            email: data.email || state.profile?.email,
+            phone: data.phone ?? state.profile?.phone,
+            bio: data.bio ?? state.profile?.bio,
+            avatarUrl: data.avatarUrl ?? '',
+          },
+        });
+      })
+      .catch((err) => {
+        console.warn('Could not load profile on layout mount:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [dispatch]);
 
   const [isPinned, setIsPinned] = useState(() => {
     return localStorage.getItem('sidebar_pinned') === 'true';
@@ -518,10 +550,11 @@ export default function AppLayout() {
             aria-label={t('common:aria.accountMenu')}
             onClick={() => setUserMenuOpen(!userMenuOpen)}
           >
-            {state.profile?.avatarUrl ? (
+            {state.profile?.avatarUrl && !avatarLoadError ? (
               <img
                 src={state.profile.avatarUrl}
                 alt="Avatar"
+                onError={() => setAvatarLoadError(true)}
                 style={{
                   width: 34,
                   height: 34,
