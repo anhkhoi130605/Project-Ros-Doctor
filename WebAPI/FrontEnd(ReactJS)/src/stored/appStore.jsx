@@ -128,6 +128,7 @@ function appReducer(state, action) {
           ...getInitialState().profile,
           name: action.userName || '',
           email: action.email || '',
+          avatarUrl: action.avatarUrl || '',
         },
       };
 
