@@ -36,6 +36,7 @@ export default function LoginPage() {
       if (loginResult && loginResult.success) {
         const userRole = loginResult.role || (email.toLowerCase().includes('admin') ? 'Admin' : 'Engineering');
         const userName = loginResult.user?.fullName || loginResult.user?.FullName || loginResult.user?.name || email.split('@')[0];
+        const userAvatar = loginResult.user?.avatarUrl || loginResult.user?.AvatarUrl || '';
 
         dispatch({
           type: 'LOGIN',
@@ -43,6 +44,7 @@ export default function LoginPage() {
           userName,
           role: userRole,
           userId: loginResult.user?.id || loginResult.user?.Id || null,
+          avatarUrl: userAvatar,
         });
 
         localStorage.setItem('accessToken', loginResult.token);
