@@ -36,6 +36,7 @@ namespace Application.Features.UserProfile.Commands
 			user.Bio = request.Dto.Bio?.Trim();
 
 			await _unitOfWork.User.UpdateAsync(user, cancellationToken);
+			await _unitOfWork.SaveChangesAsync(cancellationToken);
 
 			var role = !string.IsNullOrEmpty(user.RoleId) 
 				? (await _unitOfWork.Roles.GetAsync(r => r.Id == user.RoleId, cancellationToken: cancellationToken))?.RoleName?.ToString() 
