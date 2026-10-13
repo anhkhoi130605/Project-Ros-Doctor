@@ -42,7 +42,9 @@ export default function RegisterPage() {
   }, [searchParams, dispatch]);
   const [error, setError] = useState('');
   const isEnglish = String(i18n.resolvedLanguage || i18n.language || 'vi').split('-')[0] === 'en';
-  const displayedBio = formData.bio;
+  const displayedBio = formData.bio === DEFAULT_BIO_VI || formData.bio === DEFAULT_BIO_EN
+    ? isEnglish ? DEFAULT_BIO_EN : DEFAULT_BIO_VI
+    : formData.bio;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

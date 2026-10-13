@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using static Domain.Enums.UserEnum;
-
+//DTO for Admin Manage
 namespace Application.DTOs.User
 {
 	public class UserDetailDTO
