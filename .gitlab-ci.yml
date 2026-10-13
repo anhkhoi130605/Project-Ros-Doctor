@@ -40,7 +40,7 @@ ai_code_review:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   before_script:
-    - pip install --no-cache-dir requests google-genai
+    - pip install --no-cache-dir requests
   script:
     - python scripts/ai_review.py
   allow_failure: true
