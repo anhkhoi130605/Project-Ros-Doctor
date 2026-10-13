@@ -7,3 +7,4 @@ export * from './adminService';
 export * from './dashboardService';
 export * from './chatService';
 export * from './agentService';
+export * from './profileService';

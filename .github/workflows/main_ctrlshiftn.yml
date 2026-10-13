@@ -31,6 +31,10 @@ jobs:
         working-directory: "WebAPI/BackEnd(ASP.Net)"
         run: dotnet build Backend.slnx --no-restore --configuration Release
 
+      - name: Run Backend Tests
+        working-directory: "WebAPI/BackEnd(ASP.Net)"
+        run: dotnet test Backend.slnx --no-build --configuration Release
+
       - name: Publish WebAPI
         working-directory: "WebAPI/BackEnd(ASP.Net)"
         run: dotnet publish API/API.csproj -c Release -o ${{ runner.temp }}/backend-dotnet-publish
@@ -61,6 +65,10 @@ jobs:
       - name: Install dependencies
         working-directory: "WebAPI/FrontEnd(ReactJS)"
         run: npm ci || npm install --prefer-offline
+
+      - name: Run Frontend Tests
+        working-directory: "WebAPI/FrontEnd(ReactJS)"
+        run: npm test
 
       - name: Build Vite Production Bundle
         working-directory: "WebAPI/FrontEnd(ReactJS)"
@@ -99,6 +107,13 @@ jobs:
           OPENAI_API_KEY: mock-verify-key
         run: |
           python -c "import src.main; print('Python AI application loaded successfully')"
+
+      - name: Run Python Automated Tests (pytest)
+        env:
+          APP_ENV: test
+          OPENAI_API_KEY: mock-verify-key
+        run: |
+          pytest tests/test_api tests/test_services tests/test_agents -q
 
       - name: Stage Python AI Files
         run: |

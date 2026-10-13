@@ -1,10 +1,10 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../../stored/appStore';
 import { ROLE_NAMES } from '../../../domain/appTypes';
 import { PageHeader, Button, Badge, Icon } from '../../../components/common/UIComponents';
-import { logUserActivityApi } from '../../../service';
+import { logUserActivityApi, profileService } from '../../../service';
 import './ProfileEditPage.css';
 
 function getUserInitials(name) {
@@ -34,12 +34,12 @@ export default function ProfileEditPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   // Form states
-  const [name, setName] = useState(state.profile?.name || ROLE_NAMES[state.role] || 'Phạm Hoàng Anh Khôi');
-  const [email, setEmail] = useState(state.profile?.email || 'kpham6488@gmail.com');
-  const [phone, setPhone] = useState(state.profile?.phone || '0987654321');
-  const [jobTitle, setJobTitle] = useState(state.profile?.jobTitle || (state.role === 'Admin' ? 'Quản trị viên Hệ thống' : 'Kỹ sư Robotics & ROS 2'));
-  const [workspace, setWorkspace] = useState(state.profile?.workspace || 'Robotics Lab');
-  const [bio, setBio] = useState(state.profile?.bio || 'Kỹ sư chịu trách nhiệm phân tích dữ liệu bag và giám sát hệ thống ROS 2.');
+  const [name, setName] = useState(state.profile?.name || (state.role ? ROLE_NAMES[state.role] : '') || '');
+  const [email, setEmail] = useState(state.profile?.email || '');
+  const [phone, setPhone] = useState(state.profile?.phone || '');
+  const [jobTitle, setJobTitle] = useState(state.profile?.jobTitle || '');
+  const [workspace, setWorkspace] = useState(state.profile?.workspace || '');
+  const [bio, setBio] = useState(state.profile?.bio || '');
   const [avatarUrl, setAvatarUrl] = useState(state.profile?.avatarUrl || '');
 
   // Password change states
@@ -53,11 +53,39 @@ export default function ProfileEditPage() {
   const [autoSaveLogs, setAutoSaveLogs] = useState(true);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const currentRoleLabel = ROLE_NAMES[state.role] || state.role || 'Quản trị viên';
 
-  // Xử lý nén và tải file ảnh đại diện
-  const handleImageFile = (file) => {
+  // Tải dữ liệu hồ sơ thực tế từ Database khi mở trang
+  useEffect(() => {
+    profileService.getMyProfile()
+      .then((data) => {
+        if (data) {
+          if (data.fullName) setName(data.fullName);
+          if (data.email) setEmail(data.email);
+          if (data.phone) setPhone(data.phone);
+          if (data.bio) setBio(data.bio);
+          if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
+          dispatch({
+            type: 'UPDATE_PROFILE',
+            profile: {
+              name: data.fullName,
+              email: data.email,
+              phone: data.phone,
+              bio: data.bio,
+              avatarUrl: data.avatarUrl,
+            },
+          });
+        }
+      })
+      .catch(() => {
+        // Dự phòng dữ liệu local nếu chưa kết nối mạng
+      });
+  }, [dispatch]);
+
+  // Xử lý nén và tải file ảnh đại diện lên Cloudinary & lưu DB
+  const handleImageFile = async (file) => {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -70,37 +98,24 @@ export default function ProfileEditPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Tối ưu hóa kích thước tối đa 256x256 để lưu trữ mượt mà
-        const maxSide = 256;
-        let width = img.width;
-        let height = img.height;
-        if (width > maxSide || height > maxSide) {
-          if (width > height) {
-            height = Math.round((height * maxSide) / width);
-            width = maxSide;
-          } else {
-            width = Math.round((width * maxSide) / height);
-            height = maxSide;
-          }
-        }
+    setIsUploadingAvatar(true);
+    notify('Đang tải ảnh lên Cloudinary...', 'info');
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.88);
-        setAvatarUrl(optimizedBase64);
-        notify('Đã tải ảnh lên thành công. Bấm "Lưu thay đổi" để áp dụng cho toàn hệ thống.', 'info');
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+    try {
+      const res = await profileService.uploadAvatar(file);
+      if (res?.avatarUrl) {
+        setAvatarUrl(res.avatarUrl);
+        dispatch({
+          type: 'UPDATE_PROFILE',
+          profile: { avatarUrl: res.avatarUrl },
+        });
+        notify('Đã tải ảnh lên Cloudinary và lưu vào cơ sở dữ liệu thành công!', 'success');
+      }
+    } catch (err) {
+      notify(err.message || 'Lỗi khi tải ảnh lên Cloudinary.', 'error');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
   };
 
   const handleFileInputChange = (e) => {
@@ -131,10 +146,14 @@ export default function ProfileEditPage() {
   const handleRemoveAvatar = () => {
     setAvatarUrl('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    dispatch({
+      type: 'UPDATE_PROFILE',
+      profile: { avatarUrl: '' },
+    });
     notify('Đã xóa ảnh đại diện, trở về ký tự viết tắt.', 'info');
   };
 
-  const handleSaveGeneral = (e) => {
+  const handleSaveGeneral = async (e) => {
     if (e) e.preventDefault();
 
     if (!name.trim()) {
@@ -149,39 +168,42 @@ export default function ProfileEditPage() {
 
     setIsSaving(true);
 
-    const updatedProfile = {
-      name: name.trim(),
-      email: email.trim(),
-      phone: phone.trim(),
-      jobTitle: jobTitle.trim(),
-      workspace: workspace.trim(),
-      bio: bio.trim(),
-      avatarUrl: avatarUrl.trim(),
-    };
-
-    dispatch({
-      type: 'UPDATE_PROFILE',
-      profile: updatedProfile,
-    });
-
-    // Cập nhật localStorage
     try {
-      localStorage.setItem('userName', updatedProfile.name);
-      localStorage.setItem('userEmail', updatedProfile.email);
-    } catch {
-      // Ignore storage errors
-    }
+      const updated = await profileService.updateProfile({
+        fullName: name.trim(),
+        phone: phone.trim(),
+        bio: bio.trim(),
+      });
 
-    // Ghi nhận nhật ký người dùng
-    logUserActivityApi({
-      action: 'UpdateProfile',
-      description: `Người dùng cập nhật thông tin cá nhân (${updatedProfile.name})`,
-    }).catch(() => {});
+      const updatedProfile = {
+        name: updated?.fullName || name.trim(),
+        email: updated?.email || email.trim(),
+        phone: updated?.phone || phone.trim(),
+        jobTitle: jobTitle.trim(),
+        workspace: workspace.trim(),
+        bio: updated?.bio || bio.trim(),
+        avatarUrl: updated?.avatarUrl || avatarUrl.trim(),
+      };
 
-    setTimeout(() => {
-      setIsSaving(false);
+      dispatch({
+        type: 'UPDATE_PROFILE',
+        profile: updatedProfile,
+      });
+
+      // Cập nhật localStorage
+      try {
+        localStorage.setItem('userName', updatedProfile.name);
+        localStorage.setItem('userEmail', updatedProfile.email);
+      } catch {
+        // Ignore storage errors
+      }
+
       notify(t('common:profile.updateSuccess') || 'Cập nhật thông tin cá nhân thành công!', 'success');
-    }, 300);
+    } catch (err) {
+      notify(err.message || 'Lỗi khi lưu thông tin vào cơ sở dữ liệu.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleChangePassword = (e) => {
@@ -472,7 +494,7 @@ export default function ProfileEditPage() {
                     className="profile-field-input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="VD: Phạm Hoàng Anh Khôi"
+                    placeholder="VD: Nguyễn Văn A"
                     required
                   />
                 </div>
@@ -501,7 +523,7 @@ export default function ProfileEditPage() {
                     className="profile-field-input"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="VD: 0987654321"
+                    placeholder="VD: 0912345678"
                   />
                 </div>
 

@@ -18,8 +18,8 @@ export default function LoginPage() {
   const { isSubmitting, login } = useAuth();
   const { dispatch, notify } = useApp();
 
-  const [email, setEmail] = useState(searchParams.get('email') || 'kpham6488@gmail.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState(searchParams.get('email') || '');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState(searchParams.get('error') || '');
   const [errorCode, setErrorCode] = useState(searchParams.get('errorCode') || '');
   const displayedError = errorCode === 'ENGINEER_PENDING_APPROVAL'
@@ -36,6 +36,7 @@ export default function LoginPage() {
       if (loginResult && loginResult.success) {
         const userRole = loginResult.role || (email.toLowerCase().includes('admin') ? 'Admin' : 'Engineering');
         const userName = loginResult.user?.fullName || loginResult.user?.FullName || loginResult.user?.name || email.split('@')[0];
+        const userAvatar = loginResult.user?.avatarUrl || loginResult.user?.AvatarUrl || '';
 
         dispatch({
           type: 'LOGIN',
@@ -43,6 +44,7 @@ export default function LoginPage() {
           userName,
           role: userRole,
           userId: loginResult.user?.id || loginResult.user?.Id || null,
+          avatarUrl: userAvatar,
         });
 
         localStorage.setItem('accessToken', loginResult.token);
@@ -138,12 +140,12 @@ export default function LoginPage() {
 
             <FormField label={t('auth:login.email')}>
               <input
-                type="email"
+                type="text"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@ros2doctor.local"
-                autoComplete="email"
+                placeholder={t('auth:login.emailPlaceholder', 'Email hoặc tài khoản')}
+                autoComplete="username email"
               />
             </FormField>
 

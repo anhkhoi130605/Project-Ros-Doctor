@@ -21,15 +21,15 @@ export default function RegisterPage() {
   const { dispatch, notify } = useApp();
 
   const [formData, setFormData] = useState({
-    fullName: 'Nguyễn Văn A',
-    email: searchParams.get('email') || 'kpham6488@gmail.com',
-    phone: '0987654321',
+    fullName: '',
+    email: searchParams.get('email') || '',
+    phone: '',
     gender: '0', // 0: Nam (Male), 1: Nữ (Female), 2: Khác (Other)
-    dateOfBirth: '2000-01-15',
-    workspace: 'AGV-Lab',
-    bio: DEFAULT_BIO_VI,
-    password: 'demo123',
-    confirmPassword: 'demo123',
+    dateOfBirth: '',
+    workspace: '',
+    bio: '',
+    password: '',
+    confirmPassword: '',
     role: 'User',
   });
 
