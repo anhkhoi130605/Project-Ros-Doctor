@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using static Domain.Enums.UserEnum;
-//Danh sách quản lý users hiển thị cho Admin.
+//Danh sách quản lý users hiển thị cho Admin
 namespace Application.DTOs.User
 {
 	public class UsermanageDTO
