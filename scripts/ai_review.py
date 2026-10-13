@@ -2,10 +2,10 @@ import os
 
 import requests
 
-# Lấy biến môi trường và tự động loại bỏ khoảng trắng / ký tự \n thừa
-GITLAB_TOKEN = (os.environ.get("GITLAB_TOKEN") or "").strip()
+# Lấy biến môi trường và tự động loại bỏ mọi khoảng trắng / ký tự \r\n xuống dòng
+GITLAB_TOKEN = "".join((os.environ.get("GITLAB_TOKEN") or "").split())
 # Hỗ trợ cả OPENROUTER_API_KEY hoặc GEMINI_API_KEY nếu đã đặt trước đó
-API_KEY = (os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or "").strip()
+API_KEY = "".join((os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or "").split())
 CI_API_V4_URL = (os.environ.get("CI_API_V4_URL") or "").strip()
 PROJECT_ID = (os.environ.get("CI_PROJECT_ID") or "").strip()
 MR_IID = (os.environ.get("CI_MERGE_REQUEST_IID") or "").strip()
