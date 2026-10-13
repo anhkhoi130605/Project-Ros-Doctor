@@ -1,12 +1,14 @@
 # =============================================================================
 # GitLab CI/CD Pipeline - CtrlShiftN (Full Stack & Azure Web App Deployment)
 # Tách bạch rõ ràng các giai đoạn:
+#   - Stage review: ai_code_review (Tự động review khi mở Merge Request)
 #   - Stage test: test-python-ai, test-backend-dotnet, test-frontend-react
 #   - Stage build: build-backend-dotnet, build-frontend-react, package-python-ai
 #   - Stage deploy: deploy-azure
 # =============================================================================
 
 stages:
+  - review
   - test
   - build
   - deploy
@@ -28,6 +30,20 @@ variables:
   APP_ENV: "test"
   OPENAI_API_KEY: "mock-test-key-ci"
   MSBUILDDISABLENODEREUSE: "1"
+
+# =============================================================================
+# GIAI ĐOẠN 0: STAGE REVIEW (AI CODE REVIEW TRÊN MERGE REQUEST)
+# =============================================================================
+ai_code_review:
+  stage: review
+  image: python:3.11-slim
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  before_script:
+    - pip install --no-cache-dir requests google-generativeai
+  script:
+    - python scripts/ai_review.py
+  allow_failure: true
 
 # =============================================================================
 # GIAI ĐOẠN 1: STAGE TEST (KIỂM THỬ ĐỘC LẬP CHO CẢ 3 DỊCH VỤ)
