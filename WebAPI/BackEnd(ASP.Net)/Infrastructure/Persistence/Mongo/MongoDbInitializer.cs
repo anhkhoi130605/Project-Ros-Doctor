@@ -63,6 +63,19 @@ namespace Infrastructure.Persistence.Mongo
 					.Ascending(x => x.SessionId);
 				await col.Indexes.CreateOneAsync(new CreateIndexModel<ReportSnapshotDocument>(indexKeys));
 			});
+
+			await EnsureCollectionAsync<ChatMessageDocument>(db, existing, "chat_messages", async col =>
+			{
+				var convIndex = Builders<ChatMessageDocument>.IndexKeys
+					.Ascending(x => x.ConversationId)
+					.Descending(x => x.CreatedAt);
+				await col.Indexes.CreateOneAsync(new CreateIndexModel<ChatMessageDocument>(convIndex));
+
+				var roleIndex = Builders<ChatMessageDocument>.IndexKeys
+					.Ascending(x => x.TargetRole)
+					.Descending(x => x.CreatedAt);
+				await col.Indexes.CreateOneAsync(new CreateIndexModel<ChatMessageDocument>(roleIndex));
+			});
 		}
 
 		private static async Task EnsureCollectionAsync<T>(
@@ -71,12 +84,19 @@ namespace Infrastructure.Persistence.Mongo
 			string name,
 			Func<IMongoCollection<T>, Task> createIndexes)
 		{
-			if (!existing.Contains(name))
+			try
 			{
-				await db.CreateCollectionAsync(name);
+				if (!existing.Contains(name))
+				{
+					await db.CreateCollectionAsync(name);
+				}
+				var collection = db.GetCollection<T>(name);
+				await createIndexes(collection);
 			}
-			var collection = db.GetCollection<T>(name);
-			await createIndexes(collection);
+			catch (Exception)
+			{
+				// Ignore if index already exists or during concurrent initializations
+			}
 		}
 	}
 }

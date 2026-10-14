@@ -68,6 +68,7 @@ namespace Infrastructure.Repository
 		public IGenericRepository<Domain.Entities.RosbagAnalysis.ReviewAuditLog> ReviewAuditLogs { get; }
 		public IGenericRepository<Domain.Entities.RosbagAnalysis.Report> Reports { get; }
 		public IGenericRepository<Domain.Entities.RosbagAnalysis.AiUsageLog> AiUsageLogs { get; }
+		public IGenericRepository<Domain.Entities.System.ChatConversation> ChatConversations { get; }
 
 		public UnitOfWork(AppDbContext ctx, IUserRepository userRepository)
 		{
@@ -82,6 +83,7 @@ namespace Infrastructure.Repository
 			AccountPolicies = new GenericRepository<AccountPolicy>(_ctx);
 			Workspaces = new GenericRepository<Workspace>(_ctx);
 			WorkspaceMembers = new GenericRepository<WorkspaceMember>(_ctx);
+			ChatConversations = new GenericRepository<Domain.Entities.System.ChatConversation>(_ctx);
 
 			AiSettings = new GenericRepository<Domain.Entities.Configuration.AiSetting>(_ctx);
 			AnalysisConfigs = new GenericRepository<Domain.Entities.Configuration.AnalysisConfig>(_ctx);

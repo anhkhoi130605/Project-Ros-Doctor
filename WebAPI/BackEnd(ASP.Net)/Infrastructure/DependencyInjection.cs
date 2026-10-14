@@ -115,6 +115,7 @@ public static class DependencyInjection
 		services.AddSingleton<global::Infrastructure.Persistence.Mongo.IMongoDbContext, global::Infrastructure.Persistence.Mongo.MongoDbContext>();
 		services.AddScoped<Application.Interfaces.Repositories.IReportSnapshotRepository, global::Infrastructure.Persistence.Mongo.Repositories.ReportSnapshotRepository>();
 		services.AddScoped<Application.Interfaces.Repositories.ISessionEvidenceRepository, global::Infrastructure.Persistence.Mongo.Repositories.SessionEvidenceRepository>();
+		services.AddScoped<Application.Interfaces.Repositories.IChatMessageRepository, global::Infrastructure.Persistence.Mongo.Repositories.ChatMessageRepository>();
 
 		// 3. Configure Redis Cache & Services
 
@@ -177,6 +178,16 @@ public static class DependencyInjection
 			}; 
             options.Events = new JwtBearerEvents
             {
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = async context =>
                 {
                     var userId = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier)
