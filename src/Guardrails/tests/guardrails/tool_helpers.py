@@ -1,0 +1,184 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Shared fixtures and assertions for the IORails tool-rail tests.
+
+Lives alongside ``async_helpers.py`` / ``metric_helpers.py`` and is not collected
+by pytest (no ``test_`` prefix). Holds the small tool shapes and the
+blocked-result assertion reused across the tool-rail test modules. Assertions
+carry explicit messages since this module is not assertion-rewritten by pytest.
+"""
+
+from typing import Any, Optional
+
+from nemoguardrails.rails.llm.options import ToolViolation, ToolViolationType
+
+WEATHER_SCHEMA = {
+    "type": "object",
+    "properties": {"city": {"type": "string"}},
+    "required": ["city"],
+}
+
+
+def _assert_reason_contains(reason, substrings, subject) -> None:
+    """Assert *subject* stated a reason and that it contains every substring."""
+    assert reason is not None, f"expected a block reason, got {subject!r}"
+    for substring in substrings:
+        assert substring in reason, f"{substring!r} not in reason {reason!r}"
+
+
+def assert_outcome_blocked(outcome, *substrings: str) -> None:
+    """Assert a rail action's ``RailOutcome`` blocked, with a reason containing each substring."""
+    assert outcome.is_blocked, f"expected blocked, got {outcome!r}"
+    _assert_reason_contains(outcome.reason, substrings, outcome)
+
+
+def assert_result_blocked(result, *substrings: str) -> None:
+    """Assert a manager-level ``RailResult`` blocked, with a reason containing each substring.
+
+    Separate from :func:`assert_outcome_blocked` because the two layers speak different
+    types: a rail action returns a ``RailOutcome``, and ``RailsManager`` wraps it in a
+    ``RailResult`` that adds the triggering rail and the captured records.
+    """
+    assert result.is_safe is False, f"expected blocked, got {result!r}"
+    _assert_reason_contains(result.reason, substrings, result)
+
+
+def call_violation(violation_type: str, reason: str, **identity: Any) -> ToolViolation:
+    """A tool-call ``ToolViolation``; *violation_type* is its wire value, such as ``"tool_not_allowed"``."""
+    return ToolViolation(kind="tool_call", violation_type=ToolViolationType(violation_type), reason=reason, **identity)
+
+
+def result_violation(violation_type: str, reason: str, **identity: Any) -> ToolViolation:
+    """A tool-result ``ToolViolation``; *violation_type* is its wire value, such as ``"unknown_call_id"``."""
+    return ToolViolation(
+        kind="tool_result", violation_type=ToolViolationType(violation_type), reason=reason, **identity
+    )
+
+
+TOOL_CALL_QUESTION = "What's the weather in Paris?"
+
+UNREAD_TOOLS_MESSAGE = "tools is read only by a tool_call check; include tool_call in rail_types or leave tools out"
+
+
+def wire_tool_call(name: str = "get_weather", arguments: Any = '{"city": "Paris"}', call_id: str = "call_1") -> dict:
+    """One OpenAI Chat Completions tool call as it appears on an assistant message."""
+    return {"id": call_id, "type": "function", "function": {"name": name, "arguments": arguments}}
+
+
+def assistant_tool_calls(*calls: Any, content: Optional[str] = None) -> dict:
+    """An assistant message carrying *calls*, with *content* as its text."""
+    return {"role": "assistant", "content": content, "tool_calls": list(calls)}
+
+
+def tool_call_turn(*calls: Any, content: Optional[str] = None) -> list:
+    """A user question, then an assistant turn carrying *calls*."""
+    return [{"role": "user", "content": TOOL_CALL_QUESTION}, assistant_tool_calls(*calls, content=content)]
+
+
+def violations_in(outcome) -> list[ToolViolation]:
+    """The ``ToolViolation``s a tool validator attached to its ``RailOutcome`` metadata."""
+    return [ToolViolation.model_validate(violation) for violation in outcome.metadata.get("tool_violations", [])]
+
+
+def make_tool_conversation(result_call_id: str = "call_1", result_name: Optional[str] = "get_weather") -> list:
+    """A user turn, an assistant ``get_weather`` tool call (id ``call_1``), then a tool result.
+
+    ``result_call_id`` sets the tool result's ``tool_call_id`` so callers can test
+    linked (``call_1``) and unlinked (anything else) results. ``result_name`` sets the
+    result's ``name``; ``None`` omits the key, as an OpenAI tool message does.
+    """
+    tool_message = {"role": "tool", "tool_call_id": result_call_id, "content": "18C"}
+    if result_name is not None:
+        tool_message["name"] = result_name
+    return [
+        {"role": "user", "content": "What's the weather in Paris?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+                }
+            ],
+        },
+        tool_message,
+    ]
+
+
+def multi_turn_reused_call_id_messages(call_id: str = "call_0") -> list:
+    """Two ``get_weather`` turns that reuse the same tool-call id across turns.
+    This is valid according to the OpenAI chat completions spec"""
+
+    return [
+        {"role": "user", "content": "What's the weather in Paris?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": call_id,
+                    "type": "function",
+                    "function": {"name": "get_weather", "arguments": '{"city": "Paris"}'},
+                }
+            ],
+        },
+        {"role": "tool", "tool_call_id": call_id, "name": "get_weather", "content": "18C"},
+        {"role": "assistant", "content": "It's 18C in Paris."},
+        {"role": "user", "content": "And in London?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": call_id,
+                    "type": "function",
+                    "function": {"name": "get_weather", "arguments": '{"city": "London"}'},
+                }
+            ],
+        },
+        {"role": "tool", "tool_call_id": call_id, "name": "get_weather", "content": "12C"},
+    ]
+
+
+def malformed_prior_tool_call_messages() -> list:
+    """Two turns where the FIRST turn's tool-call arguments are malformed (truncated JSON)."""
+    return [
+        {"role": "user", "content": "What's the weather in Paris?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {"id": "call_0", "type": "function", "function": {"name": "get_weather", "arguments": '{"city": "Par'}}
+            ],
+        },
+        {"role": "tool", "tool_call_id": "call_0", "name": "get_weather", "content": "18C"},
+        {"role": "assistant", "content": "It's 18C in Paris."},
+        {"role": "user", "content": "And in London?"},
+        {
+            "role": "assistant",
+            "content": None,
+            "tool_calls": [
+                {
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {"name": "get_weather", "arguments": '{"city": "London"}'},
+                }
+            ],
+        },
+        {"role": "tool", "tool_call_id": "call_1", "name": "get_weather", "content": "12C"},
+    ]
