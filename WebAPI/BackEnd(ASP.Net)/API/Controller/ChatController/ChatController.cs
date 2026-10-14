@@ -1,202 +1,98 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using API.Controller.Common;
+using Application.Features.Chat.Commands;
+using Application.Features.Chat.DTOs;
+using Application.Features.Chat.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using Application.Interfaces.ManageTransaction;
-using Domain.Entities.Identity;
-using Domain.Entities.Notifications;
-using API.Hubs;
-using static Domain.Enums.UserEnum;
 
 namespace API.Controller.ChatController
 {
-    [ApiController]
+    /// <summary>
+    /// Interface Adapter (Presentation Layer) cho Chat System theo Clean Architecture.
+    /// Không chứa business logic hay truy cập database trực tiếp; ủy thác toàn bộ cho Use Cases qua IMediator.
+    /// </summary>
     [Route("api/[controller]")]
-    public class ChatController : ControllerBase
+    public class ChatController : BaseController
     {
-        private readonly IUnitOfWork _unitOfWork;
-        private readonly IHubContext<ChatHub> _hubContext;
+        private readonly IMediator _mediator;
 
-        public ChatController(IUnitOfWork unitOfWork, IHubContext<ChatHub> hubContext)
+        public ChatController(IMediator mediator)
         {
-            _unitOfWork = unitOfWork;
-            _hubContext = hubContext;
+            _mediator = mediator;
         }
 
         /// <summary>
-        /// Lấy danh sách Roles và các thành viên thực tế từ Database
+        /// 1. Lấy danh sách Roles kèm thành viên thực tế và tin nhắn mới nhất
         /// </summary>
         [HttpGet("roles")]
-        public async Task<IActionResult> GetRolesWithMembers()
+        public async Task<IActionResult> GetRolesWithMembers(CancellationToken cancellationToken)
         {
-            // 1. Lấy danh sách roles từ Database
-            var dbRoles = await _unitOfWork.Roles.GetAllAsync();
-            var roleList = dbRoles?.ToList() ?? new List<Role>();
-
-            // 2. Lấy danh sách người dùng còn hoạt động từ Database
-            var dbUsers = await _unitOfWork.User.GetAllAsync(u => u.DeletedAt == null);
-            var usersList = dbUsers?.ToList() ?? new List<User>();
-
-            // 3. Lấy tin nhắn gần nhất từ Database (Bảng Notifications)
-            var recentMessages = await _unitOfWork.Notifications.GetAllAsync(n => n.Type == "RoleMessage");
-            var messagesList = recentMessages?.ToList() ?? new List<Notification>();
-
-            // Tạo từ điển tin nhắn gần nhất theo role
-            var latestMessageByRole = messagesList
-                .Where(m => !string.IsNullOrEmpty(m.RelatedEntityId))
-                .GroupBy(m => m.RelatedEntityId!)
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.OrderByDescending(x => x.CreatedAt).FirstOrDefault()
-                );
-
-            // Nhóm người dùng theo roleId hoặc roleName
-            var result = new List<object>();
-
-            // Danh sách các vai trò chính của hệ thống
-            var systemRoles = new[]
-            {
-                new { Key = "Engineering", Name = "Kỹ sư Robotics", Avatar = "KS", Description = "Kỹ sư kiểm duyệt & chẩn đoán ROS 2" },
-                new { Key = "Admin", Name = "Quản trị viên (Admin)", Avatar = "AD", Description = "Quản trị hệ thống & phân quyền" },
-                new { Key = "User", Name = "Vận hành hệ thống", Avatar = "VH", Description = "Người dùng & giám sát vận hành Rosbag" }
-            };
-
-            foreach (var sRole in systemRoles)
-            {
-                // Tìm role tương ứng trong DB
-                var matchingDbRole = roleList.FirstOrDefault(r =>
-                    string.Equals(r.RoleName?.ToString(), sRole.Key, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(r.Description, sRole.Key, StringComparison.OrdinalIgnoreCase));
-
-                var matchingRoleId = matchingDbRole?.Id;
-
-                // Lọc người dùng thuộc role này từ database
-                var membersInRole = usersList
-                    .Where(u => (!string.IsNullOrEmpty(matchingRoleId) && u.RoleId == matchingRoleId) ||
-                                (u.Role != null && string.Equals(u.Role.RoleName?.ToString(), sRole.Key, StringComparison.OrdinalIgnoreCase)))
-                    .Select(u => new
-                    {
-                        id = u.Id,
-                        fullName = u.FullName,
-                        email = u.Email,
-                        avatarUrl = u.AvatarUrl,
-                        status = u.Status?.ToString() ?? "Active",
-                        isOnline = u.Status == UserStatusEnum.Active
-                    })
-                    .ToList();
-
-                latestMessageByRole.TryGetValue(sRole.Key, out var latestMsg);
-
-                var timeFormatted = latestMsg?.CreatedAt != null
-                    ? latestMsg.CreatedAt.ToLocalTime().ToString("HH:mm")
-                    : string.Empty;
-
-                result.Add(new
-                {
-                    id = sRole.Key,
-                    role = sRole.Key,
-                    roleName = sRole.Name,
-                    avatarText = sRole.Avatar,
-                    description = sRole.Description,
-                    online = true,
-                    memberCount = membersInRole.Count,
-                    members = membersInRole,
-                    lastMessage = latestMsg?.Message ?? string.Empty,
-                    lastTime = timeFormatted,
-                    rawTime = latestMsg?.CreatedAt != null
-                        ? new DateTimeOffset(latestMsg.CreatedAt).ToUnixTimeMilliseconds()
-                        : 0,
-                    unread = latestMsg != null && !(latestMsg.IsRead ?? false)
-                });
-            }
-
+            var result = await _mediator.Send(new GetChatRolesQuery(), cancellationToken);
             return Ok(result);
         }
 
         /// <summary>
-        /// Lấy lịch sử tin nhắn thực tế từ Database của một Role
+        /// 2. Lấy lịch sử tin nhắn của một Role (hỗ trợ phân trang)
         /// </summary>
         [HttpGet("messages")]
-        public async Task<IActionResult> GetMessagesByRole([FromQuery] string role)
+        public async Task<IActionResult> GetMessagesByRole(
+            [FromQuery] string role,
+            [FromQuery] int limit = 50,
+            [FromQuery] DateTime? before = null,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(role))
-                return BadRequest("Role is required.");
+                return BadRequest(new { message = "Tham số 'role' là bắt buộc." });
 
-            var messages = await _unitOfWork.Notifications.GetAllAsync(
-                n => n.Type == "RoleMessage" && n.RelatedEntityId == role
-            );
-
-            var result = (messages ?? Enumerable.Empty<Notification>())
-                .OrderBy(m => m.CreatedAt)
-                .Select(m => new
-                {
-                    id = m.Id,
-                    role = m.RelatedEntityId,
-                    sender = m.Title ?? "Thành viên hệ thống",
-                    content = m.Message ?? string.Empty,
-                    time = m.CreatedAt.ToLocalTime().ToString("HH:mm"),
-                    rawTime = new DateTimeOffset(m.CreatedAt).ToUnixTimeMilliseconds(),
-                    unread = !(m.IsRead ?? false)
-                });
-
+            var result = await _mediator.Send(new GetChatMessagesByRoleQuery(role, limit, before, CurrentUserId), cancellationToken);
             return Ok(result);
         }
 
         /// <summary>
-        /// Gửi tin nhắn qua API (fallback khi SignalR kết nối lại hoặc gửi REST)
+        /// 3. Gửi tin nhắn qua REST API (fallback khi WebSocket ngắt kết nối)
         /// </summary>
         [HttpPost("messages")]
-        public async Task<IActionResult> SendMessage([FromBody] SendMessageDto dto)
+        public async Task<IActionResult> SendMessage(
+            [FromBody] SendMessageRequestDto dto,
+            CancellationToken cancellationToken)
         {
             if (dto == null || string.IsNullOrWhiteSpace(dto.Role) || string.IsNullOrWhiteSpace(dto.Content))
-                return BadRequest("Invalid message payload.");
+                return BadRequest(new { message = "Nội dung tin nhắn và Role không được để trống." });
 
-            var nowUtc = DateTime.UtcNow;
-            var notification = new Notification
-            {
-                Title = string.IsNullOrWhiteSpace(dto.SenderName) ? "Thành viên hệ thống" : dto.SenderName,
-                Message = dto.Content.Trim(),
-                Type = "RoleMessage",
-                RelatedEntityId = dto.Role,
-                IsRead = false,
-                CreatedAt = nowUtc
-            };
+            var senderId = CurrentUserId ?? dto.SenderEmail ?? "system";
+            var senderName = !string.IsNullOrWhiteSpace(dto.SenderName) 
+                ? dto.SenderName 
+                : User.FindFirst(ClaimTypes.Name)?.Value ?? "Thành viên hệ thống";
+            var senderEmail = dto.SenderEmail ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+            var senderRole = dto.SenderRole ?? User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
 
-            await _unitOfWork.Notifications.CreateAsync(notification);
-            await _unitOfWork.SaveChangesAsync();
+            var command = new SendChatMessageCommand(
+                TargetRole: dto.Role,
+                Content: dto.Content.Trim(),
+                MediaUrls: dto.MediaUrls,
+                SenderId: senderId,
+                SenderName: senderName,
+                SenderEmail: senderEmail,
+                SenderRole: senderRole
+            );
 
-            var messagePayload = new
-            {
-                id = notification.Id,
-                role = dto.Role,
-                content = notification.Message,
-                sender = notification.Title,
-                senderRole = dto.SenderRole ?? "User",
-                time = DateTime.Now.ToString("HH:mm"),
-                timestamp = nowUtc.ToString("o"),
-                rawTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            };
-
-            // Broadcast qua SignalR Hub
-            await _hubContext.Clients.Group(dto.Role).SendAsync("ReceiveRoleMessage", messagePayload);
-            if (!string.IsNullOrWhiteSpace(dto.SenderRole) && !string.Equals(dto.SenderRole, dto.Role, StringComparison.OrdinalIgnoreCase))
-            {
-                await _hubContext.Clients.Group(dto.SenderRole).SendAsync("ReceiveRoleMessage", messagePayload);
-            }
-
-            return Ok(messagePayload);
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
         }
     }
 
-    public class SendMessageDto
+    public class SendMessageRequestDto
     {
         public string Role { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public string? SenderName { get; set; }
         public string? SenderEmail { get; set; }
         public string? SenderRole { get; set; }
+        public List<string>? MediaUrls { get; set; }
     }
 }

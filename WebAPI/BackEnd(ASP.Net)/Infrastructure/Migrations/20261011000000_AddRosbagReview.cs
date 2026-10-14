@@ -9,27 +9,10 @@ public partial class AddRosbagReview : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        // Existing recordings remain usable. Only the user submission endpoint writes Submitted.
-        migrationBuilder.AddColumn<string>(name: "review_status", table: "rosbags",
-            type: "varchar(20)", maxLength: 20, nullable: false, defaultValue: "Approved",
-            collation: "utf8mb4_0900_ai_ci").Annotation("MySql:CharSet", "utf8mb4");
-        migrationBuilder.AddColumn<string>(name: "description", table: "rosbags",
-            type: "varchar(2000)", maxLength: 2000, nullable: true,
-            collation: "utf8mb4_0900_ai_ci").Annotation("MySql:CharSet", "utf8mb4");
-        migrationBuilder.AddColumn<string>(name: "reviewer_id", table: "rosbags",
-            type: "varchar(36)", maxLength: 36, nullable: true,
-            collation: "utf8mb4_0900_ai_ci").Annotation("MySql:CharSet", "utf8mb4");
-        migrationBuilder.AddColumn<string>(name: "review_note", table: "rosbags",
-            type: "varchar(2000)", maxLength: 2000, nullable: true,
-            collation: "utf8mb4_0900_ai_ci").Annotation("MySql:CharSet", "utf8mb4");
-        migrationBuilder.AddColumn<DateTime>(name: "reviewed_at", table: "rosbags",
-            type: "datetime(6)", nullable: true);
-        migrationBuilder.CreateIndex(name: "IX_rosbags_reviewer_id", table: "rosbags", column: "reviewer_id");
-        migrationBuilder.CreateIndex(name: "IX_rosbags_review_status_CreatedAt", table: "rosbags",
-            columns: new[] { "review_status", "CreatedAt" });
-        migrationBuilder.AddForeignKey(name: "FK_rosbags_Users_reviewer_id", table: "rosbags",
-            column: "reviewer_id", principalTable: "Users", principalColumn: "Id",
-            onDelete: ReferentialAction.SetNull);
+        // Các cột review_status, description, reviewer_id, review_note, reviewed_at
+        // và các index, foreign key liên quan đã được tạo thực tế trên bảng rosbags
+        // thông qua RosbagReviewSchemaInitializer. Giữ phương thức này trống để EF Core
+        // ghi nhận migration vào __EFMigrationsHistory mà không gặp lỗi Duplicate column name.
     }
 
     protected override void Down(MigrationBuilder migrationBuilder)
