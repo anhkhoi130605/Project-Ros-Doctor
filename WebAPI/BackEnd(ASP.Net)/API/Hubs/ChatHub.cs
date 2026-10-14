@@ -1,20 +1,26 @@
 using System;
 using System.Threading.Tasks;
+using Application.Features.Chat.Commands;
+using MediatR;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
-using Application.Interfaces.ManageTransaction;
-using Domain.Entities.Notifications;
 
 namespace API.Hubs
 {
+    /// <summary>
+    /// Presentation Interface Adapter (WebSocket SignalR Hub) theo Clean Architecture.
+    /// Hub chỉ làm nhiệm vụ quản lý kết nối, nhóm phòng và điều phối Command vào Use Cases qua MediatR.
+    /// </summary>
     public class ChatHub : Hub
     {
-        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMediator _mediator;
         private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(IUnitOfWork unitOfWork, ILogger<ChatHub> logger)
+        public ChatHub(
+            IMediator mediator,
+            ILogger<ChatHub> logger)
         {
-            _unitOfWork = unitOfWork;
+            _mediator = mediator;
             _logger = logger;
         }
 
@@ -23,7 +29,8 @@ namespace API.Hubs
             if (!string.IsNullOrWhiteSpace(role))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, role);
-                _logger.LogInformation("Connection {ConnectionId} joined role group: {Role}", Context.ConnectionId, role);
+                await Groups.AddToGroupAsync(Context.ConnectionId, $"Role_{role}");
+                _logger.LogInformation("SignalR Connection {ConnectionId} joined role group: {Role}", Context.ConnectionId, role);
             }
         }
 
@@ -32,7 +39,8 @@ namespace API.Hubs
             if (!string.IsNullOrWhiteSpace(role))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, role);
-                _logger.LogInformation("Connection {ConnectionId} left role group: {Role}", Context.ConnectionId, role);
+                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Role_{role}");
+                _logger.LogInformation("SignalR Connection {ConnectionId} left role group: {Role}", Context.ConnectionId, role);
             }
         }
 
@@ -41,54 +49,24 @@ namespace API.Hubs
             if (string.IsNullOrWhiteSpace(targetRole) || string.IsNullOrWhiteSpace(content))
                 return;
 
-            var nowUtc = DateTime.UtcNow;
-            var timeFormatted = DateTime.Now.ToString("HH:mm");
-            var messageId = $"msg_{Guid.NewGuid():N}";
-
-            var messagePayload = new
-            {
-                id = messageId,
-                role = targetRole,
-                content = content.Trim(),
-                sender = string.IsNullOrWhiteSpace(senderName) ? "Thành viên hệ thống" : senderName,
-                senderEmail = senderEmail ?? string.Empty,
-                senderRole = senderRole ?? "User",
-                time = timeFormatted,
-                timestamp = nowUtc.ToString("o"),
-                rawTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
-            };
-
-            // 1. Lưu tin nhắn vào Database (Bảng Notifications)
             try
             {
-                var notification = new Notification
-                {
-                    Title = messagePayload.sender,
-                    Message = messagePayload.content,
-                    Type = "RoleMessage",
-                    RelatedEntityId = targetRole,
-                    IsRead = false,
-                    CreatedAt = nowUtc
-                };
-                await _unitOfWork.Notifications.CreateAsync(notification);
-                await _unitOfWork.SaveChangesAsync();
+                var command = new SendChatMessageCommand(
+                    TargetRole: targetRole,
+                    Content: content.Trim(),
+                    MediaUrls: null,
+                    SenderId: senderEmail ?? Context.ConnectionId,
+                    SenderName: string.IsNullOrWhiteSpace(senderName) ? "Thành viên hệ thống" : senderName,
+                    SenderEmail: senderEmail ?? string.Empty,
+                    SenderRole: senderRole ?? "User"
+                );
+
+                await _mediator.Send(command);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to persist chat message to database for role {Role}", targetRole);
+                _logger.LogError(ex, "Lỗi điều phối tin nhắn qua MediatR Use Case cho role {Role}", targetRole);
             }
-
-            // 2. Broadcast Real-time qua SignalR tới targetRole
-            await Clients.Group(targetRole).SendAsync("ReceiveRoleMessage", messagePayload);
-
-            // Gửi cả tới nhóm của sender nếu khác targetRole
-            if (!string.IsNullOrWhiteSpace(senderRole) && !string.Equals(senderRole, targetRole, StringComparison.OrdinalIgnoreCase))
-            {
-                await Clients.Group(senderRole).SendAsync("ReceiveRoleMessage", messagePayload);
-            }
-
-            // Gửi xác nhận cho chính kết nối gọi
-            await Clients.Caller.SendAsync("ReceiveRoleMessage", messagePayload);
         }
 
         public override async Task OnConnectedAsync()

@@ -1062,20 +1062,6 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Rosbag", b =>
                 {
-                    b.Property<string>("ReviewStatus")
-                        .IsRequired().ValueGeneratedOnAdd()
-                        .HasMaxLength(20).HasColumnType("varchar(20)")
-                        .HasDefaultValue("Approved").HasColumnName("review_status");
-                    b.Property<string>("Description")
-                        .HasMaxLength(2000).HasColumnType("varchar(2000)").HasColumnName("description");
-                    b.Property<string>("ReviewerId")
-                        .HasMaxLength(36).HasColumnType("varchar(36)").HasColumnName("reviewer_id");
-                    b.Property<string>("ReviewNote")
-                        .HasMaxLength(2000).HasColumnType("varchar(2000)").HasColumnName("review_note");
-                    b.Property<DateTime?>("ReviewedAt")
-                        .HasColumnType("datetime(6)").HasColumnName("reviewed_at");
-                    b.HasIndex("ReviewerId");
-
                     b.Property<string>("Id")
                         .HasColumnType("varchar(255)");
 
@@ -1087,6 +1073,11 @@ namespace Infrastructure.Migrations
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)")
+                        .HasColumnName("description");
 
                     b.Property<int>("DurationSec")
                         .HasColumnType("int")
@@ -1109,6 +1100,28 @@ namespace Infrastructure.Migrations
                         .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false)
                         .HasColumnName("is_published");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)")
+                        .HasColumnName("review_note");
+
+                    b.Property<string>("ReviewStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Approved")
+                        .HasColumnName("review_status");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("reviewed_at");
+
+                    b.Property<string>("ReviewerId")
+                        .HasMaxLength(36)
+                        .HasColumnType("varchar(36)")
+                        .HasColumnName("reviewer_id");
 
                     b.Property<DateTime>("RowVersion")
                         .IsConcurrencyToken()
@@ -1152,12 +1165,89 @@ namespace Infrastructure.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("ReviewerId");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 
                     b.HasIndex("ReviewStatus", "CreatedAt");
+
                     b.ToTable("rosbags", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.System.ChatConversation", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("AvatarUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("CreatorId")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint(1)")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastMessageAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("LastMessageContent")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("LastSenderName")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("timestamp(6)");
+
+                    b.Property<string>("TargetRole")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)")
+                        .HasDefaultValue("Role");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastMessageAt");
+
+                    b.HasIndex("TargetRole");
+
+                    b.ToTable("chat_conversations", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.System.SystemErrorLog", b =>
@@ -1444,16 +1534,18 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.RosbagAnalysis.Rosbag", b =>
                 {
-                    b.HasOne("Domain.Entities.AboutUser.User", "Reviewer")
-                        .WithMany().HasForeignKey("ReviewerId")
+                    b.HasOne("Domain.Entities.Identity.User", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
                         .OnDelete(DeleteBehavior.SetNull);
-                    b.Navigation("Reviewer");
 
-                    b.HasOne("Domain.Entities.AboutUser.User", "User")
+                    b.HasOne("Domain.Entities.Identity.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Reviewer");
 
                     b.Navigation("User");
                 });

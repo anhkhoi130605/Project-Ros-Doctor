@@ -20,6 +20,7 @@ namespace Application.Interfaces.ManageTransaction
 		IGenericRepository<AccountPolicy> AccountPolicies { get; }
 		IGenericRepository<Workspace> Workspaces { get; }
 		IGenericRepository<WorkspaceMember> WorkspaceMembers { get; }
+		IGenericRepository<ChatConversation> ChatConversations { get; }
 
 		// Nhóm Cấu hình hệ thống & AI
 		IGenericRepository<Domain.Entities.Configuration.AiSetting> AiSettings { get; }
