@@ -10,6 +10,8 @@ import SmoothReveal from '../common/SmoothReveal';
 import { apiClient, profileService } from '../../service';
 import useWorkspaceData from './useWorkspaceData';
 import DataConnectionState from '../common/DataConnectionState';
+import HeaderMessengerDropdown from './HeaderMessengerDropdown';
+import HeaderNotificationDropdown from './HeaderNotificationDropdown';
 import './SidebarAutohide.css';
 
 function getUserInitials(name) {
@@ -744,6 +746,8 @@ export default function AppLayout() {
           </div>
 
           <div className="topbar-actions">
+            <HeaderMessengerDropdown />
+            <HeaderNotificationDropdown />
             <LanguageSwitcher />
             <span className="demo-tag">
               <Badge tone={connection.status === 'ready' ? 'green' : 'amber'}>
@@ -965,6 +969,8 @@ export default function AppLayout() {
           </div>
         </div>
       )}
+
+      {/* End main container */}
     </div>
   );
 }

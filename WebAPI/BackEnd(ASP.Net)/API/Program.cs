@@ -37,6 +37,8 @@ builder.Services.AddControllers()
 		options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 	});
 
+builder.Services.AddSignalR();
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
 
@@ -56,7 +58,8 @@ builder.Services.AddCors(options =>
 		policy
 			.WithOrigins(allowedOrigins)
 			.AllowAnyHeader()
-			.AllowAnyMethod();
+			.AllowAnyMethod()
+			.AllowCredentials();
 	});
 });
 
@@ -191,6 +194,7 @@ app.UseAuthorization();
 app.UseMiddleware<UserActivityAuditMiddleware>();
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<API.Hubs.ChatHub>("/hubs/chat");
 app.MapFallbackToFile("index.html");
 
 app.Run();
