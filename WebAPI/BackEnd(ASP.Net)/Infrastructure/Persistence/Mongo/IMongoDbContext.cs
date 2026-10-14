@@ -13,5 +13,6 @@ namespace Infrastructure.Persistence.Mongo
 		IMongoCollection<BenchmarkDatasetDocument>? BenchmarkDatasets { get; }
 		IMongoCollection<BenchmarkEvaluationDocument>? BenchmarkEvaluations { get; }
 		IMongoCollection<ReportSnapshotDocument>? ReportSnapshots { get; }
+		IMongoCollection<ChatMessageDocument>? ChatMessages { get; }
 	}
 }
