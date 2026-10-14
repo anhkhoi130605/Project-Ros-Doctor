@@ -37,6 +37,9 @@ builder.Services.AddControllers()
 		options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 	});
 
+builder.Services.AddSignalR();
+builder.Services.AddScoped<Application.Interfaces.Realtime.IChatRealtimeNotifier, API.Services.ChatRealtimeNotifier>();
+
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 
 
@@ -56,7 +59,8 @@ builder.Services.AddCors(options =>
 		policy
 			.WithOrigins(allowedOrigins)
 			.AllowAnyHeader()
-			.AllowAnyMethod();
+			.AllowAnyMethod()
+			.AllowCredentials();
 	});
 });
 
@@ -191,6 +195,20 @@ app.UseAuthorization();
 app.UseMiddleware<UserActivityAuditMiddleware>();
 app.MapHealthChecks("/health");
 app.MapControllers();
+app.MapHub<API.Hubs.ChatHub>("/hubs/chat");
 app.MapFallbackToFile("index.html");
+
+// Tự động khởi tạo bảng MySQL chat_conversations và MongoDB collections / indexes thông qua Infrastructure layer
+try
+{
+	using var initScope = app.Services.CreateScope();
+	var dbContext = initScope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+	var mongoContext = initScope.ServiceProvider.GetService<Infrastructure.Persistence.Mongo.IMongoDbContext>();
+	await Infrastructure.Persistence.ChatSchemaInitializer.EnsureSchemaAsync(dbContext, mongoContext, app.Logger);
+}
+catch (Exception ex)
+{
+	app.Logger.LogWarning(ex, "Lỗi khi tự động khởi tạo schema chat hoặc MongoDB collections.");
+}
 
 app.Run();

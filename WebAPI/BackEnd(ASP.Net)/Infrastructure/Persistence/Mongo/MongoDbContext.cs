@@ -54,5 +54,8 @@ namespace Infrastructure.Persistence.Mongo
 
 		public IMongoCollection<ReportSnapshotDocument>? ReportSnapshots =>
 			_database?.GetCollection<ReportSnapshotDocument>("report_snapshots");
+
+		public IMongoCollection<ChatMessageDocument>? ChatMessages =>
+			_database?.GetCollection<ChatMessageDocument>("chat_messages");
 	}
 }

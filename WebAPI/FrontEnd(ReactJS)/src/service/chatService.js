@@ -1,4 +1,44 @@
+import { apiClient } from './apiClient';
+import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr';
+
 const AI_AGENT_URL = import.meta.env.VITE_AI_AGENT_URL || '/ai-agent';
+
+/**
+ * Lấy danh sách vai trò và thành viên thực tế từ Database
+ */
+export async function getChatRolesFromDbApi() {
+  return apiClient.get('/api/chat/roles');
+}
+
+/**
+ * Lấy lịch sử tin nhắn thực tế của một Role từ Database
+ */
+export async function getChatMessagesByRoleApi(role) {
+  return apiClient.get(`/api/chat/messages?role=${encodeURIComponent(role)}`);
+}
+
+/**
+ * Gửi tin nhắn qua REST API
+ */
+export async function sendChatMessageRestApi(payload) {
+  return apiClient.post('/api/chat/messages', payload);
+}
+
+/**
+ * Khởi tạo kết nối SignalR Hub cho tính năng Chat Realtime giữa các Role
+ */
+export function createSignalRChatConnection() {
+  const backendUrl =
+    import.meta.env.VITE_API_URL ||
+    (window.location.protocol === 'https:' ? 'https://localhost:7149' : 'http://localhost:5143');
+  return new HubConnectionBuilder()
+    .withUrl(`${backendUrl}/hubs/chat`, {
+      accessTokenFactory: () => localStorage.getItem('accessToken') || '',
+    })
+    .withAutomaticReconnect([0, 2000, 5000, 10000])
+    .configureLogging(LogLevel.Warning)
+    .build();
+}
 
 /**
  * Đồng bộ cấu hình API Key và Model trực tiếp sang Python AI Agent.
