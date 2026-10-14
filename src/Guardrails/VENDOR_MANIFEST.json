@@ -1,0 +1,60 @@
+{
+  "format_version": 1,
+  "upstream": "https://github.com/NVIDIA-NeMo/Guardrails",
+  "upstream_package_version": "0.25.0.dev0",
+  "local_baseline_commit": "1baab5b85031b038f99090a52a86e80b49cf3a69",
+  "trimmed_on": "2026-10-14",
+  "fingerprint_algorithm": "SHA-256 of UTF-8 newline-joined relative-path:SHA-256(file-bytes) records sorted by relative POSIX path; no trailing newline; __pycache__ and .pyc/.pyo artifacts are excluded",
+  "before": {
+    "files": 2113,
+    "bytes": 20676036
+  },
+  "removed": {
+    "files": 716,
+    "bytes": 9214365
+  },
+  "preserved": {
+    "nemoguardrails/": {
+      "files": 528,
+      "sha256": "ad98c5008eb0d554cd3ff467ae2018eecac06f1f74d646bac97ef81030779f0f"
+    },
+    "tests/": {
+      "files": 740,
+      "sha256": "015b43bbb63563b7f3e9495ea09f9d0f8eec5e15827de5c5f3eb222efeb001dc"
+    },
+    "pyproject.toml": {
+      "files": 1,
+      "sha256": "bf964c6fb2fc2461ef5de7846eae5b5ac424f79ff85a5f1f84342bf4f60739ec"
+    },
+    "uv.lock": {
+      "files": 1,
+      "sha256": "07bb191fb834ce623335b4534db56415eff6e7050b96399015aebab0f2e5cddc"
+    },
+    "LICENSE.md": {
+      "files": 1,
+      "sha256": "63adc1477186a4cf4e436d3064fbe2ee56898d3de09b527f9c6e9d60b548336d"
+    },
+    "LICENSE-Apache-2.0.txt": {
+      "files": 1,
+      "sha256": "bdfe6d6049c93cf52a57fe9808fb0275d86166939c8e999caf9be88f16133ccb"
+    },
+    "LICENCES-3rd-party": {
+      "files": 1,
+      "sha256": "832d29fbdd2eec18b46745dd4385886178f46c1f725cf4558523d9484808cbfa"
+    }
+  },
+  "required_resources": [
+    "docs/telemetry.mdx",
+    "docs/reference/rail-engine-support.mdx",
+    "schemas/anonymous_events.snapshot.json",
+    "schemas/rails_config.snapshot.json",
+    "examples/bots/abc/config.yml",
+    "examples/configs/content_safety_vision/config.yml",
+    "examples/configs/nemotron-3.5-content-safety/config.yml",
+    "examples/v2_x/tutorial/hello_world_1/config.yml",
+    "examples/v2_x/tutorial/hello_world_2/config.yml",
+    "examples/v2_x/tutorial/hello_world_3/config.yml",
+    "examples/v2_x/tutorial/guardrails_1/config.yml"
+  ],
+  "note": "Runtime, tests, package dependencies and licenses were preserved byte-for-byte. The local baseline commit is a ROS Doctor commit, not a verified upstream commit. This snapshot is not yet wired into the ROS Doctor LangGraph."
+}

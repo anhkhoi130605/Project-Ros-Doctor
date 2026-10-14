@@ -1,5 +1,12 @@
 # NVIDIA NeMo Guardrails Library
 
+> Local ROS Doctor vendor subset, trimmed on 2026-10-14. Runtime, tests,
+> dependencies and licenses are unchanged; upstream support files were pruned.
+> Read [ROS_DOCTOR_GUIDE.md](ROS_DOCTOR_GUIDE.md) for the retained modules,
+> removed components, offline verification and current integration status.
+> The remainder below is the upstream README; some example links refer to the
+> full upstream repository rather than this subset.
+
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![PyPI](https://img.shields.io/pypi/v/nemoguardrails)](https://pypi.org/project/nemoguardrails)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/nemoguardrails)](https://pypi.org/project/nemoguardrails)
