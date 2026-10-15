@@ -37,7 +37,6 @@ namespace API.Services
                     status = dto.Status
                 };
                 await _hubContext.Clients.Group(targetRole).SendAsync("ReceiveRoleMessage", payload);
-                await _hubContext.Clients.Group($"Role_{targetRole}").SendAsync("ReceiveRoleMessage", payload);
             }
             else
             {
