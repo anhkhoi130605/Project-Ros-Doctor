@@ -79,6 +79,8 @@ class BenchmarkTestCaseResponse(BaseModel):
     end_sec: float
     label: str
     ground_truth: str | None = None
+    case_id: str | None = None
+    ground_truth_detail: dict[str, Any] | None = None
 
 
 class BenchmarkDatasetSummary(BaseModel):

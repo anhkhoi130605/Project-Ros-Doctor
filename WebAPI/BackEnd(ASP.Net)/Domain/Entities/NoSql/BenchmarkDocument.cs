@@ -98,6 +98,16 @@ namespace Domain.Entities.NoSql
 
 		[BsonElement("ground_truth")]
 		public string? GroundTruth { get; set; }
+
+		[BsonElement("case_id")]
+		[BsonIgnoreIfNull]
+		public string? CaseId { get; set; }
+
+		// JSON object (not a JSON-encoded string). Legacy ground_truth remains unchanged.
+		[BsonElement("ground_truth_detail")]
+		[BsonIgnoreIfNull]
+		[BsonSerializer(typeof(GroundTruthJsonSerializer))]
+		public global::System.Text.Json.JsonElement? GroundTruthDetail { get; set; }
 	}
 
 	[BsonIgnoreExtraElements]

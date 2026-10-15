@@ -17,11 +17,18 @@ from src.agents.ingestion.loaders import MarkdownPlaybookLoader
 from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.stores import get_chroma_store
 from src.config import Settings, get_settings
-from src.services.benchmark_publication import PUBLISHED_FILTER, official_benchmark
+
+# Benchmark answers/evaluations and previous model responses are not diagnostic
+# evidence. Query-time allowlisting also protects existing, pre-migration indexes.
+DIAGNOSTIC_COLLECTIONS = ("findings_evidence", "topic_metrics_timeseries", "session_tf_trees", "report_snapshots")
+DIAGNOSTIC_FILTER = {"$or": [
+    {"source_type": "playbook"},
+    {"source_collection": {"$in": list(DIAGNOSTIC_COLLECTIONS)}},
+]}
 
 
 class MongoRAGPipeline:
-    """Unified RAG pipeline combining ROS2 Markdown playbooks and MongoDB benchmark data."""
+    """Diagnostic RAG: playbooks and operational evidence, never benchmark answers."""
 
     def __init__(
         self,
@@ -73,13 +80,10 @@ class MongoRAGPipeline:
             return []
         documents: list[Document] = []
         for collection_name in sorted(self._database.list_collection_names()):
+            if collection_name not in DIAGNOSTIC_COLLECTIONS:
+                continue
             collection = self._database[collection_name]
-            query = PUBLISHED_FILTER if collection_name == "benchmark_datasets" else {}
-            for raw_document in collection.find(query).limit(self._settings.rag_max_documents_per_collection):
-                if collection_name == "benchmark_datasets":
-                    raw_document = official_benchmark(raw_document)
-                    if raw_document is None:
-                        continue
+            for raw_document in collection.find({}).limit(self._settings.rag_max_documents_per_collection):
                 document_id = str(raw_document.get("_id", "unknown"))
                 raw_document.pop("_id", None)
                 import json
@@ -135,7 +139,7 @@ class MongoRAGPipeline:
         matches = self._vector_store.similarity_search_with_relevance_scores(
             query,
             k=top_k,
-            filter=filter,
+            filter={"$and": [DIAGNOSTIC_FILTER, filter]} if filter else DIAGNOSTIC_FILTER,
         )
 
         context_parts: list[str] = []

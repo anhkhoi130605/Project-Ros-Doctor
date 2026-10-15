@@ -22,3 +22,4 @@ class AgentState(TypedDict, total=False):
     report: dict
     error: str
     metadata: dict
+    lookup_response: str | None

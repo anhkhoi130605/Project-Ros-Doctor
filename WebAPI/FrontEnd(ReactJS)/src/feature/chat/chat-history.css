@@ -31,5 +31,10 @@
 .chat-history-local { color: #64748b; font-size: 10px; }
 .chat-context-note { margin: 0; padding: 8px 18px; font-size: 11px; color: #64748b; background: #f8fbff; }
 .chat-history-warning { color: #92400e; background: #fffbeb; padding: 10px 14px; font-size: 12px; line-height: 1.6; }
+.chat-message-link { color: #0369a1; text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.chat-message-link:hover { color: #075985; }
+.chat-message-link:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
+.chat-bubble-row.user .chat-message-link { color: #e0f2fe; }
+.chat-log-line .chat-message-link { color: #7dd3fc; }
 @media (max-width: 1100px) { .chat-workspace { grid-template-columns: 220px minmax(0, 1fr); gap: 12px; } .chat-workspace .chat-input-hint { display: none; } }
 @media (max-width: 800px) { .chat-workspace { grid-template-columns: minmax(0, 1fr); } .chat-history-list { max-height: 220px; } .chat-history { padding: 14px; } .chat-history-header { padding-bottom: 12px; } .chat-history-footnote { margin-top: 10px; } }

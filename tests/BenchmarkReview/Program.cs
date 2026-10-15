@@ -41,7 +41,35 @@ var listing = await service.ListAsync(1, 25, default);
 Check(listing.Total == 1 && listing.Items[0].IsPublished && listing.Items[0].Version == 1, "list exposes legacy defaults without loading proposed cases");
 BenchmarkContent Content(string name) => new() { Name = name, TestCases = [new() {
     Code = "CASE-1", RosbagName = "test.db3", Topic = "/scan", StartSec = 0, EndSec = 2, Label = "drop", GroundTruth = "expected" }] };
-var proposal = new BenchmarkProposal("NEW", "Create", 0, Content("Proposed"));
+var detailed = Content("Proposed");
+var groundTruth = JsonDocument.Parse("""
+{"schema_version":1,"has_fault":true,"fault_type":"timestamp_shift","offset_ms":150.0,
+ "sub_faults":[{"topic":"/tf","offset_ms":150}],
+ "i18n":{"vi":{"required_evidence":["Độ lệch 150 ms"],"remediation_playbook":["Kiểm tra đồng hồ"]},
+         "en":{"required_evidence":["150 ms offset"],"remediation_playbook":["Check clocks"]}}}
+""").RootElement.Clone();
+detailed.TestCases[0].CaseId = "case_07_ts_constant_offset";
+detailed.TestCases[0].GroundTruth = "Legacy answer";
+detailed.TestCases[0].GroundTruthDetail = groundTruth;
+BenchmarkProposalValidation.Validate(new("NEW", "Create", 0, detailed));
+var bsonCase = detailed.TestCases[0].ToBsonDocument();
+Check(bsonCase["ground_truth_detail"].IsBsonDocument, "structured ground truth is BSON object, not string");
+var restored = BsonSerializer.Deserialize<BenchmarkTestCaseItem>(bsonCase);
+Check(restored.GroundTruth == "Legacy answer" && restored.GroundTruthDetail!.Value.GetProperty("offset_ms").GetDouble() == 150,
+    "legacy text and numeric ground truth survive BSON roundtrip");
+Check(restored.GroundTruthDetail!.Value.GetProperty("i18n").GetProperty("vi").GetProperty("required_evidence")[0].GetString() == "Độ lệch 150 ms",
+    "Vietnamese Unicode survives BSON roundtrip");
+var jsonRoundtrip = JsonSerializer.Deserialize<BenchmarkTestCaseItem>(JsonSerializer.Serialize(restored))!;
+Check(jsonRoundtrip.GroundTruthDetail!.Value.GetProperty("sub_faults")[0].GetProperty("topic").GetString() == "/tf",
+    "nested facts survive JSON roundtrip");
+foreach (var invalidJson in new[] { "[]", "{}", "{\"schema_version\":\"1\"}",
+    "{\"schema_version\":1,\"$bad\":true}", "{\"x\":1,\"x\":2}" })
+{
+    var bad = Content("Invalid"); bad.TestCases[0].GroundTruthDetail = JsonDocument.Parse(invalidJson).RootElement.Clone();
+    try { BenchmarkProposalValidation.Validate(new("INVALID", "Create", 0, bad)); throw new Exception("Invalid detail accepted"); }
+    catch (ArgumentException) { Check(true, "invalid structured ground truth rejected"); }
+}
+var proposal = new BenchmarkProposal("NEW", "Create", 0, detailed);
 await service.SubmitAsync(proposal, "engineer", default);
 var created = (await service.GetAsync("NEW", default))!;
 Check(!created.IsPublished && created.TestCases.Count == 0 && created.ChangeRequest!.Status == "Pending", "create stays unpublished with isolated proposed data");
@@ -52,6 +80,9 @@ await service.ReviewAsync("NEW", new(created.ChangeRequest!.RequestId, true, "OK
 var approved = (await service.GetAsync("NEW", default))!;
 Check(approved.IsPublished && approved.Version == 1 && approved.TestCases.Count == 1, "approval publishes data and increments version atomically");
 Check(approved.ChangeRequest!.ReviewedBy == "admin", "decision records authenticated reviewer");
+Check(approved.TestCases[0].CaseId == "case_07_ts_constant_offset" &&
+    approved.TestCases[0].GroundTruthDetail!.Value.GetProperty("fault_type").GetString() == "timestamp_shift",
+    "approval publishes structured answer and stable case ID");
 await Conflict(() => service.ReviewAsync("NEW", new(created.ChangeRequest.RequestId, true, null), "admin", default), "same request cannot be reviewed twice");
 await Conflict(() => service.SubmitAsync(proposal, "engineer", default), "create with existing published code does not silently update");
 await Conflict(() => service.SubmitAsync(new("NEW", "Update", 0, Content("Stale")), "engineer", default), "stale version cannot submit");
@@ -63,6 +94,7 @@ catch (ArgumentException) { Check(true, "rejection requires reason"); }
 await service.ReviewAsync("NEW", new(pending.ChangeRequest!.RequestId, false, "Needs evidence"), "admin", default);
 var rejected = (await service.GetAsync("NEW", default))!;
 Check(rejected.Name == "Proposed" && rejected.Version == 1 && rejected.ChangeRequest!.Status == "Rejected", "rejection preserves published content and revision");
+Check(rejected.TestCases[0].GroundTruthDetail != null, "rejection does not erase official structured ground truth");
 await service.SubmitAsync(new("LEGACY", "Update", 1, Content("Legacy updated")), "engineer", default);
 var legacyRequest = (await service.GetAsync("LEGACY", default))!.ChangeRequest!;
 await service.ReviewAsync("LEGACY", new(legacyRequest.RequestId, true, null), "admin", default);
@@ -126,6 +158,9 @@ try {
     Check((await client.PostAsJsonAsync("/api/benchmarks/requests", proposal)).StatusCode == HttpStatusCode.Forbidden, "User cannot submit benchmark proposals");
     client.DefaultRequestHeaders.Remove("X-Role"); client.DefaultRequestHeaders.Add("X-Role", "Engineering");
     Check((await client.GetAsync("/api/benchmarks/NEW")).StatusCode == HttpStatusCode.OK, "Engineer can read other datasets");
+    var groundTruthHttp = await client.GetFromJsonAsync<JsonElement>("/api/benchmarks/NEW");
+    Check(groundTruthHttp.GetProperty("testCases")[0].GetProperty("groundTruthDetail").GetProperty("offset_ms").GetDouble() == 150,
+        "management GET returns structured JSON, not BSON internals");
     var detail = (await client.GetFromJsonAsync<JsonElement>("/api/benchmarks/LEGACY")).GetProperty("changeRequest");
     Check(detail.GetProperty("requestedByName").GetString() == "Đạt Engineer" &&
         detail.GetProperty("reviewedByName").GetString() == "Quản trị viên", "Engineer can read participant names without admin user API");
@@ -145,10 +180,12 @@ try {
     Check((await client.GetAsync("/api/benchmarks?page=1&pageSize=2")).StatusCode == HttpStatusCode.OK, "Engineer can browse paginated datasets");
     Check((await client.GetAsync("/api/benchmarks?page=0")).StatusCode == HttpStatusCode.BadRequest, "invalid pagination returns 400");
     Check((await client.PostAsJsonAsync("/api/benchmarks/NEW/review", new { requestId = "x", approve = true })).StatusCode == HttpStatusCode.Forbidden, "Engineer cannot approve by direct API call");
-    Check((await client.PostAsJsonAsync("/api/benchmarks/requests", new BenchmarkProposal("HTTP", "Create", 0, Content("HTTP")))).StatusCode == HttpStatusCode.OK, "Engineer submits through API");
+    Check((await client.PostAsJsonAsync("/api/benchmarks/requests", new BenchmarkProposal("HTTP", "Create", 0, detailed))).StatusCode == HttpStatusCode.OK, "Engineer submits through API");
     var httpRequest = (await service.GetAsync("HTTP", default))!.ChangeRequest!;
     client.DefaultRequestHeaders.Remove("X-Role"); client.DefaultRequestHeaders.Add("X-Role", "Admin");
     Check((await client.PostAsJsonAsync("/api/benchmarks/HTTP/review", new { requestId = httpRequest.RequestId, approve = true })).StatusCode == HttpStatusCode.OK, "Admin approves through API");
+    Check((await service.GetAsync("HTTP", default))!.TestCases[0].GroundTruthDetail!.Value.GetProperty("has_fault").GetBoolean(),
+        "HTTP submit and approve preserve structured ground truth");
     Check((await client.PostAsJsonAsync("/api/benchmarks/HTTP/review", new { requestId = httpRequest.RequestId, approve = true })).StatusCode == HttpStatusCode.Conflict, "duplicate HTTP review returns 409");
 } finally { await app.StopAsync(); await app.DisposeAsync(); }
 Console.WriteLine($"{passed} checks passed. No real database was contacted.");
