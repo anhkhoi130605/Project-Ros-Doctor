@@ -71,16 +71,25 @@ namespace API.Controller.ChatController
             if (dto == null || string.IsNullOrWhiteSpace(dto.Role) || string.IsNullOrWhiteSpace(trimmedContent))
                 return BadRequest(new { message = ChatErrorMessages.MessageContentOrRoleRequired });
 
-            var senderId = CurrentUserId ?? (!string.IsNullOrWhiteSpace(dto.SenderEmail) ? dto.SenderEmail : $"anonymous_{Guid.NewGuid():N}");
-            var senderName = !string.IsNullOrWhiteSpace(dto.SenderName) 
-                ? dto.SenderName 
-                : User.FindFirst(ClaimTypes.Name)?.Value ?? "Thành viên hệ thống";
-            var senderEmail = !string.IsNullOrWhiteSpace(dto.SenderEmail)
-                ? dto.SenderEmail
-                : User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
-            var senderRole = !string.IsNullOrWhiteSpace(dto.SenderRole)
-                ? dto.SenderRole
-                : User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+            string senderId;
+            string senderName;
+            string senderEmail;
+            string senderRole;
+
+            if (!string.IsNullOrWhiteSpace(CurrentUserId))
+            {
+                senderId = CurrentUserId;
+                senderName = User.FindFirst(ClaimTypes.Name)?.Value ?? (!string.IsNullOrWhiteSpace(dto.SenderName) ? dto.SenderName : "Thành viên hệ thống");
+                senderEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? (dto.SenderEmail ?? string.Empty);
+                senderRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+            }
+            else
+            {
+                senderId = !string.IsNullOrWhiteSpace(dto.SenderEmail) ? dto.SenderEmail : $"anonymous_{Guid.NewGuid():N}";
+                senderName = !string.IsNullOrWhiteSpace(dto.SenderName) ? dto.SenderName : "Người dùng ẩn danh";
+                senderEmail = dto.SenderEmail ?? string.Empty;
+                senderRole = "Anonymous";
+            }
 
             var command = new SendChatMessageCommand(
                 TargetRole: dto.Role,

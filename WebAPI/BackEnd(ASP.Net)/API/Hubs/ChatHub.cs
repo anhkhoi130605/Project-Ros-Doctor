@@ -58,10 +58,25 @@ namespace API.Hubs
                 var claimName = user?.FindFirst(ClaimTypes.Name)?.Value;
                 var claimRole = user?.GetRole();
 
-                var resolvedSenderId = claimUserId ?? (!string.IsNullOrWhiteSpace(senderEmail) ? senderEmail : Context.ConnectionId);
-                var resolvedSenderName = !string.IsNullOrWhiteSpace(claimName) ? claimName : (!string.IsNullOrWhiteSpace(senderName) ? senderName : "Thành viên hệ thống");
-                var resolvedSenderEmail = !string.IsNullOrWhiteSpace(claimEmail) ? claimEmail : (senderEmail ?? string.Empty);
-                var resolvedSenderRole = !string.IsNullOrWhiteSpace(claimRole) ? claimRole : (senderRole ?? "User");
+                string resolvedSenderId;
+                string resolvedSenderName;
+                string resolvedSenderEmail;
+                string resolvedSenderRole;
+
+                if (!string.IsNullOrWhiteSpace(claimUserId))
+                {
+                    resolvedSenderId = claimUserId;
+                    resolvedSenderName = !string.IsNullOrWhiteSpace(claimName) ? claimName : (!string.IsNullOrWhiteSpace(senderName) ? senderName : "Thành viên hệ thống");
+                    resolvedSenderEmail = claimEmail ?? string.Empty;
+                    resolvedSenderRole = claimRole ?? "User";
+                }
+                else
+                {
+                    resolvedSenderId = Context.ConnectionId;
+                    resolvedSenderName = !string.IsNullOrWhiteSpace(senderName) ? senderName : "Người dùng ẩn danh";
+                    resolvedSenderEmail = senderEmail ?? string.Empty;
+                    resolvedSenderRole = "Anonymous";
+                }
 
                 var command = new SendChatMessageCommand(
                     TargetRole: targetRole,
