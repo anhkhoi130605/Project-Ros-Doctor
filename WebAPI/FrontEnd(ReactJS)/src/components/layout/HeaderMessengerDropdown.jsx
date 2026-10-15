@@ -8,7 +8,6 @@ import {
   getChatMessagesByRoleApi,
   sendChatMessageRestApi,
   createSignalRChatConnection,
-  getReviewsApi,
 } from '../../service';
 
 const FILTER_TABS = [
@@ -69,6 +68,11 @@ export default function HeaderMessengerDropdown() {
     };
   }, [isDropdownOpen]);
 
+  const profileRef = useRef(state.profile);
+  useEffect(() => {
+    profileRef.current = state.profile;
+  }, [state.profile]);
+
   // Khởi tạo kết nối SignalR Hub để chat thời gian thực
   useEffect(() => {
     let isMounted = true;
@@ -79,12 +83,19 @@ export default function HeaderMessengerDropdown() {
     connection.on('ReceiveRoleMessage', (msg) => {
       if (!isMounted || !msg) return;
       const roleKey = msg.role;
-      const isSelf =
-        msg.senderEmail === state.profile?.email ||
-        msg.sender === state.profile?.name;
+      const myProfile = profileRef.current || state.profile || {};
+      const myEmail = (myProfile.email || localStorage.getItem('email') || '').toLowerCase().trim();
+      const myName = (myProfile.name || localStorage.getItem('fullName') || '').trim();
+      const msgEmail = (msg.senderEmail || '').toLowerCase().trim();
+      const msgSender = (msg.sender || '').trim();
 
+      const isSelf =
+        Boolean(myEmail && msgEmail && myEmail === msgEmail) ||
+        Boolean(myName && msgSender && myName === msgSender);
+
+      const msgId = msg.id || `msg_${Date.now()}`;
       const newMsgObj = {
-        id: msg.id || `msg_${Date.now()}`,
+        id: msgId,
         role: roleKey,
         sender: msg.sender,
         content: msg.content,
@@ -93,10 +104,25 @@ export default function HeaderMessengerDropdown() {
         isSelf,
       };
 
-      setChatMessages((prev) => ({
-        ...prev,
-        [roleKey]: [...(prev[roleKey] || []), newMsgObj],
-      }));
+      setChatMessages((prev) => {
+        const existingList = prev[roleKey] || [];
+        // Chống duplicate: kiểm tra theo ID hoặc trùng nội dung + người gửi gửi trong 3 giây
+        const isDuplicate = existingList.some(
+          (m) =>
+            (m.id && newMsgObj.id && String(m.id) === String(newMsgObj.id)) ||
+            (m.content === newMsgObj.content &&
+              m.sender === newMsgObj.sender &&
+              Math.abs((m.rawTime || 0) - (newMsgObj.rawTime || 0)) < 3000)
+        );
+        if (isDuplicate) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [roleKey]: [...existingList, newMsgObj],
+        };
+      });
 
       setConversations((prev) =>
         prev.map((c) =>
@@ -136,54 +162,31 @@ export default function HeaderMessengerDropdown() {
     return () => {
       isMounted = false;
       try {
+        connection.off('ReceiveRoleMessage');
         connection.stop();
       } catch {
         // ignore
       }
     };
-  }, [state.profile]);
+  }, []);
 
   // Tải các vai trò và tin nhắn thực tế từ Database
   const loadChatData = async () => {
     setLoading(true);
     try {
       // 1. Gọi API lấy roles và thành viên trực tiếp từ Database
-      const [dbRolesRes, reviewRes] = await Promise.allSettled([
-        getChatRolesFromDbApi(),
-        getReviewsApi(),
-      ]);
+      const rolesRes = await getChatRolesFromDbApi();
 
       let roleList = [];
-      if (dbRolesRes.status === 'fulfilled' && Array.isArray(dbRolesRes.value)) {
-        roleList = dbRolesRes.value.map((r) => ({
+      if (Array.isArray(rolesRes)) {
+        roleList = rolesRes.map((r) => ({
           ...r,
           online: true,
           unread: false,
         }));
       }
 
-      // 2. Ghi chú kiểm duyệt thực tế từ review
-      const reviewMessages = [];
-      if (reviewRes.status === 'fulfilled' && Array.isArray(reviewRes.value)) {
-        reviewRes.value
-          .filter((r) => r.note && String(r.note).trim().length > 0)
-          .forEach((r) => {
-            const timeFormatted = r.reviewedAt || r.at
-              ? new Date(r.reviewedAt || r.at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-              : 'Gần đây';
-            reviewMessages.push({
-              id: `rev_${r.id || r.findingId}`,
-              role: ROLES.ENGINEER,
-              sender: r.reviewedBy || 'Kỹ sư kiểm duyệt',
-              content: `[Ghi chú duyệt] ${r.note}`,
-              time: timeFormatted,
-              rawTime: r.reviewedAt || r.at ? new Date(r.reviewedAt || r.at).getTime() : 0,
-              isSelf: false,
-            });
-          });
-      }
-
-      // 3. Tải tin nhắn từ Database cho từng Role
+      // 2. Tải tin nhắn thực tế từ Database cho từng Role
       const messagesMap = {};
       await Promise.allSettled(
         roleList.map(async (r) => {
@@ -197,10 +200,6 @@ export default function HeaderMessengerDropdown() {
                     m.senderEmail === state.profile?.email,
                 }))
               : [];
-
-            if (r.role === ROLES.ENGINEER && reviewMessages.length > 0) {
-              list.push(...reviewMessages);
-            }
 
             list.sort((a, b) => (a.rawTime || 0) - (b.rawTime || 0));
             messagesMap[r.role] = list;
@@ -1018,7 +1017,11 @@ export default function HeaderMessengerDropdown() {
                         textOverflow: 'ellipsis',
                         maxWidth: '130px',
                       }}
-                      title={activeChat.roleName || activeChat.name}
+                      title={
+                        activeChat.members && activeChat.members.length > 0
+                          ? `${activeChat.roleName || activeChat.name} (${activeChat.members.map((m) => m.fullName).join(', ')})`
+                          : (activeChat.roleName || activeChat.name)
+                      }
                     >
                       {activeChat.roleName || activeChat.name}
                     </div>
@@ -1097,42 +1100,6 @@ export default function HeaderMessengerDropdown() {
                   background: '#f8fafc',
                 }}
               >
-                {/* Hiển thị thành viên thực tế của Role từ Database */}
-                {activeChat.members && activeChat.members.length > 0 && (
-                  <div
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      padding: '8px',
-                      fontSize: '10px',
-                      color: '#64748b',
-                    }}
-                  >
-                    <div style={{ fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-                      👥 Thành viên ({activeChat.members.length} tài khoản trong DB):
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                      {activeChat.members.map((m) => (
-                        <span
-                          key={m.id}
-                          style={{
-                            background: '#f1f5f9',
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                          title={m.email}
-                        >
-                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e' }} />
-                          {m.fullName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 {currentActiveMessages.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '30px 10px', color: '#94a3b8', fontSize: '11px' }}>
