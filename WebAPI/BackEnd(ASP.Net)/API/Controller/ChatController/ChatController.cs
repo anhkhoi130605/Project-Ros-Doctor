@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controller.ChatController
 {
-    public static class ChatErrorMessages
+    internal static class ChatErrorMessages
     {
         public const string RoleRequired = "Tham số 'role' là bắt buộc.";
         public const string MessageContentOrRoleRequired = "Nội dung tin nhắn và Role không được để trống.";
