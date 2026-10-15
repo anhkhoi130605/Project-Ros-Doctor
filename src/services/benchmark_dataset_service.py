@@ -79,6 +79,11 @@ class BenchmarkDatasetService:
         if self._client is not None:
             self._client.close()
 
+    def lookup_ground_truth(self, case_id: str, dataset_code: str | None = None, language: str = "vi") -> dict:
+        from src.services.ground_truth_lookup import lookup_case
+
+        return lookup_case(self._collection, case_id, dataset_code, language)
+
 
 @lru_cache(maxsize=1)
 def get_benchmark_dataset_service() -> BenchmarkDatasetService:

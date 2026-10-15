@@ -19,6 +19,7 @@
 .benchmark-review-comparison > div { padding: 18px; background: #f7f9fb; border-radius: 8px; overflow-wrap: anywhere; }
 .benchmark-case-content { min-width: 230px; max-width: 600px; overflow-wrap: anywhere; }
 .benchmark-case-content pre { white-space: pre-wrap; font-size: 12px; max-height: 260px; overflow: auto; }
+.benchmark-case-editor pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 260px; overflow: auto; }
 .benchmark-status { padding: 6px 12px; border-radius: 999px; background: #f1f4f7; display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
 .benchmark-status.Pending { background: #fff4d9; color: #855706; }
 .benchmark-status.Approved { background: #e6f5ed; color: #17654b; }

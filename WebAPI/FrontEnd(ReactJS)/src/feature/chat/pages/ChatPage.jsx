@@ -6,6 +6,7 @@ import { streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../s
 import { useTranslation } from 'react-i18next';
 import { useChatHistory } from '../useChatHistory';
 import ChatHistorySidebar from '../components/ChatHistorySidebar';
+import ChatText from '../components/ChatText';
 import '../chat-history.css';
 import robotPearlImg from '../../../assets/robot-pearl.png';
 
@@ -28,8 +29,8 @@ function renderFormattedLogLine(line, lIdx) {
   else if (text.includes('[FATAL]')) color = '#f43f5e';
 
   return (
-    <div key={lIdx} style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color }}>
-      {text}
+    <div key={lIdx} className="chat-log-line" style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', color }}>
+      <ChatText text={text} />
     </div>
   );
 }
@@ -408,7 +409,7 @@ function ChatWorkspace({ owner }) {
                 <div className="bubble-text">
                   {m.text ? (
                     <>
-                      <span translate={m.isError ? undefined : 'no'}>{m.text}</span>
+                      <span translate={m.isError ? undefined : 'no'}><ChatText text={m.text} /></span>
                       {m.isStreaming && <span className="streaming-cursor" />}
                     </>
                   ) : m.isStreaming ? (
@@ -470,19 +471,19 @@ function ChatWorkspace({ owner }) {
 
                           {f.evidence && (
                             <div style={{ fontSize: '12px', color: '#334155', backgroundColor: '#f8fafc', padding: '6px 8px', borderRadius: '4px', marginTop: '6px' }}>
-                              <strong>📊 Bằng chứng:</strong> <span translate="no">{f.evidence}</span>
+                              <strong>📊 Bằng chứng:</strong> <span translate="no"><ChatText text={f.evidence} /></span>
                             </div>
                           )}
 
                           {f.root_cause && (
                             <div style={{ fontSize: '12px', color: '#334155', marginTop: '6px' }}>
-                              <strong>🔍 Nguyên nhân gốc (RCA):</strong> <span translate="no">{f.root_cause}</span>
+                              <strong>🔍 Nguyên nhân gốc (RCA):</strong> <span translate="no"><ChatText text={f.root_cause} /></span>
                             </div>
                           )}
 
                           {f.recommended_action && (
                             <div style={{ fontSize: '12px', color: '#047857', backgroundColor: '#ecfdf5', padding: '6px 8px', borderRadius: '4px', marginTop: '6px' }}>
-                              <strong>🛠️ Khắc phục Playbook:</strong> <span translate="no">{f.recommended_action}</span>
+                              <strong>🛠️ Khắc phục Playbook:</strong> <span translate="no"><ChatText text={f.recommended_action} /></span>
                             </div>
                           )}
 
@@ -605,7 +606,7 @@ function ChatWorkspace({ owner }) {
                       color: m.sender === 'agent' ? '#64748b' : '#e0e7ff',
                     }}
                   >
-                    🔍 <em>{m.analysis}</em>
+                    🔍 <em><ChatText text={m.analysis} /></em>
                   </div>
                 )}
 

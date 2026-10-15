@@ -30,6 +30,12 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    # Additive input/context/output checks, using server-side credentials only.
+    guardrails_enabled: bool = True
+    guardrails_model: str | None = None
+    guardrails_timeout_seconds: float = Field(default=30.0, ge=1.0, le=120.0)
+    guardrails_max_attempts: int = Field(default=2, ge=1, le=3)
+    guardrails_max_prompt_chars: int = Field(default=128000, ge=16000, le=2000000)
     embedding_model: str = "text-embedding-3-small"
     embedding_request_timeout: float = Field(default=30.0, ge=1.0, le=300.0)
     embedding_max_retries: int = Field(default=3, ge=0, le=10)
@@ -42,6 +48,8 @@ class Settings(BaseSettings):
     # Database
     database_url: str = "sqlite:///./data/app.db"
     mongo_connection_string: str = ""
+    # Explicit local opt-in to reuse the .NET MongoDbSettings, without copying secrets.
+    mongo_settings_file: str | None = None
     mongo_database_name: str = "CtrlShiftN"
     mongo_server_selection_timeout_ms: int = Field(default=10000, ge=1000, le=120000)
     mongo_connect_timeout_ms: int = Field(default=10000, ge=1000, le=120000)
@@ -75,7 +83,35 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return load_shared_mongo_settings(Settings())
+
+
+def load_shared_mongo_settings(settings: Settings) -> Settings:
+    """Direct environment credentials take priority over an explicitly selected file."""
+    if settings.mongo_connection_string or not settings.mongo_settings_file:
+        return settings
+
+    import json
+    from pathlib import Path
+
+    path = Path(settings.mongo_settings_file)
+    if not path.is_absolute():
+        path = Path(__file__).resolve().parent.parent / path
+    try:
+        section = json.loads(path.read_text(encoding="utf-8-sig"))["MongoDbSettings"]
+        uri = section["ConnectionString"]
+        database = section["DatabaseName"]
+        if not isinstance(uri, str) or not uri.startswith(("mongodb://", "mongodb+srv://")):
+            raise ValueError("Invalid MongoDB URI")
+        if not isinstance(database, str) or not database.strip():
+            raise ValueError("Missing MongoDB database name")
+    except (OSError, ValueError, KeyError, TypeError):
+        # Never include JSON contents or credentials in configuration errors.
+        raise ValueError("MONGO_SETTINGS_FILE must contain valid MongoDbSettings.ConnectionString and DatabaseName") from None
+    updates = {"mongo_connection_string": uri}
+    if "mongo_database_name" not in settings.model_fields_set:
+        updates["mongo_database_name"] = database
+    return settings.model_copy(update=updates)
 
 
 def update_env_setting(key: str, value: str) -> None:

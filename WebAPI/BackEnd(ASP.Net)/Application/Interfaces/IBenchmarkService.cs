@@ -32,6 +32,7 @@ public static class BenchmarkProposalValidation
         if (data.TestCases == null || data.TestCases.Count is < 1 or > 5000)
             throw new ArgumentException("Bộ benchmark cần từ 1 đến 5000 trường hợp.");
         var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var caseIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in data.TestCases)
         {
             if (item == null || string.IsNullOrWhiteSpace(item.Code) || item.Code.Length > 100 || !codes.Add(item.Code.Trim()) ||
@@ -40,6 +41,9 @@ public static class BenchmarkProposalValidation
                 item.GroundTruth?.Length > 20000 || !double.IsFinite(item.StartSec) || !double.IsFinite(item.EndSec) ||
                 item.StartSec < 0 || item.EndSec < item.StartSec)
                 throw new ArgumentException("Trường hợp không hợp lệ: kiểm tra mã trùng, rosbag, nhãn, độ dài và khoảng thời gian.");
+            if (!caseIds.Add(item.CaseId ?? item.Code))
+                throw new ArgumentException("case_id bị trùng / Duplicate case_id.");
+            BenchmarkGroundTruthValidation.Validate(item);
         }
     }
 }
