@@ -45,6 +45,8 @@ var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get
 
 allowedOrigins ??=
 [
+	"https://ctrlshiftn.azurewebsites.net",
+	"https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net",
 	"http://localhost:5173",
 	"https://localhost:5173",
 	"http://localhost:80",
