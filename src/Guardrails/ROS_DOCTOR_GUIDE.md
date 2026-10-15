@@ -4,9 +4,11 @@ Thư mục này là bản source **NVIDIA NeMo Guardrails library** được thu
 copy đã có trong ROS Doctor. Phiên bản trong `pyproject.toml`: `0.25.0.dev0`.
 Đây là bản phát triển, không phải một release đã được xác nhận cho production.
 
-Chỉ nội dung trong `src/Guardrails` được thay đổi. Lõi thư viện, test, dependency,
-lockfile và giấy phép được giữ nguyên từng byte. Việc có source trong thư mục này
-chưa kích hoạt guardrails cho `src/agents/graph.py` hoặc API chat của ROS Doctor.
+Trong bước thu gọn ban đầu, chỉ nội dung trong `src/Guardrails` được thay đổi.
+Lõi thư viện, test, dependency, lockfile và giấy phép được giữ nguyên từng byte.
+Lớp tích hợp ứng dụng hiện nằm tại [`src/safety`](../safety/README.md): bổ sung
+kiểm tra quanh các node hiện có, giữ nguyên topology graph và hợp đồng API chat.
+Xem tài liệu đó để cài dependency, bật/tắt, cấu hình và kiểm thử tích hợp.
 
 ## Những phần quan trọng được giữ
 
@@ -103,8 +105,9 @@ make test WORKERS=1 TEST="tests/guardrails tests/rails/llm tests/integrations/la
 ```
 
 Makefile dùng shell Unix; trên Windows dùng Git Bash hoặc WSL. Cài môi trường
-này là bước riêng, không được thực hiện khi thu gọn source. Các test trên cần
-được chạy trước khi coi guardrails đã tích hợp và hoạt động trong ROS Doctor.
+này là bước riêng, không được thực hiện khi thu gọn source. Bộ test trên phục vụ
+kiểm tra runtime upstream khi nâng cấp/chỉnh vendor. Kiểm thử lớp tích hợp ROS
+Doctor nằm tại `tests/test_safety`; xem [hướng dẫn tích hợp](../safety/README.md).
 
 Nguồn upstream: https://github.com/NVIDIA-NeMo/Guardrails
 Tài liệu đầy đủ: https://docs.nvidia.com/nemo/guardrails/

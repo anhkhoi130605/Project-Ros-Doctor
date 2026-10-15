@@ -20,8 +20,22 @@ from src.models.schemas import (
 from src.services.agent_trace_service import get_agent_trace_service
 from src.services.benchmark_dataset_service import get_benchmark_dataset_service
 from src.services.carla_rosbag_service import CarlaRosbagRecorder
+from src.services.ground_truth_lookup import (
+    GroundTruthAmbiguousError,
+    GroundTruthInvalidError,
+    GroundTruthNotFoundError,
+)
 
 router = APIRouter()
+
+
+def lookup_trace_fields(result: dict) -> dict:
+    metadata = result.get("metadata", {})
+    if metadata.get("mode") != "ground_truth_lookup":
+        return {}
+    sources = metadata.get("sources", [])
+    return {"step": "lookup", "title": "Ground truth lookup (not a session diagnosis)",
+            "retrieved_context": [json.dumps(source, ensure_ascii=False, sort_keys=True) for source in sources]}
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -51,6 +65,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 response=response_text,
                 analysis=analysis_text,
                 report=report_data,
+                **lookup_trace_fields(result),
             )
         except Exception as save_err:
             print(f"[MongoDB] Cảnh báo không thể lưu agent trace: {save_err}")
@@ -107,6 +122,7 @@ async def chat_stream(request: ChatRequest):
                     response=full_response,
                     analysis=analysis,
                     report=report,
+                    **lookup_trace_fields(result),
                 )
             except Exception as save_err:
                 print(f"[MongoDB] Cảnh báo không thể lưu agent trace: {save_err}")
@@ -168,6 +184,21 @@ async def get_benchmark_dataset(code: str) -> BenchmarkDatasetResponse:
     if dataset is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy benchmark dataset")
     return dataset
+
+
+@router.get("/benchmarks/{code}/cases/{case_id}/ground-truth")
+async def get_case_ground_truth(code: str, case_id: str, language: str = Query(default="vi", pattern="^(vi|en)$")):
+    """Read an exact published answer key; no LLM, RAG, or database writes."""
+    try:
+        return await run_in_threadpool(get_benchmark_dataset_service().lookup_ground_truth, case_id, code, language)
+    except GroundTruthNotFoundError:
+        raise HTTPException(status_code=404, detail="Published ground truth not found") from None
+    except GroundTruthAmbiguousError:
+        raise HTTPException(status_code=409, detail="Duplicate case or dataset; review the benchmark data") from None
+    except GroundTruthInvalidError:
+        raise HTTPException(status_code=422, detail="Invalid ground truth, identifier or language") from None
+    except Exception:
+        raise HTTPException(status_code=503, detail="Ground truth storage is temporarily unavailable") from None
 
 
 @router.post("/carla/record", response_model=CarlaRecordResponse)

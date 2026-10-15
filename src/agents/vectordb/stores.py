@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import math
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,29 @@ from src.agents.embedding.models import ResilientEmbeddingModel, get_embedding_m
 from src.agents.vectordb.indexing import sync_source_chunks
 from src.agents.vectordb.revisions import RevisionedChroma
 from src.config import Settings, get_settings
+
+
+def distance_relevance_score(distance: float, *, metric: str) -> float:
+    """Bounded, monotone similarity, not a probability or diagnostic confidence.
+
+    Chroma L2 is a *squared* distance with no fixed upper bound. LangChain's
+    default 1 - distance / sqrt(2) can therefore become negative. Use an inverse
+    distance mapping without changing embeddings, stored vectors or ranking.
+    """
+    if not math.isfinite(distance):
+        raise ValueError("Vector distance must be finite")
+    if metric == "l2":
+        return 1.0 / (1.0 + max(0.0, distance))
+    if metric == "cosine":
+        return min(1.0, max(0.0, 1.0 - distance / 2.0))
+    if metric == "ip":
+        # Chroma returns 1 - dot_product; stable sigmoid also supports unnormalized vectors.
+        dot = 1.0 - distance
+        if dot >= 0:
+            return 1.0 / (1.0 + math.exp(-dot))
+        exp_dot = math.exp(dot)
+        return exp_dot / (1.0 + exp_dot)
+    raise ValueError("Unsupported vector distance metric")
 
 
 def create_chroma_store(
@@ -55,6 +79,13 @@ def create_chroma_store(
         )
         if (raw._collection.metadata or {}).get("embedding_profile") != profile_id:
             raise ValueError("Collection embedding profile mismatch; rebuild into a new collection")
+        configuration = raw._collection.configuration
+        # Configuration is available in current Chroma; legacy metadata is a fallback.
+        metric = (raw._collection.metadata or {}).get("hnsw:space", "l2")
+        if isinstance(configuration, dict):
+            index_config = configuration.get("hnsw") or configuration.get("spann") or {}
+            metric = index_config.get("space", metric)
+        raw.override_relevance_score_fn = lambda distance: distance_relevance_score(distance, metric=metric)
         manifest_name = hashlib.sha256(resolved_collection.encode()).hexdigest() + ".json"
         return RevisionedChroma(
             raw,

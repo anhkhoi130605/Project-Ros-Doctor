@@ -93,7 +93,7 @@ class AgentTraceService:
                 "bag_id": bag_id,
                 "step": step,
                 "title": resolved_title,
-                "retrieved_context": retrieved_context or ["Playbooks ROS2 RAG", "Telemetry Metrics"],
+                "retrieved_context": retrieved_context if retrieved_context is not None else ["Playbooks ROS2 RAG", "Telemetry Metrics"],
                 "raw_prompt": raw_prompt or "",
                 "hypothesis": resolved_hypothesis,
                 "confidence": float(confidence),

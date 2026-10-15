@@ -6,6 +6,7 @@ import { Button, PageHeader } from '../../../components/common/UIComponents';
 import { compareCases, emptyCase, proposalFrom } from '../domain/benchmarkReview';
 import './benchmark-review.css';
 import BenchmarkRequestCard from './BenchmarkRequestCard';
+import { GroundTruthImporter, GroundTruthPreview } from './BenchmarkGroundTruth';
 
 export default function BenchmarkManagementPage() {
   const { state, notify } = useApp();
@@ -78,12 +79,14 @@ export default function BenchmarkManagementPage() {
   const caseSummary = item => item ? <>
     <strong translate="no">{item.rosbagName}</strong><span translate="no">{item.topic || '—'} · {item.startSec}–{item.endSec}s</span>
     <span translate="no">{item.label}</span>{item.groundTruth && <details><summary>{t('Dữ liệu chuẩn đối chiếu', 'Ground truth')}</summary><pre>{item.groundTruth}</pre></details>}
+    {item.caseId && <small translate="no">case_id: {item.caseId}</small>}
+    <GroundTruthPreview detail={item.groundTruthDetail} en={en} />
   </> : '—';
 
   return <div className="benchmark-review-page">
     <PageHeader title={t('Benchmark & bộ dữ liệu chuẩn', 'Benchmarks & ground truth')}
       subtitle={t('Engineer đề xuất. Admin kiểm tra và duyệt trước khi đưa vào sử dụng.', 'Engineers propose. Admins review before publication.')} />
-    <div className="benchmark-review-notice">{t('Chỉ dữ liệu đã duyệt được dùng cho đánh giá và RAG. Mỗi bộ có một yêu cầu chờ duyệt; thông tin bên dưới lưu quyết định gần nhất.', 'Only published data is used for evaluation and RAG. One pending request per dataset; the latest decision is retained.')}</div>
+    <div className="benchmark-review-notice">{t('Chỉ dữ liệu đã duyệt được dùng làm đáp án đánh giá. Đáp án benchmark không được đưa vào RAG chẩn đoán. Mỗi bộ có một yêu cầu chờ duyệt; thông tin bên dưới lưu quyết định gần nhất.', 'Only published data is used as evaluation answer keys. Benchmark answers are excluded from diagnostic RAG. One pending request per dataset; the latest decision is retained.')}</div>
     {error && <div className="benchmark-review-error" role="alert">{error} <Button variant="secondary" onClick={() => { setSelected(null); setDraft(null); refresh(); }} disabled={busy}>{t('Tải lại', 'Reload')}</Button></div>}
     <section className="benchmark-review-panel">
       <div className="benchmark-review-heading"><div><h2>{t('Toàn bộ benchmark', 'All benchmarks')}</h2><p>{list.total} {t('bộ dữ liệu trong hệ thống', 'datasets in the system')}</p></div>
@@ -108,6 +111,8 @@ export default function BenchmarkManagementPage() {
         value={draft.code} onChange={e => setDraft(d => ({ ...d, code: e.target.value.toUpperCase() }))} placeholder="BENCHMARK-NEW" /></label>
         <label className="field"><span>{t('Tên bộ dữ liệu', 'Dataset name')}</span><input required maxLength={200} value={draft.proposedData.name} onChange={e => setContent('name', e.target.value)} /></label>
         <label className="field wide"><span>{t('Nguồn / mô tả dữ liệu', 'Data source / description')}</span><textarea maxLength={2000} value={draft.proposedData.provenance} onChange={e => setContent('provenance', e.target.value)} /></label></div>
+      <GroundTruthImporter cases={draft.proposedData.testCases} en={en} disabled={busy}
+        onImport={cases => { setContent('testCases', cases); setCasePage(0); }} />
       <div className="benchmark-review-heading"><h3>{t('Trường hợp kiểm thử', 'Test cases')} ({draft.proposedData.testCases.length})</h3>
         <Button type="button" variant="secondary" disabled={draft.proposedData.testCases.length >= 5000} onClick={() => { setContent('testCases', [...draft.proposedData.testCases, emptyCase()]); setCasePage(Math.floor(draft.proposedData.testCases.length / 10)); }}>{t('Thêm trường hợp', 'Add case')}</Button></div>
       {draft.proposedData.testCases.slice(casePage * 10, (casePage + 1) * 10).map((item, offset) => {
@@ -117,7 +122,8 @@ export default function BenchmarkManagementPage() {
         }}>{t('Xóa khỏi đề xuất', 'Remove from proposal')}</Button></div><div className="benchmark-review-form">
           {[["code", t('Mã trường hợp', 'Case code'), 100], ['rosbagName', 'Rosbag', 255], ['topic', 'Topic / TF', 1000], ['label', t('Nhãn lỗi', 'Fault label'), 200]].map(([key, label, max]) => <label className="field" key={key}><span>{label}</span><input required={key !== 'topic'} maxLength={max} value={item[key] || ''} onChange={e => setCase(index, key, e.target.value)} /></label>)}
           {['startSec', 'endSec'].map(key => <label className="field" key={key}><span>{key === 'startSec' ? t('Bắt đầu (giây)', 'Start (seconds)') : t('Kết thúc (giây)', 'End (seconds)')}</span><input type="number" min={key === 'endSec' ? item.startSec : 0} step="any" required value={item[key]} onChange={e => setCase(index, key, e.target.value === '' ? '' : Number(e.target.value))} /></label>)}
-          <label className="field wide"><span>{t('Dữ liệu chuẩn đối chiếu', 'Ground truth')}</span><textarea maxLength={20000} value={item.groundTruth || ''} onChange={e => setCase(index, 'groundTruth', e.target.value)} /></label></div></div>;
+          <label className="field wide"><span>{t('Dữ liệu chuẩn đối chiếu', 'Ground truth')}</span><textarea maxLength={20000} value={item.groundTruth || ''} onChange={e => setCase(index, 'groundTruth', e.target.value)} /></label>
+          <div className="field wide"><GroundTruthPreview detail={item.groundTruthDetail} en={en} /></div></div></div>;
       })}
       <div className="benchmark-review-pagination"><Button type="button" variant="secondary" disabled={casePage === 0} onClick={() => setCasePage(p => p - 1)}>{t('Trước', 'Previous')}</Button><span>{casePage + 1} / {Math.ceil(draft.proposedData.testCases.length / 10)}</span><Button type="button" variant="secondary" disabled={(casePage + 1) * 10 >= draft.proposedData.testCases.length} onClick={() => setCasePage(p => p + 1)}>{t('Tiếp', 'Next')}</Button></div>
       <div className="benchmark-review-heading"><p>{t('Gửi đề xuất không thay đổi bản đang sử dụng. Mã đã tồn tại sẽ được báo để bạn chọn cập nhật.', 'Submitting does not change published data. Existing codes must be opened for update.')}</p><Button type="submit">{busy ? t('Đang gửi…', 'Submitting…') : t('Gửi Admin duyệt', 'Submit for review')}</Button></div>
