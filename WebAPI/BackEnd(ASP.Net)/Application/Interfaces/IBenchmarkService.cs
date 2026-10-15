@@ -19,26 +19,38 @@ public interface IBenchmarkService
 
 public static class BenchmarkProposalValidation
 {
+    private const int MinTestCases = 1;
+    private const int MaxTestCases = 5000;
+    private const int MaxBenchmarkNameLength = 200;
+    private const int MaxProvenanceLength = 2000;
+    private const int MaxCaseCodeLength = 100;
+    private const int MaxRosbagNameLength = 255;
+    private const int MaxTopicLength = 1000;
+    private const int MaxLabelLength = 200;
+    private const int MaxLegacyGroundTruthLength = 20000;
+
+    private static readonly System.Text.RegularExpressions.Regex BenchmarkCodeRegex =
+        new(@"^[A-Z0-9][A-Z0-9_-]{0,99}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
     public static void Validate(BenchmarkProposal proposal)
     {
-        if (string.IsNullOrWhiteSpace(proposal.Code) ||
-            !System.Text.RegularExpressions.Regex.IsMatch(proposal.Code, @"^[A-Z0-9][A-Z0-9_-]{0,99}$"))
+        if (string.IsNullOrWhiteSpace(proposal.Code) || !BenchmarkCodeRegex.IsMatch(proposal.Code))
             throw new ArgumentException("Mã benchmark chỉ gồm chữ in hoa, số, dấu - hoặc _ (tối đa 100 ký tự).");
         if (proposal.RequestType is not ("Create" or "Update") || proposal.BaseVersion < 0)
             throw new ArgumentException("Loại yêu cầu hoặc phiên bản không hợp lệ.");
         var data = proposal.ProposedData;
-        if (data == null || string.IsNullOrWhiteSpace(data.Name) || data.Name.Length > 200 || data.Provenance?.Length > 2000)
-            throw new ArgumentException("Nhập tên benchmark (tối đa 200 ký tự), nguồn dữ liệu tối đa 2000 ký tự.");
-        if (data.TestCases == null || data.TestCases.Count is < 1 or > 5000)
-            throw new ArgumentException("Bộ benchmark cần từ 1 đến 5000 trường hợp.");
+        if (data == null || string.IsNullOrWhiteSpace(data.Name) || data.Name.Length > MaxBenchmarkNameLength || data.Provenance?.Length > MaxProvenanceLength)
+            throw new ArgumentException($"Nhập tên benchmark (tối đa {MaxBenchmarkNameLength} ký tự), nguồn dữ liệu tối đa {MaxProvenanceLength} ký tự.");
+        if (data.TestCases == null || data.TestCases.Count is < MinTestCases or > MaxTestCases)
+            throw new ArgumentException($"Bộ benchmark cần từ {MinTestCases} đến {MaxTestCases} trường hợp.");
         var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var caseIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var item in data.TestCases)
         {
-            if (item == null || string.IsNullOrWhiteSpace(item.Code) || item.Code.Length > 100 || !codes.Add(item.Code.Trim()) ||
-                string.IsNullOrWhiteSpace(item.RosbagName) || item.RosbagName.Length > 255 ||
-                item.Topic == null || item.Topic.Length > 1000 || string.IsNullOrWhiteSpace(item.Label) || item.Label.Length > 200 ||
-                item.GroundTruth?.Length > 20000 || !double.IsFinite(item.StartSec) || !double.IsFinite(item.EndSec) ||
+            if (item == null || string.IsNullOrWhiteSpace(item.Code) || item.Code.Length > MaxCaseCodeLength || !codes.Add(item.Code.Trim()) ||
+                string.IsNullOrWhiteSpace(item.RosbagName) || item.RosbagName.Length > MaxRosbagNameLength ||
+                item.Topic == null || item.Topic.Length > MaxTopicLength || string.IsNullOrWhiteSpace(item.Label) || item.Label.Length > MaxLabelLength ||
+                item.GroundTruth?.Length > MaxLegacyGroundTruthLength || !double.IsFinite(item.StartSec) || !double.IsFinite(item.EndSec) ||
                 item.StartSec < 0 || item.EndSec < item.StartSec)
                 throw new ArgumentException("Trường hợp không hợp lệ: kiểm tra mã trùng, rosbag, nhãn, độ dài và khoảng thời gian.");
             if (!caseIds.Add(item.CaseId ?? item.Code))

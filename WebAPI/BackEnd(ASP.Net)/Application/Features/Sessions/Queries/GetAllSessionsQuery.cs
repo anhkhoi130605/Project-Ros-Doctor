@@ -60,6 +60,7 @@ namespace Application.Features.Sessions.Queries
 						SessionId = i.SessionId,
 						Title = i.IssueTitle,
 						Topic = i.Topic,
+						Interval = i.TimeRange,
 						Severity = i.Severity.ToString().ToLower(),
 						Observation = $"Phát hiện bất thường trên {i.Topic} trong khoảng {i.TimeRange}."
 					}).ToList()

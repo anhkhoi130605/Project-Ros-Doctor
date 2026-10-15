@@ -1,5 +1,7 @@
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using API.Middlewares.Extentions;
 using Application.Features.Chat.Commands;
 using MediatR;
 using Microsoft.AspNetCore.SignalR;
@@ -51,10 +53,10 @@ namespace API.Hubs
             try
             {
                 var user = Context.User;
-                var claimUserId = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                var claimEmail = user?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
-                var claimName = user?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
-                var claimRole = user?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                var claimUserId = user?.GetUserId();
+                var claimEmail = user?.FindFirst(ClaimTypes.Email)?.Value;
+                var claimName = user?.FindFirst(ClaimTypes.Name)?.Value;
+                var claimRole = user?.GetRole();
 
                 var resolvedSenderId = claimUserId ?? (!string.IsNullOrWhiteSpace(senderEmail) ? senderEmail : Context.ConnectionId);
                 var resolvedSenderName = !string.IsNullOrWhiteSpace(claimName) ? claimName : (!string.IsNullOrWhiteSpace(senderName) ? senderName : "Thành viên hệ thống");

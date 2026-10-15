@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.Services
 {
-    public static class ChatEventNames
+    internal static class ChatEventNames
     {
         public const string ReceiveRoleMessage = "ReceiveRoleMessage";
         public const string ReceiveUserMessage = "ReceiveUserMessage";
