@@ -60,6 +60,7 @@ export default function DiagnosticPriorityPanel({ pendingCount = 0, highWarnings
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
+        gap: '14px',
       }}
     >
       {/* Header */}

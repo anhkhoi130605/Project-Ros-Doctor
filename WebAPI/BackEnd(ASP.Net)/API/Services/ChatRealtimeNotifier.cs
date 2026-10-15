@@ -5,6 +5,12 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace API.Services
 {
+    public static class ChatEventNames
+    {
+        public const string ReceiveRoleMessage = "ReceiveRoleMessage";
+        public const string ReceiveUserMessage = "ReceiveUserMessage";
+    }
+
     /// <summary>
     /// Implementation của IChatRealtimeNotifier sử dụng ASP.NET Core SignalR IHubContext
     /// Tách rời phụ thuộc SignalR khỏi tầng Application theo nguyên tắc Clean Architecture (Dependency Inversion).
@@ -36,17 +42,17 @@ namespace API.Services
                     mediaUrls = dto.MediaUrls,
                     status = dto.Status
                 };
-                await _hubContext.Clients.Group(targetRole).SendAsync("ReceiveRoleMessage", payload);
+                await _hubContext.Clients.Group(targetRole).SendAsync(ChatEventNames.ReceiveRoleMessage, payload);
             }
             else
             {
-                await _hubContext.Clients.Group(targetRole).SendAsync("ReceiveRoleMessage", messagePayload);
+                await _hubContext.Clients.Group(targetRole).SendAsync(ChatEventNames.ReceiveRoleMessage, messagePayload);
             }
         }
 
         public async Task SendMessageToUserAsync(string userId, object messagePayload)
         {
-            await _hubContext.Clients.User(userId).SendAsync("ReceiveUserMessage", messagePayload);
+            await _hubContext.Clients.User(userId).SendAsync(ChatEventNames.ReceiveUserMessage, messagePayload);
         }
     }
 }
