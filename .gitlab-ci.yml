@@ -92,7 +92,7 @@ test-backend-dotnet:
     - dotnet build Backend.slnx --no-restore --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
     - echo "=== 3. Chạy Backend Tests ==="
     - dotnet test Backend.slnx --no-build --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
-    - dotnet build-server shutdown || true
+    - dotnet build-server shutdown 
 
 # 1.3 Test Frontend ReactJS (Node.js 20)
 test-frontend-react:
@@ -105,7 +105,7 @@ test-frontend-react:
   script:
     - echo "=== 1. Cài đặt dependencies Frontend ==="
     - cd "WebAPI/FrontEnd(ReactJS)"
-    - npm ci || npm install --prefer-offline --no-audit --no-fund
+    - npm ci
     - echo "=== 2. Chạy Frontend Tests ==="
     - npm test --if-present
 
@@ -129,7 +129,7 @@ build-backend-dotnet:
     - dotnet restore Backend.slnx
     - dotnet build Backend.slnx --no-restore --configuration Release --verbosity minimal -p:UseSharedCompilation=false -p:NodeReuse=false
     - dotnet publish API/API.csproj -c Release -o ../../publish
-    - dotnet build-server shutdown || true
+    - dotnet build-server shutdown
   artifacts:
     name: "backend-dotnet-package"
     expire_in: 1 week
@@ -147,7 +147,7 @@ build-frontend-react:
   script:
     - echo "=== Build Production Bundle Frontend (Vite) ==="
     - cd "WebAPI/FrontEnd(ReactJS)"
-    - npm ci || npm install --prefer-offline --no-audit --no-fund
+    - npm ci 
     - npm run build
   artifacts:
     name: "frontend-dist-package"
@@ -165,7 +165,7 @@ package-python-ai:
   script:
     - echo "=== Đóng gói Python AI Service ==="
     - mkdir -p python-ai-publish
-    - cp -r src requirements.txt data python-ai-publish/ 2>/dev/null || cp -r src requirements.txt python-ai-publish/
+    - python -c "import shutil, os; os.makedirs('python-ai-publish', exist_ok=True); [shutil.copytree(p, os.path.join('python-ai-publish', p), dirs_exist_ok=True) if os.path.isdir(p) else shutil.copy(p, 'python-ai-publish') for p in ['src', 'requirements.txt', 'data'] if os.path.exists(p)]"
   artifacts:
     name: "python-ai-package"
     expire_in: 1 week

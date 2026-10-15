@@ -57,7 +57,10 @@ namespace Application.Features.Chat.Queries
                     if (roleId != null && u.RoleId == roleId) return true;
                     if (u.Role != null && string.Equals(u.Role.RoleName?.ToString(), r.Key, StringComparison.OrdinalIgnoreCase)) return true;
                     return false;
-                }).ToList();
+                })
+                .GroupBy(u => u.Id)
+                .Select(g => g.First())
+                .ToList();
 
                 var memberDtos = matchedUsers.Select(u => new ChatMemberDto
                 {

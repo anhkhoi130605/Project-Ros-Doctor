@@ -29,7 +29,6 @@ namespace API.Hubs
             if (!string.IsNullOrWhiteSpace(role))
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, role);
-                await Groups.AddToGroupAsync(Context.ConnectionId, $"Role_{role}");
                 _logger.LogInformation("SignalR Connection {ConnectionId} joined role group: {Role}", Context.ConnectionId, role);
             }
         }
@@ -39,7 +38,6 @@ namespace API.Hubs
             if (!string.IsNullOrWhiteSpace(role))
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, role);
-                await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"Role_{role}");
                 _logger.LogInformation("SignalR Connection {ConnectionId} left role group: {Role}", Context.ConnectionId, role);
             }
         }
