@@ -9,9 +9,54 @@ from src.agents.vectordb.revisions import RevisionedChroma
 from src.agents.vectordb.stores import (
     ChromaVectorStore,
     create_chroma_store,
+    distance_relevance_score,
     get_chroma_store,
 )
 from src.config import Settings
+
+
+@pytest.mark.parametrize("metric,distances", [
+    ("l2", [0, 1, 2, 4, 1000]),
+    ("cosine", [0, 0.5, 1, 1.5, 2]),
+    ("ip", [-1000, -2, 0, 1, 1000]),
+])
+def test_relevance_scores_are_bounded_and_monotone(metric, distances):
+    scores = [distance_relevance_score(distance, metric=metric) for distance in distances]
+    assert all(0 <= score <= 1 for score in scores)
+    assert scores == sorted(scores, reverse=True)
+    assert len(set(scores)) == len(scores)
+
+
+def test_squared_l2_mapping():
+    assert distance_relevance_score(0, metric="l2") == 1
+    assert distance_relevance_score(2, metric="l2") == pytest.approx(1 / 3)
+    assert distance_relevance_score(4, metric="l2") == pytest.approx(1 / 5)
+
+
+def test_real_chroma_negative_similarity_warning_is_fixed(tmp_path):
+    import warnings
+
+    from langchain_core.embeddings import Embeddings
+
+    class FixedEmbeddings(Embeddings):
+        def embed_documents(self, texts):
+            vectors = {"same": [1.0, 0.0], "orthogonal": [0.0, 1.0], "opposite": [-1.0, 0.0]}
+            return [vectors[text] for text in texts]
+
+        def embed_query(self, text):
+            return [1.0, 0.0]
+
+    store = create_chroma_store(persist_directory=str(tmp_path), embedding_function=FixedEmbeddings(),
+                                embedding_profile="relevance-regression")
+    docs = [Document(page_content=name) for name in ("same", "orthogonal", "opposite")]
+    store._store.add_documents(docs, ids=[doc.page_content for doc in docs])
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        matches = store._store.similarity_search_with_relevance_scores("query", k=3)
+        assert [doc.page_content for doc, _ in matches] == ["same", "orthogonal", "opposite"]
+        assert [score for _, score in matches] == pytest.approx([1, 1 / 3, 1 / 5])
+        thresholded = store._store.similarity_search_with_relevance_scores("query", k=3, score_threshold=0.3)
+        assert [doc.page_content for doc, _ in thresholded] == ["same", "orthogonal"]
 
 
 def test_create_and_get_chroma_store():
