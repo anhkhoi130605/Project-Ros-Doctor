@@ -93,7 +93,11 @@ export default function HeaderMessengerDropdown() {
         Boolean(myEmail && msgEmail && myEmail === msgEmail) ||
         Boolean(myName && msgSender && myName === msgSender);
 
-      const msgId = msg.id || `msg_${Date.now()}`;
+      const msgId =
+        msg.id ||
+        (typeof window !== 'undefined' && window.crypto?.randomUUID
+          ? `msg_${window.crypto.randomUUID()}`
+          : `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`);
       const newMsgObj = {
         id: msgId,
         role: roleKey,
@@ -309,7 +313,10 @@ export default function HeaderMessengerDropdown() {
 
         const timeFormatted = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
         const localMsg = {
-          id: `local_${Date.now()}`,
+          id:
+            typeof window !== 'undefined' && window.crypto?.randomUUID
+              ? `local_${window.crypto.randomUUID()}`
+              : `local_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
           role: targetRole,
           sender: currentUserName,
           content: textContent,

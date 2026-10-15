@@ -12,6 +12,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controller.ChatController
 {
+    public static class ChatErrorMessages
+    {
+        public const string RoleRequired = "Tham số 'role' là bắt buộc.";
+        public const string MessageContentOrRoleRequired = "Nội dung tin nhắn và Role không được để trống.";
+    }
+
     /// <summary>
     /// Interface Adapter (Presentation Layer) cho Chat System theo Clean Architecture.
     /// Không chứa business logic hay truy cập database trực tiếp; ủy thác toàn bộ cho Use Cases qua IMediator.
@@ -47,7 +53,7 @@ namespace API.Controller.ChatController
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(role))
-                return BadRequest(new { message = "Tham số 'role' là bắt buộc." });
+                return BadRequest(new { message = ChatErrorMessages.RoleRequired });
 
             var result = await _mediator.Send(new GetChatMessagesByRoleQuery(role, limit, before, CurrentUserId), cancellationToken);
             return Ok(result);
@@ -61,19 +67,24 @@ namespace API.Controller.ChatController
             [FromBody] SendMessageRequestDto dto,
             CancellationToken cancellationToken)
         {
-            if (dto == null || string.IsNullOrWhiteSpace(dto.Role) || string.IsNullOrWhiteSpace(dto.Content))
-                return BadRequest(new { message = "Nội dung tin nhắn và Role không được để trống." });
+            var trimmedContent = dto?.Content?.Trim() ?? string.Empty;
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Role) || string.IsNullOrWhiteSpace(trimmedContent))
+                return BadRequest(new { message = ChatErrorMessages.MessageContentOrRoleRequired });
 
-            var senderId = CurrentUserId ?? dto.SenderEmail ?? "system";
+            var senderId = CurrentUserId ?? (!string.IsNullOrWhiteSpace(dto.SenderEmail) ? dto.SenderEmail : $"anonymous_{Guid.NewGuid():N}");
             var senderName = !string.IsNullOrWhiteSpace(dto.SenderName) 
                 ? dto.SenderName 
                 : User.FindFirst(ClaimTypes.Name)?.Value ?? "Thành viên hệ thống";
-            var senderEmail = dto.SenderEmail ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "";
-            var senderRole = dto.SenderRole ?? User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+            var senderEmail = !string.IsNullOrWhiteSpace(dto.SenderEmail)
+                ? dto.SenderEmail
+                : User.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
+            var senderRole = !string.IsNullOrWhiteSpace(dto.SenderRole)
+                ? dto.SenderRole
+                : User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
 
             var command = new SendChatMessageCommand(
                 TargetRole: dto.Role,
-                Content: dto.Content.Trim(),
+                Content: trimmedContent,
                 MediaUrls: dto.MediaUrls,
                 SenderId: senderId,
                 SenderName: senderName,

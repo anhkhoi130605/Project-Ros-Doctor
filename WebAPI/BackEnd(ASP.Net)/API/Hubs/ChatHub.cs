@@ -42,21 +42,33 @@ namespace API.Hubs
             }
         }
 
-        public async Task SendMessageToRole(string targetRole, string content, string senderName, string senderEmail, string senderRole)
+        public async Task SendMessageToRole(string targetRole, string content, string? senderName = null, string? senderEmail = null, string? senderRole = null)
         {
-            if (string.IsNullOrWhiteSpace(targetRole) || string.IsNullOrWhiteSpace(content))
+            var trimmedContent = content?.Trim();
+            if (string.IsNullOrWhiteSpace(targetRole) || string.IsNullOrWhiteSpace(trimmedContent))
                 return;
 
             try
             {
+                var user = Context.User;
+                var claimUserId = user?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                var claimEmail = user?.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+                var claimName = user?.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+                var claimRole = user?.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+                var resolvedSenderId = claimUserId ?? (!string.IsNullOrWhiteSpace(senderEmail) ? senderEmail : Context.ConnectionId);
+                var resolvedSenderName = !string.IsNullOrWhiteSpace(claimName) ? claimName : (!string.IsNullOrWhiteSpace(senderName) ? senderName : "Thành viên hệ thống");
+                var resolvedSenderEmail = !string.IsNullOrWhiteSpace(claimEmail) ? claimEmail : (senderEmail ?? string.Empty);
+                var resolvedSenderRole = !string.IsNullOrWhiteSpace(claimRole) ? claimRole : (senderRole ?? "User");
+
                 var command = new SendChatMessageCommand(
                     TargetRole: targetRole,
-                    Content: content.Trim(),
+                    Content: trimmedContent,
                     MediaUrls: null,
-                    SenderId: senderEmail ?? Context.ConnectionId,
-                    SenderName: string.IsNullOrWhiteSpace(senderName) ? "Thành viên hệ thống" : senderName,
-                    SenderEmail: senderEmail ?? string.Empty,
-                    SenderRole: senderRole ?? "User"
+                    SenderId: resolvedSenderId,
+                    SenderName: resolvedSenderName,
+                    SenderEmail: resolvedSenderEmail,
+                    SenderRole: resolvedSenderRole
                 );
 
                 await _mediator.Send(command);
