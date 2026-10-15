@@ -29,8 +29,10 @@ export async function sendChatMessageRestApi(payload) {
  */
 export function createSignalRChatConnection() {
   const backendUrl =
-    import.meta.env.VITE_API_URL ||
-    (window.location.protocol === 'https:' ? 'https://localhost:7149' : 'http://localhost:5143');
+    import.meta.env.VITE_API_URL ??
+    (import.meta.env.DEV
+      ? (window.location.protocol === 'https:' ? 'https://localhost:7149' : 'http://localhost:5143')
+      : '');
   return new HubConnectionBuilder()
     .withUrl(`${backendUrl}/hubs/chat`, {
       accessTokenFactory: () => localStorage.getItem('accessToken') || '',
