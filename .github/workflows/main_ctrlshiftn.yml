@@ -72,6 +72,8 @@ jobs:
 
       - name: Build Vite Production Bundle
         working-directory: "WebAPI/FrontEnd(ReactJS)"
+        env:
+          VITE_AI_AGENT_URL: https://ctrlshiftn-agent-bdf9d4dse2cjgac5.eastasia-01.azurewebsites.net
         run: npm run build
 
       - name: Upload Frontend Artifact
@@ -148,7 +150,7 @@ jobs:
           name: frontend-dist-package
           path: ./publish/wwwroot
 
-      - name: Deploy to Azure Web App
+      - name: Deploy ASP.NET Core & React to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
@@ -156,3 +158,18 @@ jobs:
           slot-name: 'Production'
           package: ./publish
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4CAF0059E81E48D690CA5E536CA48760 }}
+
+      - name: Download Python AI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-ai-package
+          path: ./python-publish
+
+      - name: Deploy Python AI to Azure Web App
+        id: deploy-python-ai
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'ctrlshiftn-agent'
+          slot-name: 'Production'
+          package: ./python-publish
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_AI_PUBLISHPROFILE }}
