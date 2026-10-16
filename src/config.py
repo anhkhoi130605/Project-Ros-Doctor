@@ -22,8 +22,11 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, ge=1, le=65535)
     app_host: str = "0.0.0.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
-    cors_origins: str = "http://localhost:3000"
-    backend_api_url: str = "https://localhost:7149"
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:5173,https://localhost:5173,"
+        "https://ctrlshiftn.azurewebsites.net,https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
+    )
+    backend_api_url: str = "https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
 
     # LLM
     openai_api_key: str = ""
