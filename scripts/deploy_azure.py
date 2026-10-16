@@ -144,6 +144,8 @@ def deploy_to_azure(zip_path, profile_env_vars=None, default_app_name="CtrlShift
         print(f"Please set one of {candidate_vars} in CI/CD Variables.")
         sys.exit(1)
 
+    print(f"[INFO] Using deployment username: '{user_name}' (password length: {len(user_pwd) if user_pwd else 0})")
+
     deploy_url = f"https://{scm_host}/api/zipdeploy"
     print(f"[INFO] Target: App '{app_name}' (Slot: '{slot_name}')")
     print(f"[INFO] Deploying to Kudu endpoint: {deploy_url}")
