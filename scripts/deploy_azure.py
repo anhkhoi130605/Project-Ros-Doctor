@@ -60,11 +60,17 @@ def parse_publish_profile(profile_xml):
 
     selected = None
     for profile in root.iter("publishProfile"):
-        method = profile.get("publishMethod", "")
-        username = profile.get("userName", "")
-        if method == "MSDeploy" or username.startswith("$"):
+        if profile.get("publishMethod") == "ZipDeploy":
             selected = profile
             break
+
+    if selected is None:
+        for profile in root.iter("publishProfile"):
+            method = profile.get("publishMethod", "")
+            username = profile.get("userName", "")
+            if method == "MSDeploy" or username.startswith("$"):
+                selected = profile
+                break
 
     if selected is None:
         profiles = list(root.iter("publishProfile"))
@@ -183,6 +189,7 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--python":
         publish_dir = "python-ai-publish"
         zip_path = zip_directory(publish_dir, "python_publish.zip")
+        os.environ["AZURE_APP_NAME"] = "ctrlshiftn-agent"
         deploy_to_azure(
             zip_path,
             profile_env_vars=[
