@@ -83,12 +83,34 @@ def parse_publish_profile(profile_xml):
     return scm_host, user_name, user_pwd
 
 
-def deploy_to_azure(zip_path):
-    profile_xml = (
-        os.environ.get("AZURE_PUBLISH_PROFILE")
-        or os.environ.get("AZUREAPPSERVICE_PUBLISHPROFILE")
-        or os.environ.get("AZUREAPPSERVICE_PUBLISHPROFILE_4CAF0059E81E48D690CA5E536CA48760")
-    )
+def zip_directory(source_dir, output_zip):
+    if not os.path.isdir(source_dir):
+        print(f"[ERROR] Directory '{source_dir}' not found.")
+        sys.exit(1)
+    print(f"[INFO] Compressing '{source_dir}' to '{output_zip}'...")
+    with zipfile.ZipFile(output_zip, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                full_path = os.path.join(root, file)
+                rel_path = os.path.relpath(full_path, source_dir)
+                zipf.write(full_path, rel_path)
+    zip_size_mb = os.path.getsize(output_zip) / (1024 * 1024)
+    print(f"[INFO] Archive created: {output_zip} ({zip_size_mb:.2f} MB)")
+    return output_zip
+
+
+def deploy_to_azure(zip_path, profile_env_vars=None, default_app_name="CtrlShiftN"):
+    candidate_vars = profile_env_vars or [
+        "AZURE_PUBLISH_PROFILE",
+        "AZUREAPPSERVICE_PUBLISHPROFILE",
+        "AZUREAPPSERVICE_PUBLISHPROFILE_4CAF0059E81E48D690CA5E536CA48760",
+    ]
+    profile_xml = None
+    for var in candidate_vars:
+        val = os.environ.get(var)
+        if val:
+            profile_xml = val
+            break
 
     scm_host = None
     user_name = None
@@ -102,7 +124,7 @@ def deploy_to_azure(zip_path):
         user_name = os.environ.get("AZURE_PUBLISH_USERNAME")
         user_pwd = os.environ.get("AZURE_PUBLISH_PASSWORD")
 
-    app_name = os.environ.get("AZURE_APP_NAME", "CtrlShiftN")
+    app_name = os.environ.get("AZURE_APP_NAME", default_app_name)
     slot_name = os.environ.get("AZURE_SLOT_NAME", "Production")
 
     if not scm_host:
@@ -113,7 +135,7 @@ def deploy_to_azure(zip_path):
 
     if not user_name or not user_pwd:
         print("[ERROR] Missing Azure credentials!")
-        print("Please set AZURE_PUBLISH_PROFILE (or AZUREAPPSERVICE_PUBLISHPROFILE) in GitLab CI/CD Variables.")
+        print(f"Please set one of {candidate_vars} in CI/CD Variables.")
         sys.exit(1)
 
     deploy_url = f"https://{scm_host}/api/zipdeploy"
@@ -158,8 +180,20 @@ def deploy_to_azure(zip_path):
 
 
 def main():
-    zip_path = prepare_package()
-    deploy_to_azure(zip_path)
+    if len(sys.argv) > 1 and sys.argv[1] == "--python":
+        publish_dir = "python-ai-publish"
+        zip_path = zip_directory(publish_dir, "python_publish.zip")
+        deploy_to_azure(
+            zip_path,
+            profile_env_vars=[
+                "AZURE_AI_PUBLISH_PROFILE",
+                "AZUREAPPSERVICE_AI_PUBLISHPROFILE",
+            ],
+            default_app_name="ctrlshiftn-agent",
+        )
+    else:
+        zip_path = prepare_package()
+        deploy_to_azure(zip_path)
 
 
 if __name__ == "__main__":

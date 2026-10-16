@@ -142,6 +142,8 @@ build-backend-dotnet:
 build-frontend-react:
   stage: build
   image: node:20
+  variables:
+    VITE_AI_AGENT_URL: "https://ctrlshiftn-agent-bdf9d4dse2cjgac5.eastasia-01.azurewebsites.net"
   cache:
     key: "frontend-$CI_COMMIT_REF_SLUG"
     paths:
@@ -192,3 +194,18 @@ deploy-azure:
   script:
     - echo "=== Gộp Frontend wwwroot vào Backend Publish & Zip Deploy lên Azure ==="
     - python scripts/deploy_azure.py
+
+deploy-python-ai:
+  stage: deploy
+  image: python:3.11-slim
+  dependencies:
+    - package-python-ai
+  environment:
+    name: Production
+    url: https://ctrlshiftn-agent-bdf9d4dse2cjgac5.eastasia-01.azurewebsites.net/
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_PIPELINE_SOURCE == "web"
+  script:
+    - echo "=== Deploy Python AI Agent to Azure Web App ==="
+    - python scripts/deploy_azure.py --python
