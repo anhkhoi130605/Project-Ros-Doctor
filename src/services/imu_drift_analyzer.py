@@ -12,8 +12,8 @@ from __future__ import annotations
 import math
 import sqlite3
 import struct
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 
 @dataclass
