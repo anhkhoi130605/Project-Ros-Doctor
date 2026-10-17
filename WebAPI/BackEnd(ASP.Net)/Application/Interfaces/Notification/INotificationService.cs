@@ -9,5 +9,9 @@ namespace Application.Interfaces.Notifications
     public interface INotificationService
     {
         Task SendNotificationAsync(SendNotificationRequest request);
+        Task<List<NotificationDto>> GetNotificationsForUserAsync(string userId, string? role, int take = 50);
+        Task<bool> MarkAsReadAsync(string notificationId, string userId);
+        Task<bool> MarkAllAsReadAsync(string userId);
     }
+
 }
