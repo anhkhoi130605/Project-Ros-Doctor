@@ -120,6 +120,10 @@ def repair_json_string(text: str) -> str:
     if start_brace != -1:
         s = s[start_brace:]
 
+    # Chuyển đổi chuỗi bọc dấu nháy đơn kiểu Python sang nháy kép JSON nếu có
+    if "'" in s:
+        s = re.sub(r"'([^'\\]*(?:\\.[^'\\]*)*)'", r'"\1"', s)
+
     # Thay thế hằng số Python sang JSON chuẩn
     s = re.sub(r"\bTrue\b", "true", s)
     s = re.sub(r"\bFalse\b", "false", s)
@@ -249,7 +253,7 @@ def parse_diagnostic_report(raw_text: str) -> tuple[str, DiagnosticReport | None
             json_str = clean_text[first_brace:]
             clean_text = clean_text[:first_brace].strip()
 
-    # 1. Thử parse trực tiếp
+    # 1. Thử parse trực tiếp JSON hoặc Python dict
     if json_str:
         try:
             parsed = json.loads(json_str)
@@ -260,10 +264,26 @@ def parse_diagnostic_report(raw_text: str) -> tuple[str, DiagnosticReport | None
         except Exception:
             pass
 
+        try:
+            import ast
+            py_dict = ast.literal_eval(json_str)
+            if isinstance(py_dict, dict) and ("has_fault" in py_dict or "faults" in py_dict):
+                report = DiagnosticReport.model_validate(py_dict)
+                display_text = clean_text if clean_text else report.summary
+                return display_text, report
+        except Exception:
+            pass
+
         # 2. Áp dụng cơ chế Tự động sửa lỗi cú pháp JSON (JSON auto-repair) tại Stage 1
         try:
             repaired_json = repair_json_string(json_str)
-            parsed = json.loads(repaired_json)
+            try:
+                parsed = json.loads(repaired_json)
+            except Exception:
+                # Hỗ trợ sửa lỗi single-quote và hằng số dạng Python dictionary bằng ast.literal_eval
+                import ast
+                parsed = ast.literal_eval(repaired_json)
+
             if isinstance(parsed, dict) and ("has_fault" in parsed or "faults" in parsed):
                 report = DiagnosticReport.model_validate(parsed)
                 display_text = clean_text if clean_text else report.summary

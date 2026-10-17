@@ -168,3 +168,18 @@ def test_parse_diagnostic_report_auto_repair_trailing_commas_and_python_literals
     assert report.faults[0].fault_type == "sensor_anomaly"
     assert report.faults[0].sub_type == "gyro_bias_drift"
 
+
+def test_parse_diagnostic_report_auto_repair_single_quotes_python_dict():
+    # Mô phỏng LLM sinh ra dạng dict với dấu nháy đơn Python
+    python_dict_str = """
+{'has_fault': True, 'faults': [{'fault_type': 'topic_dropout', 'sub_type': 'transient', 'severity': 'critical', 'topic': '/tf', 'start_sec': 12.0, 'end_sec': 14.5, 'evidence': 'TF transform missing'}], 'summary': 'Phát hiện TF dropout'}
+"""
+    clean_text, report = parse_diagnostic_report(python_dict_str)
+
+    assert report is not None
+    assert report.has_fault is True
+    assert len(report.faults) == 1
+    assert report.faults[0].fault_type == "topic_dropout"
+    assert report.faults[0].topic == "/tf"
+
+
