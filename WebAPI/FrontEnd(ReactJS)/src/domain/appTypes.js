@@ -233,3 +233,81 @@ export function getHealthCondition(healthScore, warningsCount = 0, highSeverityC
     effectiveScore: 100,
   };
 }
+
+/**
+ * Các loại thông báo hệ thống chuẩn từ Domain.Enums.NotificationType
+ */
+export const NotificationType = Object.freeze({
+  SystemError: 'SystemError',
+  UserRegistered: 'UserRegistered',
+  AccountBan: 'AccountBan',
+  AccountUnban: 'AccountUnban',
+  SystemBroadcast: 'SystemBroadcast',
+  NewChatMessage: 'NewChatMessage',
+  Other: 'Other',
+});
+
+/**
+ * Các loại thông báo dành riêng cho Quản trị viên từ Domain.Enums.AdminNotificationType
+ */
+export const AdminNotificationType = Object.freeze({
+  SystemError: 'SystemError',
+  UserRegistered: 'UserRegistered',
+  AccountBan: 'AccountBan',
+  AccountUnban: 'AccountUnban',
+  SystemBroadcast: 'SystemBroadcast',
+  NewChatMessage: 'NewChatMessage',
+  ReceivedRequest: 'ReceivedRequest',
+  ReceivedMessage: 'ReceivedMessage',
+  Other: 'Other',
+});
+
+/**
+ * Các loại thông báo dành riêng cho Kỹ sư Robotics từ Domain.Enums.EngineerNotificationType
+ */
+export const EngineerNotificationType = Object.freeze({
+  SystemError: 'SystemError',
+  RosbagUploaded: 'RosbagUploaded',
+  AnalysisCompleted: 'AnalysisCompleted',
+  DiagnosticAnomalyDetected: 'DiagnosticAnomalyDetected',
+  ReviewRequired: 'ReviewRequired',
+  AccountApproved: 'AccountApproved',
+  NewChatMessage: 'NewChatMessage',
+  SystemBroadcast: 'SystemBroadcast',
+  Other: 'Other',
+});
+
+/**
+ * Các loại thông báo dành cho Người dùng / Vận hành từ Domain.Enums.UserNotificationType
+ */
+export const UserNotificationType = Object.freeze({
+  RosbagProcessed: 'RosbagProcessed',
+  ReportReady: 'ReportReady',
+  VehicleAlert: 'VehicleAlert',
+  AccountApproved: 'AccountApproved',
+  AccountBan: 'AccountBan',
+  AccountUnban: 'AccountUnban',
+  NewChatMessage: 'NewChatMessage',
+  SystemBroadcast: 'SystemBroadcast',
+  Other: 'Other',
+});
+
+export const NOTIFICATION_TYPE_LABELS = {
+  SystemError: { label: 'Lỗi hệ thống', color: '#dc2626', bg: '#fee2e2', icon: 'AlertTriangle' },
+  UserRegistered: { label: 'Đăng ký mới', color: '#2563eb', bg: '#dbeafe', icon: 'UserPlus' },
+  AccountBan: { label: 'Khóa tài khoản', color: '#b91c1c', bg: '#fef2f2', icon: 'UserX' },
+  AccountUnban: { label: 'Mở khóa', color: '#16a34a', bg: '#dcfce7', icon: 'UserCheck' },
+  SystemBroadcast: { label: 'Hệ thống', color: '#7c3aed', bg: '#ede9fe', icon: 'Bell' },
+  NewChatMessage: { label: 'Tin nhắn mới', color: '#059669', bg: '#d1fae5', icon: 'MessageSquare' },
+  ReceivedRequest: { label: 'Yêu cầu gửi tới', color: '#ea580c', bg: '#ffedd5', icon: 'FileText' },
+  ReceivedMessage: { label: 'Tin nhắn nhận', color: '#0891b2', bg: '#cffafe', icon: 'Mail' },
+  RosbagUploaded: { label: 'Bản ghi Rosbag mới', color: '#0284c7', bg: '#e0f2fe', icon: 'Folder' },
+  AnalysisCompleted: { label: 'Phân tích xong', color: '#10b981', bg: '#d1fae5', icon: 'CheckCircle' },
+  DiagnosticAnomalyDetected: { label: 'Bất thường telemetry', color: '#f59e0b', bg: '#fef3c7', icon: 'AlertCircle' },
+  ReviewRequired: { label: 'Chờ kỹ sư duyệt', color: '#d97706', bg: '#fef3c7', icon: 'ClipboardCheck' },
+  ReportReady: { label: 'Báo cáo hoàn tất', color: '#059669', bg: '#d1fae5', icon: 'FileCheck' },
+  RosbagProcessed: { label: 'Rosbag đã xử lý', color: '#0284c7', bg: '#e0f2fe', icon: 'FileCode' },
+  VehicleAlert: { label: 'Cảnh báo xe', color: '#ef4444', bg: '#fee2e2', icon: 'AlertOctagon' },
+  AccountApproved: { label: 'Tài khoản được duyệt', color: '#16a34a', bg: '#dcfce7', icon: 'ShieldCheck' },
+  Other: { label: 'Khác', color: '#64748b', bg: '#f1f5f9', icon: 'Info' },
+};
