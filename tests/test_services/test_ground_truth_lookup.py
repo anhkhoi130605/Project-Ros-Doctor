@@ -235,7 +235,7 @@ async def test_natural_evidence_graph_uses_selected_context(lookup_services, mon
 
 
 @pytest.mark.asyncio
-async def test_api_read_and_chat_stream_contracts(dataset, client, monkeypatch):
+async def test_api_read_and_chat_stream_contracts(dataset, client, auth_headers, monkeypatch):
     from src.api import routes
     from src.services import benchmark_dataset_service
 
@@ -248,15 +248,20 @@ async def test_api_read_and_chat_stream_contracts(dataset, client, monkeypatch):
     assert response.status_code == 200
     assert response.json()["source"]["dataset_version"] == 2
     assert (await client.get(f"/api/v1/benchmarks/{CODE}/cases/{CASE}/ground-truth?language=xx")).status_code == 422
-    response = await client.post("/api/v1/chat", json={"message": f"Tra cứu ground truth {CASE}"})
+    response = await client.post("/api/v1/chat", json={"message": f"Tra cứu ground truth {CASE}"}, headers=auth_headers)
     assert response.status_code == 200 and response.json()["report"] is None
     assert "99.9" in response.json()["response"]
     assert trace.save_trace.call_args.kwargs["step"] == "lookup"
     assert CODE in trace.save_trace.call_args.kwargs["retrieved_context"][0]
-    response = await client.post("/api/v1/chat/stream", json={"message": f"Show ground truth {CASE} in English"})
+    response = await client.post(
+        "/api/v1/chat/stream",
+        json={"message": f"Show ground truth {CASE} in English"},
+        headers=auth_headers,
+    )
     events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")]
     assert events[-1]["done"] is True and events[-1]["report"] is None
     assert "99.9" in "".join(event.get("token", "") for event in events)
+
 
 
 @pytest.mark.asyncio
