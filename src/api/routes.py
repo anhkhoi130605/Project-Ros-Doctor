@@ -3,10 +3,12 @@ import json
 import re
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
+
+from src.api.auth import get_current_user, require_admin
 
 from src.agents.graph import agent
 from src.models.schemas import (
@@ -38,7 +40,7 @@ def lookup_trace_fields(result: dict) -> dict:
             "retrieved_context": [json.dumps(source, ensure_ascii=False, sort_keys=True) for source in sources]}
 
 
-@router.post("/chat", response_model=ChatResponse)
+@router.post("/chat", response_model=ChatResponse, dependencies=[Depends(get_current_user)])
 async def chat(request: ChatRequest) -> ChatResponse:
     """Chat với AI agent (Non-streaming) và tự động lưu vết chẩn đoán xuống MongoDB."""
     try:
@@ -79,7 +81,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/chat/stream")
+@router.post("/chat/stream", dependencies=[Depends(get_current_user)])
 async def chat_stream(request: ChatRequest):
     """Stream chat response token-by-token using Server-Sent Events (SSE) và lưu vết xuống MongoDB."""
     async def event_generator():
@@ -151,12 +153,12 @@ async def chat_stream(request: ChatRequest):
     )
 
 
-@router.get("/traces")
+@router.get("/traces", dependencies=[Depends(get_current_user)])
 async def list_agent_traces(
     session_id: str | None = Query(default=None),
     limit: int = Query(default=20, ge=1, le=100),
 ):
-    """Lấy danh sách các vết thực thi và báo cáo chẩn đoán của Agent đã lưu trong MongoDB."""
+    """Lấy danh sách các vết thực thi và báo cáo chẩn đoán của Agent đã lưu trong MongoDB (Yêu cầu đăng nhập)."""
     service = get_agent_trace_service()
     return await run_in_threadpool(service.list_traces, session_id=session_id, limit=limit)
 
@@ -201,9 +203,9 @@ async def get_case_ground_truth(code: str, case_id: str, language: str = Query(d
         raise HTTPException(status_code=503, detail="Ground truth storage is temporarily unavailable") from None
 
 
-@router.post("/carla/record", response_model=CarlaRecordResponse)
+@router.post("/carla/record", response_model=CarlaRecordResponse, dependencies=[Depends(require_admin)])
 async def record_carla_bag(request: CarlaRecordRequest):
-    """Ghi log IMU, LiDAR, Camera từ CARLA thành ROS2 bag (db3 + yaml) mỗi giây."""
+    """Ghi log IMU, LiDAR, Camera từ CARLA thành ROS2 bag (Chỉ Admin)."""
     try:
         recorder = CarlaRosbagRecorder(
             host=request.host,
@@ -220,9 +222,9 @@ async def record_carla_bag(request: CarlaRecordRequest):
         raise HTTPException(status_code=500, detail=f"Lỗi khi ghi CARLA rosbag: {str(e)}")
 
 
-@router.get("/carla/bags")
+@router.get("/carla/bags", dependencies=[Depends(get_current_user)])
 async def list_carla_bags():
-    """Liệt kê danh sách các ROS2 bags đã ghi trong thư mục Data."""
+    """Liệt kê danh sách các ROS2 bags đã ghi trong thư mục Data (Yêu cầu đăng nhập)."""
     data_dir = Path(__file__).resolve().parent.parent / "Data"
     bags = []
     if data_dir.exists():
@@ -247,17 +249,26 @@ class UpdateAiConfigPayload(BaseModel):
     base_url: str | None = None
 
 
-@router.post("/ai-config")
+@router.post("/ai-config", dependencies=[Depends(require_admin)])
 async def update_ai_config(payload: UpdateAiConfigPayload):
-    """Cập nhật cấu hình mô hình AI và API key trực tiếp cho Agent chẩn đoán."""
+    """Cập nhật cấu hình mô hình AI và API key trực tiếp cho Agent chẩn đoán (Chỉ Admin)."""
+    from urllib.parse import urlparse
     from src.config import get_settings, update_env_setting
+
+    if payload.base_url and payload.base_url.strip():
+        url = payload.base_url.strip()
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+            raise HTTPException(
+                status_code=400,
+                detail="base_url không hợp lệ. Phải bắt đầu bằng http:// hoặc https://",
+            )
+        update_env_setting("OPENAI_BASE_URL", url)
 
     if payload.api_key and payload.api_key.strip():
         update_env_setting("OPENAI_API_KEY", payload.api_key.strip())
     if payload.model and payload.model.strip():
         update_env_setting("MODEL_NAME", payload.model.strip())
-    if payload.base_url and payload.base_url.strip():
-        update_env_setting("OPENAI_BASE_URL", payload.base_url.strip())
 
     settings = get_settings()
     return {

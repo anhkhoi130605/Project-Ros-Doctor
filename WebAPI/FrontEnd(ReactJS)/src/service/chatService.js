@@ -42,6 +42,14 @@ export function createSignalRChatConnection() {
     .build();
 }
 
+function getAiAgentHeaders() {
+  const token = localStorage.getItem('accessToken');
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
 /**
  * Đồng bộ cấu hình API Key và Model trực tiếp sang Python AI Agent.
  */
@@ -49,7 +57,7 @@ export async function syncAiConfigToAgentApi(config) {
   try {
     const res = await fetch(`${AI_AGENT_URL}/api/v1/ai-config`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAiAgentHeaders(),
       body: JSON.stringify({
         api_key: config.apiKey,
         model: config.modelName,
@@ -67,7 +75,7 @@ export async function syncAiConfigToAgentApi(config) {
  * Lấy cấu hình AI hiệu lực dựa trên chức năng (chat, diagnostic, report...) hoặc cấu hình người dùng
  */
 export function getEffectiveAiConfig(feature = 'chat') {
-  let model = localStorage.getItem('ai_model_name') || 'qwen-2.5-coder-32b';
+  let model = localStorage.getItem('ai_model_name') || '';
   let apiKey = localStorage.getItem('ai_api_key') || '';
   let temperature = 0.2;
   let systemPrompt = '';
@@ -130,9 +138,7 @@ export async function sendChatMessageApi(message, sessionId = null, bagId = null
 
   const response = await fetch(`${AI_AGENT_URL}/api/v1/chat`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAiAgentHeaders(),
     body: JSON.stringify(payload),
   });
 
@@ -183,9 +189,7 @@ export async function streamChatMessageApi(message, sessionId = null, bagId = nu
   try {
     const response = await fetch(`${AI_AGENT_URL}/api/v1/chat/stream`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getAiAgentHeaders(),
       body: JSON.stringify(payload),
     });
 

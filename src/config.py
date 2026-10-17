@@ -22,11 +22,11 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, ge=1, le=65535)
     app_host: str = "0.0.0.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
-    cors_origins: str = (
-        "http://localhost:3000,http://localhost:5173,https://localhost:5173,"
-        "https://ctrlshiftn.azurewebsites.net,https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
-    )
-    backend_api_url: str = "https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
+    cors_origins: str = "http://localhost:3000,http://localhost:5173,https://localhost:5173"
+    backend_api_url: str = "http://localhost:5143"
+    jwt_secret: str = ""
+    jwt_algorithm: str = "HS256"
+    internal_api_secret: str = ""
 
     # LLM
     openai_api_key: str = ""
@@ -86,13 +86,39 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return load_shared_mongo_settings(Settings())
+    settings = load_shared_mongo_settings(Settings())
+    return load_shared_appsettings(settings)
+
+
+def load_shared_appsettings(settings: Settings) -> Settings:
+    """Fallback to local appsettings.json if JWT secret is not explicitly set in env."""
+    if settings.jwt_secret:
+        return settings
+
+    import json
+    from pathlib import Path
+
+    candidates = [
+        Path("WebAPI/BackEnd(ASP.Net)/API/appsettings.json"),
+        Path(__file__).resolve().parent.parent / "WebAPI" / "BackEnd(ASP.Net)" / "API" / "appsettings.json",
+    ]
+    for path in candidates:
+        if path.exists():
+            try:
+                data = json.loads(path.read_text(encoding="utf-8-sig"))
+                key = data.get("Jwt", {}).get("Key")
+                if key and isinstance(key, str) and key.strip():
+                    return settings.model_copy(update={"jwt_secret": key.strip()})
+            except Exception:
+                pass
+    return settings
 
 
 def load_shared_mongo_settings(settings: Settings) -> Settings:
     """Direct environment credentials take priority over an explicitly selected file."""
     if settings.mongo_connection_string or not settings.mongo_settings_file:
         return settings
+
 
     import json
     from pathlib import Path
