@@ -1,17 +1,58 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../stored/appStore';
-import { getReviewsApi, getBagsApi } from '../../service';
+import {
+  getReviewsApi,
+  getBagsApi,
+  getReportsApi,
+  getChatMessagesByRoleApi,
+} from '../../service';
+import {
+  fetchAdminMembersApi,
+  fetchAdminActivityLogsApi,
+  fetchSystemLogsApi,
+} from '../../feature/dashboard/api/dashboardApi';
 
 export default function HeaderNotificationDropdown() {
   const { state } = useApp();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('ALL');
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Đóng khi click ra ngoài
+  // Xác định vai trò hiện tại của người dùng
+  const rawRole = (state.role || state.profile?.role || localStorage.getItem('user_role') || 'User').toLowerCase();
+  const isAdmin = rawRole.includes('admin');
+  const isEngineer = rawRole.includes('engineer');
+  const isUser = !isAdmin && !isEngineer;
+
+  // Cấu hình các Tabs lọc thông báo theo từng vai trò
+  const tabs = useMemo(() => {
+    if (isAdmin) {
+      return [
+        { key: 'ALL', label: 'Tất cả' },
+        { key: 'REQUESTS', label: 'Yêu cầu' },
+        { key: 'SYSTEM_LOGS', label: 'Log hệ thống' },
+        { key: 'MESSAGES', label: 'Tin nhắn' },
+      ];
+    }
+    if (isEngineer) {
+      return [
+        { key: 'ALL', label: 'Tất cả' },
+        { key: 'TASKS', label: 'Đánh giá & Bags' },
+        { key: 'MESSAGES', label: 'Tin nhắn' },
+      ];
+    }
+    return [
+      { key: 'ALL', label: 'Tất cả' },
+      { key: 'REPORTS', label: 'Báo cáo & Xe' },
+      { key: 'MESSAGES', label: 'Tin nhắn' },
+    ];
+  }, [isAdmin, isEngineer]);
+
+  // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -26,73 +67,391 @@ export default function HeaderNotificationDropdown() {
     };
   }, [isOpen]);
 
-  // Tải thông báo thực tế từ Findings, Reviews và Bags
-  useEffect(() => {
-    let isMounted = true;
+  // Tải dữ liệu thông báo thực tế theo vai trò
+  const loadNotifications = useCallback(async () => {
     setLoading(true);
+    const notifs = [];
 
-    Promise.allSettled([
-      getReviewsApi(),
-      getBagsApi(),
-    ])
-      .then(([reviewRes, bagsRes]) => {
-        if (!isMounted) return;
-        const realNotifs = [];
+    try {
+      if (isAdmin) {
+        // ==============================================================
+        // VAI TRÒ ADMIN: Xem toàn bộ request người dùng + log hệ thống
+        // ==============================================================
+        const [membersRes, userLogsRes, sysLogsRes, reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
+          fetchAdminMembersApi({ noCache: true }),
+          fetchAdminActivityLogsApi(15),
+          fetchSystemLogsApi({ pageSize: 8 }),
+          getReviewsApi(),
+          getBagsApi(),
+          getChatMessagesByRoleApi('Admin'),
+        ]);
 
-        // 1. Thông báo từ các kết luận chờ duyệt và cảnh báo mức cao
-        if (reviewRes.status === 'fulfilled' && Array.isArray(reviewRes.value)) {
-          const pendingReviews = reviewRes.value.filter((r) => r.status === 'pending');
-          pendingReviews.slice(0, 5).forEach((item) => {
-            realNotifs.push({
-              id: `notif_rev_${item.id || item.findingId}`,
-              title: 'Kết luận chờ duyệt',
-              message: `Phát hiện ${item.ruleId || 'bất thường'} trên topic ${item.topic || '/system'} cần kỹ sư xác nhận.`,
-              time: 'Cần xử lý',
-              icon: '⚠️',
+        // 1. Yêu cầu đăng ký / duyệt thành viên Engineer chờ duyệt
+        if (membersRes.status === 'fulfilled' && Array.isArray(membersRes.value)) {
+          const pendingMembers = membersRes.value.filter(
+            (m) =>
+              (m.accountStatus || '').toUpperCase() === 'PENDING' ||
+              (m.status || '').toUpperCase() === 'PENDING'
+          );
+          pendingMembers.slice(0, 5).forEach((m) => {
+            notifs.push({
+              id: `notif_mbr_${m.id || m.email}`,
+              category: 'REQUESTS',
+              title: 'Yêu cầu duyệt tài khoản',
+              message: `${m.fullName || m.email} đăng ký vai trò ${m.role || 'Kỹ sư'} đang chờ phê duyệt.`,
+              time: 'Chờ duyệt',
+              icon: '👤',
               iconBg: '#fef3c7',
-              to: `/reviews/${item.findingId || item.id}`,
+              to: '/admin/overview?tab=members',
               unread: true,
+              rawTime: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
             });
           });
         }
 
-        // 2. Thông báo từ Rosbag vừa tải lên
+        // 2. Yêu cầu & hoạt động của người dùng (User Activity Logs)
+        if (userLogsRes.status === 'fulfilled' && Array.isArray(userLogsRes.value)) {
+          userLogsRes.value.slice(0, 8).forEach((log) => {
+            const userName = log.fullName || log.userName || 'Người dùng';
+            notifs.push({
+              id: `notif_act_${log.id || Math.random()}`,
+              category: 'REQUESTS',
+              title: `Yêu cầu: ${userName}`,
+              message: log.description || `Đã gửi thao tác ${log.action || ''}.`,
+              time: log.createdAt
+                ? new Date(log.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                : 'Gần đây',
+              icon: '📝',
+              iconBg: '#e0f2fe',
+              to: '/admin/overview?tab=activity',
+              unread: false,
+              rawTime: log.createdAt ? new Date(log.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 3. Log hệ thống (System Error/Warning Logs)
+        if (sysLogsRes.status === 'fulfilled') {
+          const sysData = sysLogsRes.value;
+          const sysList = Array.isArray(sysData) ? sysData : sysData?.items || sysData?.Items || [];
+          sysList.slice(0, 6).forEach((sys) => {
+            const isError =
+              (sys.logLevel || '').toUpperCase() === 'ERROR' ||
+              (sys.logLevel || '').toUpperCase() === 'FATAL';
+            notifs.push({
+              id: `notif_sys_${sys.id || Math.random()}`,
+              category: 'SYSTEM_LOGS',
+              title: `Log hệ thống [${sys.logLevel || 'WARN'}]`,
+              message: sys.errorMessage || sys.translatedMessage || sys.exceptionType || 'Cảnh báo từ hệ thống máy chủ.',
+              time: sys.createdAt
+                ? new Date(sys.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                : 'Hệ thống',
+              icon: isError ? '🚨' : '⚠️',
+              iconBg: isError ? '#fee2e2' : '#fef3c7',
+              to: '/admin/system-logs',
+              unread: isError,
+              rawTime: sys.createdAt ? new Date(sys.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 4. Kết luận chẩn đoán chờ duyệt
+        if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
+          const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
+          pendingReviews.slice(0, 4).forEach((r) => {
+            notifs.push({
+              id: `notif_rev_${r.id || r.findingId}`,
+              category: 'REQUESTS',
+              title: 'Kết luận chẩn đoán chờ duyệt',
+              message: `Phát hiện ${r.ruleId || 'sự cố'} trên topic ${r.topic || '/telemetry'} cần phê duyệt.`,
+              time: 'Chờ duyệt',
+              icon: '⚠️',
+              iconBg: '#fef3c7',
+              to: `/reviews/${r.findingId || r.id}`,
+              unread: true,
+              rawTime: r.createdAt ? new Date(r.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 5. Bản ghi Rosbags tải lên
         if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
           bagsRes.value.slice(0, 3).forEach((bag) => {
-            realNotifs.push({
+            notifs.push({
               id: `notif_bag_${bag.id}`,
-              title: 'Bản ghi Rosbag đã nạp',
-              message: `File ${bag.name} (${bag.size || 'dữ liệu đầy đủ'}) đã sẵn sàng phân tích.`,
+              category: 'REQUESTS',
+              title: 'Bản ghi Rosbag mới',
+              message: `Tệp ${bag.name} (${bag.size || 'đầy đủ'}) đã tải lên thành công.`,
               time: bag.date || 'Hôm nay',
               icon: '📁',
               iconBg: '#e0f2fe',
               to: `/bags/${bag.id}`,
               unread: false,
+              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
             });
           });
         }
 
-        setNotifications(realNotifs);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        setLoading(false);
+        // 6. Tin nhắn gửi tới Admin
+        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+          msgs.slice(-4).reverse().forEach((msg) => {
+            notifs.push({
+              id: `notif_chat_${msg.id || Math.random()}`,
+              category: 'MESSAGES',
+              title: `Tin nhắn từ ${msg.sender || 'Người gửi'}`,
+              message: msg.content || 'Nội dung tin nhắn...',
+              time: msg.time || 'Tin nhắn mới',
+              icon: '💬',
+              iconBg: '#dbeafe',
+              to: null,
+              chatRole: 'Admin',
+              unread: true,
+              rawTime: msg.rawTime || 0,
+            });
+          });
+        }
+      } else if (isEngineer) {
+        // ==============================================================
+        // VAI TRÒ KỸ SƯ (ENGINEERING): Đánh giá, Rosbags & Tin nhắn
+        // ==============================================================
+        const [reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
+          getReviewsApi(),
+          getBagsApi(),
+          getChatMessagesByRoleApi('Engineering'),
+        ]);
+
+        // 1. Kết luận chẩn đoán chờ kỹ sư xác nhận
+        if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
+          const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
+          pendingReviews.slice(0, 6).forEach((item) => {
+            notifs.push({
+              id: `notif_rev_${item.id || item.findingId}`,
+              category: 'TASKS',
+              title: 'Cần kỹ sư xác nhận kết luận',
+              message: `Phát hiện ${item.ruleId || 'bất thường'} trên topic ${item.topic || '/system'} cần xác minh.`,
+              time: 'Cần xử lý',
+              icon: '⚠️',
+              iconBg: '#fef3c7',
+              to: `/reviews/${item.findingId || item.id}`,
+              unread: true,
+              rawTime: item.createdAt ? new Date(item.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 2. Rosbags cần phân tích kỹ thuật
+        if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
+          bagsRes.value.slice(0, 4).forEach((bag) => {
+            notifs.push({
+              id: `notif_bag_${bag.id}`,
+              category: 'TASKS',
+              title: 'Rosbag sẵn sàng phân tích',
+              message: `Bản ghi ${bag.name} (${bag.size || 'dữ liệu đầy đủ'}) đang chờ phân tích telemetry.`,
+              time: bag.date || 'Hôm nay',
+              icon: '📁',
+              iconBg: '#e0f2fe',
+              to: `/bags/${bag.id}`,
+              unread: false,
+              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 3. Tin nhắn gửi tới Kỹ sư
+        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+          msgs.slice(-5).reverse().forEach((msg) => {
+            notifs.push({
+              id: `notif_chat_${msg.id || Math.random()}`,
+              category: 'MESSAGES',
+              title: `Tin nhắn kỹ thuật: ${msg.sender || 'Đồng nghiệp'}`,
+              message: msg.content || 'Nội dung tin nhắn...',
+              time: msg.time || 'Tin nhắn mới',
+              icon: '💬',
+              iconBg: '#dbeafe',
+              to: null,
+              chatRole: 'Engineering',
+              unread: true,
+              rawTime: msg.rawTime || 0,
+            });
+          });
+        }
+      } else {
+        // ==============================================================
+        // VAI TRÒ VẬN HÀNH (USER): Báo cáo chẩn đoán, Xe & Tin nhắn
+        // ==============================================================
+        const [reportsRes, bagsRes, chatRes] = await Promise.allSettled([
+          getReportsApi(),
+          getBagsApi(),
+          getChatMessagesByRoleApi('User'),
+        ]);
+
+        // 1. Báo cáo chẩn đoán sự cố hoàn tất
+        if (reportsRes.status === 'fulfilled' && Array.isArray(reportsRes.value)) {
+          reportsRes.value.slice(0, 5).forEach((rpt) => {
+            notifs.push({
+              id: `notif_rpt_${rpt.id}`,
+              category: 'REPORTS',
+              title: 'Báo cáo chẩn đoán hoàn tất',
+              message: `Báo cáo #${rpt.id} về sự cố xe đã có kết luận và khuyến nghị xử lý.`,
+              time: rpt.createdAt ? new Date(rpt.createdAt).toLocaleDateString('vi-VN') : 'Mới',
+              icon: '📋',
+              iconBg: '#dcfce7',
+              to: `/reports/${rpt.id}`,
+              unread: true,
+              rawTime: rpt.createdAt ? new Date(rpt.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 2. Trạng thái bản ghi xe / telemetry đã sẵn sàng
+        if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
+          bagsRes.value.slice(0, 4).forEach((bag) => {
+            notifs.push({
+              id: `notif_bag_${bag.id}`,
+              category: 'REPORTS',
+              title: 'Dữ liệu xe sẵn sàng',
+              message: `Bản ghi ${bag.name} đã được đồng bộ với hệ thống chẩn đoán.`,
+              time: bag.date || 'Hôm nay',
+              icon: '📁',
+              iconBg: '#e0f2fe',
+              to: `/bags/${bag.id}`,
+              unread: false,
+              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+            });
+          });
+        }
+
+        // 3. Tin nhắn phản hồi từ Admin hoặc Kỹ sư
+        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+          msgs.slice(-5).reverse().forEach((msg) => {
+            notifs.push({
+              id: `notif_chat_${msg.id || Math.random()}`,
+              category: 'MESSAGES',
+              title: `Tin nhắn từ ${msg.sender || 'Kỹ sư / Admin'}`,
+              message: msg.content || 'Nội dung tin nhắn...',
+              time: msg.time || 'Tin nhắn mới',
+              icon: '💬',
+              iconBg: '#dbeafe',
+              to: null,
+              chatRole: 'User',
+              unread: true,
+              rawTime: msg.rawTime || 0,
+            });
+          });
+        }
+      }
+
+      // Sắp xếp ưu tiên: unread lên trước, sau đó theo thời gian mới nhất
+      notifs.sort((a, b) => {
+        if (a.unread !== b.unread) return a.unread ? -1 : 1;
+        return (b.rawTime || 0) - (a.rawTime || 0);
       });
 
-    return () => {
-      isMounted = false;
+      setNotifications(notifs);
+    } catch (err) {
+      console.warn('Lỗi tải thông báo:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAdmin, isEngineer, isUser, state.profile]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  // Lắng nghe tin nhắn mới thời gian thực từ SignalR Hub qua custom event
+  useEffect(() => {
+    const handleNewChatMessage = (e) => {
+      const msg = e.detail;
+      if (!msg) return;
+      setNotifications((prev) => [
+        {
+          id: `notif_chat_${msg.id || Date.now()}`,
+          category: 'MESSAGES',
+          title: `Tin nhắn mới từ ${msg.sender || 'Người gửi'}`,
+          message: msg.content || 'Nội dung...',
+          time: msg.time || 'Vừa xong',
+          icon: '💬',
+          iconBg: '#dbeafe',
+          to: null,
+          chatRole: msg.role,
+          unread: true,
+          rawTime: msg.rawTime || Date.now(),
+        },
+        ...prev,
+      ]);
     };
+
+    window.addEventListener('app_new_chat_message', handleNewChatMessage);
+    return () => window.removeEventListener('app_new_chat_message', handleNewChatMessage);
   }, []);
+
+  // Xử lý click vào item thông báo
+  const handleItemClick = (n) => {
+    setIsOpen(false);
+    // Đánh dấu mục này là đã đọc
+    setNotifications((prev) =>
+      prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
+    );
+
+    if (n.chatRole) {
+      // Mở hộp chat tương ứng với Role qua event
+      window.dispatchEvent(
+        new CustomEvent('app_open_chat_conversation', { detail: { role: n.chatRole } })
+      );
+    } else if (n.to) {
+      navigate(n.to);
+    }
+  };
+
+  // Đánh dấu tất cả là đã đọc
+  const handleMarkAllRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  };
+
+  // Lọc thông báo theo tab đang chọn
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === 'ALL') return notifications;
+    return notifications.filter((n) => n.category === activeTab);
+  }, [notifications, activeTab]);
 
   const unreadCount = notifications.filter((n) => n.unread).length;
 
+  // Cấu hình link Footer theo vai trò
+  const footerInfo = useMemo(() => {
+    if (isAdmin) {
+      return {
+        to: '/admin/overview',
+        label: 'Xem toàn bộ yêu cầu & hoạt động hệ thống →',
+      };
+    }
+    if (isEngineer) {
+      return {
+        to: '/reviews',
+        label: 'Xem tất cả đánh giá & phát hiện →',
+      };
+    }
+    return {
+      to: '/reports',
+      label: 'Xem tất cả báo cáo & phiên chẩn đoán →',
+    };
+  }, [isAdmin, isEngineer]);
+
   return (
     <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
-      {/* Nút Chuông thông báo */}
+      {/* Nút Chuông thông báo trên Header */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (!isOpen) loadNotifications();
+        }}
         style={{
           width: '38px',
           height: '38px',
@@ -113,7 +472,7 @@ export default function HeaderNotificationDropdown() {
         onMouseLeave={(e) => {
           if (!isOpen) e.currentTarget.style.background = '#f1f5f9';
         }}
-        title="Thông báo"
+        title={`Thông báo (${isAdmin ? 'Admin' : isEngineer ? 'Kỹ sư' : 'Vận hành'})`}
         aria-label="Thông báo"
       >
         {/* SVG Bell Icon */}
@@ -155,9 +514,9 @@ export default function HeaderNotificationDropdown() {
             position: 'absolute',
             top: 'calc(100% + 8px)',
             right: 0,
-            width: '360px',
+            width: '380px',
             maxWidth: 'calc(100vw - 32px)',
-            maxHeight: '480px',
+            maxHeight: '520px',
             background: '#ffffff',
             borderRadius: '16px',
             boxShadow: '0 12px 35px rgba(0, 0, 0, 0.15), 0 2px 10px rgba(0, 0, 0, 0.05)',
@@ -171,58 +530,124 @@ export default function HeaderNotificationDropdown() {
           {/* Header Thông báo */}
           <div
             style={{
-              padding: '14px 16px',
+              padding: '14px 16px 10px 16px',
               borderBottom: '1px solid #f1f5f9',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
-                Thông báo
-              </h3>
-              {unreadCount > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>
+                  Thông báo
+                </h3>
                 <span
                   style={{
                     fontSize: '10px',
                     fontWeight: 700,
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
+                    background: isAdmin ? '#fef3c7' : isEngineer ? '#e0e7ff' : '#e0f2fe',
+                    color: isAdmin ? '#b45309' : isEngineer ? '#4338ca' : '#0369a1',
+                    padding: '2px 8px',
+                    borderRadius: '8px',
                   }}
                 >
-                  {unreadCount} mới
+                  {isAdmin ? 'Quản trị viên' : isEngineer ? 'Kỹ sư Robotics' : 'Vận hành'}
                 </span>
+                {unreadCount > 0 && (
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      background: '#fee2e2',
+                      color: '#dc2626',
+                      padding: '2px 6px',
+                      borderRadius: '10px',
+                    }}
+                  >
+                    {unreadCount} mới
+                  </span>
+                )}
+              </div>
+
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={handleMarkAllRead}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748b',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    padding: 0,
+                  }}
+                >
+                  Đã đọc tất cả
+                </button>
               )}
             </div>
 
-            <Link
-              to="/reviews"
-              onClick={() => setIsOpen(false)}
-              style={{
-                fontSize: '11px',
-                color: '#2563eb',
-                textDecoration: 'none',
-                fontWeight: 600,
-              }}
-            >
-              Xem tất cả
-            </Link>
+            {/* Tabs lọc thông báo theo vai trò */}
+            <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
+              {tabs.map((tab) => {
+                const isSelected = activeTab === tab.key;
+                const tabCount =
+                  tab.key === 'ALL'
+                    ? notifications.length
+                    : notifications.filter((n) => n.category === tab.key).length;
+
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '16px',
+                      fontSize: '11px',
+                      fontWeight: isSelected ? 700 : 500,
+                      background: isSelected ? '#0284c7' : '#f1f5f9',
+                      color: isSelected ? '#ffffff' : '#475569',
+                      border: 'none',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    <span>{tab.label}</span>
+                    {tabCount > 0 && (
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          background: isSelected ? 'rgba(255,255,255,0.3)' : '#e2e8f0',
+                          color: isSelected ? '#ffffff' : '#64748b',
+                          padding: '0 4px',
+                          borderRadius: '8px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        {tabCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Danh sách thông báo */}
           <div style={{ flex: 1, overflowY: 'auto', maxHeight: '340px', padding: '6px' }}>
             {loading ? (
-              <div style={{ textAlign: 'center', padding: '24px', fontSize: '12px', color: '#94a3b8' }}>
+              <div style={{ textAlign: 'center', padding: '28px', fontSize: '12px', color: '#94a3b8' }}>
                 Đang tải thông báo...
               </div>
-            ) : notifications.length === 0 ? (
+            ) : filteredNotifications.length === 0 ? (
               <div
                 style={{
                   textAlign: 'center',
-                  padding: '32px 16px',
+                  padding: '36px 16px',
                   color: '#94a3b8',
                   fontSize: '12px',
                   display: 'flex',
@@ -231,20 +656,19 @@ export default function HeaderNotificationDropdown() {
                   gap: '6px',
                 }}
               >
-                <span style={{ fontSize: '28px' }}>🔔</span>
-                <strong>Không có thông báo mới</strong>
-                <span style={{ fontSize: '11px', color: '#cbd5e1' }}>
-                  Hệ thống đang vận hành ổn định.
+                <span style={{ fontSize: '30px' }}>🔔</span>
+                <strong style={{ color: '#475569' }}>Không có thông báo mới</strong>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                  {activeTab === 'ALL'
+                    ? 'Hệ thống đang vận hành ổn định.'
+                    : 'Không có thông báo nào trong danh mục này.'}
                 </span>
               </div>
             ) : (
-              notifications.map((n) => (
+              filteredNotifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => {
-                    setIsOpen(false);
-                    navigate(n.to);
-                  }}
+                  onClick={() => handleItemClick(n)}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
@@ -253,8 +677,9 @@ export default function HeaderNotificationDropdown() {
                     borderRadius: '10px',
                     cursor: 'pointer',
                     background: n.unread ? '#f8fafc' : '#ffffff',
-                    borderLeft: n.unread ? '3px solid #3b82f6' : '3px solid transparent',
+                    borderLeft: n.unread ? '3px solid #0284c7' : '3px solid transparent',
                     transition: 'background 0.15s ease',
+                    marginBottom: '4px',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
                   onMouseLeave={(e) => (e.currentTarget.style.background = n.unread ? '#f8fafc' : '#ffffff')}
@@ -296,26 +721,26 @@ export default function HeaderNotificationDropdown() {
             )}
           </div>
 
-          {/* Footer */}
+          {/* Footer liên kết theo vai trò */}
           <div
             style={{
               padding: '10px 16px',
               borderTop: '1px solid #f1f5f9',
               textAlign: 'center',
-              background: '#ffffff',
+              background: '#f8fafc',
             }}
           >
             <Link
-              to="/reviews"
+              to={footerInfo.to}
               onClick={() => setIsOpen(false)}
               style={{
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#2563eb',
+                color: '#0284c7',
                 textDecoration: 'none',
               }}
             >
-              Xem tất cả đánh giá & báo cáo →
+              {footerInfo.label}
             </Link>
           </div>
         </div>
