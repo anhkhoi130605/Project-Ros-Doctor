@@ -235,7 +235,7 @@ async def list_carla_bags():
                 bags.append(
                     {
                         "name": item.name,
-                        "path": str(item),
+                        "path": item.name,
                         "db3_files": db3_files,
                         "has_yaml": len(yaml_files) > 0,
                     }

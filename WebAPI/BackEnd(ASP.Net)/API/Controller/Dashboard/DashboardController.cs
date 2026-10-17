@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using API.Controller.Common;
 using Application.Features.Dashboard.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
