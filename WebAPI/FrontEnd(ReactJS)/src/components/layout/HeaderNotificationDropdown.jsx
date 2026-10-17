@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../stored/appStore';
 import {
+  NotificationType,
+  AdminNotificationType,
+  EngineerNotificationType,
+  UserNotificationType,
+  NOTIFICATION_TYPE_LABELS,
+} from '../../domain/appTypes';
+import {
+  getNotificationsApi,
+  markNotificationReadApi,
+  markAllNotificationsReadApi,
   getReviewsApi,
   getBagsApi,
   getReportsApi,
@@ -67,13 +77,178 @@ export default function HeaderNotificationDropdown() {
     };
   }, [isOpen]);
 
-  // Tải dữ liệu thông báo thực tế theo vai trò
+  // Tải dữ liệu thông báo thực tế theo vai trò từ Backend API & hệ thống
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     const notifs = [];
 
     try {
-      if (isAdmin) {
+      // 0. Gọi API thông báo chính từ Backend (/api/notifications) theo vai trò
+      try {
+        const res = await getNotificationsApi(50);
+        const backendList = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : Array.isArray(res?.data) ? res.data : [];
+        
+        backendList.forEach((item) => {
+          const nType = item.type || 'Other';
+          let category = 'MESSAGES';
+          let icon = '🔔';
+          let iconBg = '#f1f5f9';
+          let to = null;
+          let chatRole = null;
+
+          if (isAdmin) {
+            switch (nType) {
+              case AdminNotificationType.ReceivedRequest:
+              case AdminNotificationType.UserRegistered:
+                category = 'REQUESTS';
+                icon = nType === AdminNotificationType.UserRegistered ? '👤' : '📝';
+                iconBg = '#ffedd5';
+                to = '/admin/overview?tab=members';
+                break;
+              case AdminNotificationType.SystemError:
+                category = 'SYSTEM_LOGS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/admin/system-logs';
+                break;
+              case AdminNotificationType.AccountBan:
+              case AdminNotificationType.AccountUnban:
+                category = 'REQUESTS';
+                icon = nType === AdminNotificationType.AccountBan ? '🚫' : '✅';
+                iconBg = '#fee2e2';
+                to = '/admin/overview?tab=members';
+                break;
+              case AdminNotificationType.ReceivedMessage:
+              case AdminNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'Admin';
+                break;
+              case AdminNotificationType.SystemBroadcast:
+              default:
+                category = 'REQUESTS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/admin/overview';
+                break;
+            }
+          } else if (isEngineer) {
+            switch (nType) {
+              case EngineerNotificationType.ReviewRequired:
+              case EngineerNotificationType.DiagnosticAnomalyDetected:
+                category = 'TASKS';
+                icon = nType === EngineerNotificationType.ReviewRequired ? '📝' : '⚠️';
+                iconBg = '#fef3c7';
+                to = '/reviews';
+                break;
+              case EngineerNotificationType.RosbagUploaded:
+              case EngineerNotificationType.AnalysisCompleted:
+                category = 'TASKS';
+                icon = nType === EngineerNotificationType.AnalysisCompleted ? '✅' : '📁';
+                iconBg = nType === EngineerNotificationType.AnalysisCompleted ? '#d1fae5' : '#e0f2fe';
+                to = '/bags';
+                break;
+              case EngineerNotificationType.SystemError:
+                category = 'TASKS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/admin/system-logs';
+                break;
+              case EngineerNotificationType.AccountApproved:
+                category = 'TASKS';
+                icon = '🛡️';
+                iconBg = '#dcfce7';
+                to = '/profile';
+                break;
+              case EngineerNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'Engineering';
+                break;
+              case EngineerNotificationType.SystemBroadcast:
+              default:
+                category = 'TASKS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/reviews';
+                break;
+            }
+          } else {
+            // Role User
+            switch (nType) {
+              case UserNotificationType.ReportReady:
+                category = 'REPORTS';
+                icon = '📋';
+                iconBg = '#dcfce7';
+                to = '/reports';
+                break;
+              case UserNotificationType.RosbagProcessed:
+                category = 'REPORTS';
+                icon = '📁';
+                iconBg = '#e0f2fe';
+                to = '/bags';
+                break;
+              case UserNotificationType.VehicleAlert:
+                category = 'REPORTS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/reports';
+                break;
+              case UserNotificationType.AccountApproved:
+              case UserNotificationType.AccountUnban:
+                category = 'REPORTS';
+                icon = '✅';
+                iconBg = '#dcfce7';
+                to = '/profile';
+                break;
+              case UserNotificationType.AccountBan:
+                category = 'REPORTS';
+                icon = '🚫';
+                iconBg = '#fee2e2';
+                to = '/profile';
+                break;
+              case UserNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'User';
+                break;
+              case UserNotificationType.SystemBroadcast:
+              default:
+                category = 'REPORTS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/reports';
+                break;
+            }
+          }
+
+          notifs.push({
+            id: item.id,
+            category,
+            title: item.title || 'Thông báo hệ thống',
+            message: item.message || '',
+            time: item.createdAt
+              ? new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+              : 'Vừa xong',
+            icon,
+            iconBg,
+            to,
+            chatRole,
+            unread: !item.isRead,
+            rawTime: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+            backendId: item.id,
+          });
+        });
+      } catch (e) {
+        console.warn('getNotificationsApi warning:', e);
+      }
+
+      // Nếu API thông báo trả về rỗng, fallback sang tổng hợp dữ liệu thực tế trực tiếp từ hệ thống
+      if (notifs.length === 0) {
+        if (isAdmin) {
         // ==============================================================
         // VAI TRÒ ADMIN: Xem toàn bộ request người dùng + log hệ thống
         // ==============================================================
@@ -346,6 +521,7 @@ export default function HeaderNotificationDropdown() {
           });
         }
       }
+    }
 
       // Sắp xếp ưu tiên: unread lên trước, sau đó theo thời gian mới nhất
       notifs.sort((a, b) => {
@@ -393,12 +569,21 @@ export default function HeaderNotificationDropdown() {
   }, []);
 
   // Xử lý click vào item thông báo
-  const handleItemClick = (n) => {
+  const handleItemClick = async (n) => {
     setIsOpen(false);
-    // Đánh dấu mục này là đã đọc
+    // Đánh dấu mục này là đã đọc trên giao diện
     setNotifications((prev) =>
       prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
     );
+
+    // Đồng bộ trạng thái đã đọc về Backend nếu có ID
+    if (n.backendId && !String(n.backendId).startsWith('notif_')) {
+      try {
+        await markNotificationReadApi(n.backendId);
+      } catch (err) {
+        console.warn('Lỗi cập nhật đã đọc:', err);
+      }
+    }
 
     if (n.chatRole) {
       // Mở hộp chat tương ứng với Role qua event
@@ -411,8 +596,13 @@ export default function HeaderNotificationDropdown() {
   };
 
   // Đánh dấu tất cả là đã đọc
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await markAllNotificationsReadApi();
+    } catch (err) {
+      console.warn('Lỗi đánh dấu tất cả đã đọc:', err);
+    }
   };
 
   // Lọc thông báo theo tab đang chọn
