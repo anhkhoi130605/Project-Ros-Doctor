@@ -169,7 +169,7 @@ package-python-ai:
   script:
     - echo "=== Đóng gói Python AI Service ==="
     - mkdir -p python-ai-publish
-    - python -c "import shutil, os; os.makedirs('python-ai-publish', exist_ok=True); [shutil.copytree(p, os.path.join('python-ai-publish', p), dirs_exist_ok=True) if os.path.isdir(p) else shutil.copy(p, 'python-ai-publish') for p in ['src', 'requirements.txt', 'data'] if os.path.exists(p)]"
+    - python -c "import shutil, os; os.makedirs('python-ai-publish', exist_ok=True); [shutil.copytree(p, os.path.join('python-ai-publish', p), dirs_exist_ok=True) if os.path.isdir(p) else shutil.copy(p, 'python-ai-publish') for p in ['src', 'requirements.txt', 'main.py', 'data'] if os.path.exists(p)]"
   artifacts:
     name: "python-ai-package"
     expire_in: 1 week

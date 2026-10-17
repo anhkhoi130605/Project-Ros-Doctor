@@ -74,7 +74,11 @@ payload = {
     "messages": [
         {"role": "user", "content": prompt}
     ],
+<<<<<<< HEAD
     "max_tokens": AI_REVIEW_MAX_TOKENS,
+=======
+    "max_tokens": 1500,
+>>>>>>> 0816064c4b4ffbca2133d500a2a318a0ceb37a15
 }
 
 print(f"Đang gửi yêu cầu review tới OpenRouter (model: {OPENROUTER_MODEL})...")

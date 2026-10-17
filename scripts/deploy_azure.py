@@ -10,6 +10,8 @@ import sys
 import shutil
 import zipfile
 import base64
+import json
+import time
 import urllib.request
 import urllib.error
 import xml.etree.ElementTree as ET
@@ -146,9 +148,9 @@ def deploy_to_azure(zip_path, profile_env_vars=None, default_app_name="CtrlShift
 
     print(f"[INFO] Using deployment username: '{user_name}' (password length: {len(user_pwd) if user_pwd else 0})")
 
-    deploy_url = f"https://{scm_host}/api/zipdeploy"
+    deploy_url = f"https://{scm_host}/api/zipdeploy?isAsync=true"
     print(f"[INFO] Target: App '{app_name}' (Slot: '{slot_name}')")
-    print(f"[INFO] Deploying to Kudu endpoint: {deploy_url}")
+    print(f"[INFO] Deploying to Kudu async endpoint: {deploy_url}")
 
     auth_str = f"{user_name}:{user_pwd}"
     auth_header = "Basic " + base64.b64encode(auth_str.encode("utf-8")).decode("utf-8")
@@ -167,24 +169,69 @@ def deploy_to_azure(zip_path, profile_env_vars=None, default_app_name="CtrlShift
     )
 
     try:
-        print("[INFO] Uploading package to Azure App Service (this may take a few minutes)...")
-        with urllib.request.urlopen(req, timeout=600) as response:
+        print("[INFO] Uploading package to Azure App Service (async)...")
+        with urllib.request.urlopen(req, timeout=300) as response:
             status = response.status
-            body = response.read().decode("utf-8", errors="ignore")
-            print(f"[SUCCESS] HTTP Status: {status}")
-            if body:
-                print(f"[AZURE RESPONSE]\n{body}")
-            print("=======================================================")
-            print(f" Deployment to Azure Web App '{app_name}' SUCCESSFUL! ")
-            print("=======================================================")
+            print(f"[INFO] Package uploaded (HTTP {status}). Tracking background build & deployment...")
     except urllib.error.HTTPError as e:
-        print(f"[ERROR] Azure deployment failed with HTTP {e.code}: {e.reason}")
+        print(f"[ERROR] Azure deployment upload failed with HTTP {e.code}: {e.reason}")
         err_body = e.read().decode("utf-8", errors="ignore")
         print(f"[AZURE ERROR DETAILS]\n{err_body}")
         sys.exit(1)
     except Exception as e:
         print(f"[ERROR] Deployment request failed: {e}")
         sys.exit(1)
+
+    # Poll deployment progress from Kudu API until complete
+    poll_url = f"https://{scm_host}/api/deployments/latest"
+    start_time = time.time()
+    last_msg = ""
+    print("[INFO] Polling deployment status from Kudu...")
+
+    while time.time() - start_time < 900:  # 15 minutes timeout
+        time.sleep(5)
+        poll_req = urllib.request.Request(
+            poll_url,
+            headers={"Authorization": auth_header},
+            method="GET"
+        )
+        try:
+            with urllib.request.urlopen(poll_req, timeout=30) as p_res:
+                dep_data = json.loads(p_res.read().decode("utf-8", errors="ignore"))
+        except Exception:
+            # SCM may temporarily recycle while applying changes
+            continue
+
+        # status: 0 = Pending, 1 = Building, 2 = Deploying, 3 = Failed, 4 = Success
+        status_code = dep_data.get("status")
+        status_text = dep_data.get("status_text") or dep_data.get("message") or ""
+        progress = dep_data.get("progress") or status_text
+        complete = dep_data.get("complete", False)
+
+        if progress and progress != last_msg:
+            print(f"[AZURE DEPLOY STATUS] {progress}")
+            last_msg = progress
+
+        if complete:
+            if status_code == 4:
+                print("=======================================================")
+                print(f" Deployment to Azure Web App '{app_name}' SUCCESSFUL! ")
+                print("=======================================================")
+                return
+            else:
+                print(f"[ERROR] Azure deployment failed with status code {status_code}: {status_text}")
+                log_url = dep_data.get("log_url")
+                if log_url:
+                    try:
+                        log_req = urllib.request.Request(log_url, headers={"Authorization": auth_header})
+                        with urllib.request.urlopen(log_req, timeout=30) as l_res:
+                            print(f"[AZURE BUILD LOGS]\n{l_res.read().decode('utf-8', errors='ignore')}")
+                    except Exception:
+                        pass
+                sys.exit(1)
+
+    print("[ERROR] Deployment tracking timed out after 15 minutes.")
+    sys.exit(1)
 
 
 def main():
