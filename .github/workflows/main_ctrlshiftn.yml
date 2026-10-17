@@ -120,7 +120,7 @@ jobs:
       - name: Stage Python AI Files
         run: |
           mkdir -p ${{ runner.temp }}/python-ai-publish
-          cp -r src requirements.txt data ${{ runner.temp }}/python-ai-publish/ 2>/dev/null || cp -r src requirements.txt ${{ runner.temp }}/python-ai-publish/
+          cp -r src requirements.txt main.py data ${{ runner.temp }}/python-ai-publish/ 2>/dev/null || cp -r src requirements.txt main.py ${{ runner.temp }}/python-ai-publish/
 
       - name: Upload Python AI Artifact
         uses: actions/upload-artifact@v4
