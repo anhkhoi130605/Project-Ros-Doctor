@@ -22,9 +22,12 @@ class Settings(BaseSettings):
     app_port: int = Field(default=8000, ge=1, le=65535)
     app_host: str = "0.0.0.0"
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
-    cors_origins: str = "http://localhost:3000,http://localhost:5173,https://localhost:5173"
-    backend_api_url: str = "http://localhost:5143"
-    jwt_secret: str = ""
+    cors_origins: str = (
+        "http://localhost:3000,http://localhost:5173,https://localhost:5173,"
+        "https://ctrlshiftn.azurewebsites.net,https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
+    )
+    backend_api_url: str = "https://ctrlshiftn-hrd3ayfue2eqgvee.eastasia-01.azurewebsites.net"
+    jwt_secret: str = "p8sDb7aQz3vR9yW1xN4fE0gH5jK2mL6u"
     jwt_algorithm: str = "HS256"
     internal_api_secret: str = ""
 
@@ -33,6 +36,7 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    llm_max_tokens: int = Field(default=4096, ge=512, le=32768)
     # Additive input/context/output checks, using server-side credentials only.
     guardrails_enabled: bool = True
     guardrails_model: str | None = None

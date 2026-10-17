@@ -50,6 +50,13 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 				int stuckCount = 0;
 				long stuckStartTs = 0;
 
+				// Thuật toán tích phân con lắc số (numerical integration) theo dõi độ trôi góc xoay quanh trục Z (yaw drift rate)
+				long? prevImuTs = null;
+				double prevGz = 0.0;
+				double integratedYawRad = 0.0;
+				long integrationStartTs = 0;
+				int steadySampleCount = 0;
+
 				int sustainedDriftCount = 0;
 				long driftStartTs = 0;
 
@@ -204,12 +211,64 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 						});
 					}
 
-					// D. Kiểm tra trôi dạt góc xoay Yaw (Gyro Bias Drift: |gz| >= 0.20 rad/s liên tục)
-					if (Math.Abs(gz) >= 0.20 && maxGyro < 34.0)
+					// D. Tích hợp thuật toán tích phân con lắc số (numerical integration) theo dõi độ trôi góc xoay quanh trục Z (yaw drift rate):
+					// Tự động phát hiện hiện tượng trôi nhỏ (> 0.05 rad/s) ngay cả khi xe đang ở trạng thái đứng yên hoặc chuyển động thẳng đều.
+					bool isSteadyOrStationary = Math.Abs(ay) <= 1.2 &&
+					                           Math.Abs(gx) <= 0.15 && Math.Abs(gy) <= 0.15 &&
+					                           accelMag >= 7.5 && accelMag <= 12.5;
+
+					if (isSteadyOrStationary && maxGyro < 34.0)
+					{
+						if (integrationStartTs == 0) integrationStartTs = ts;
+
+						if (prevImuTs.HasValue)
+						{
+							double dtSec = (ts - prevImuTs.Value) / 1e9;
+							// Chỉ tích phân nếu bước thời gian hợp lý (0 < dt <= 0.25s)
+							if (dtSec > 0 && dtSec <= 0.25)
+							{
+								// Tích phân con lắc số hình thang Trapezoidal: (gz + prevGz) / 2 * dt
+								integratedYawRad += 0.5 * (gz + prevGz) * dtSec;
+								steadySampleCount++;
+							}
+						}
+
+						double elapsedSec = (ts - integrationStartTs) / 1e9;
+						if (elapsedSec >= 2.0 && steadySampleCount >= 20)
+						{
+							double yawDriftRate = Math.Abs(integratedYawRad) / elapsedSec;
+							if (yawDriftRate > 0.05 && gyroDriftReported < 2)
+							{
+								gyroDriftReported++;
+								double yawDriftDeg = Math.Round(integratedYawRad * 57.2957795, 1);
+								anomalies.Add(new RosbagAnomalyDto
+								{
+									Id = Guid.NewGuid().ToString("N")[..8],
+									Topic = imuTopic.TopicName,
+									AnomalyType = "GYRO_BIAS_DRIFT",
+									Severity = yawDriftRate >= 0.15 ? "CRITICAL" : "HIGH",
+									TimeRange = context.FormatRelativeRange(integrationStartTs, ts),
+									IssueTitle = $"Trôi dạt góc xoay Yaw tích phân con lắc số ({Math.Round(yawDriftRate, 3)} rad/s)",
+									Description = $"Thuật toán tích phân con lắc số (numerical integration Trapezoidal) phát hiện độ trôi góc xoay quanh trục Z đạt {yawDriftDeg}° qua {Math.Round(elapsedSec, 1)}s (tốc độ trôi yaw drift rate = {Math.Round(yawDriftRate, 3)} rad/s > 0.05 rad/s) khi xe đang ở trạng thái đứng yên/chuyển động thẳng đều.",
+									SuggestedFix = "Thực hiện Zero-velocity update (ZUPT) và trực tuyến ước lượng Gyro Bias trong robot_localization EKF / Nav2."
+								});
+							}
+						}
+					}
+					else
+					{
+						// Reset tích phân nếu xe đang vào cua thực tế hoặc chao đảo mạnh
+						integrationStartTs = ts;
+						integratedYawRad = 0.0;
+						steadySampleCount = 0;
+					}
+
+					// Song song kiểm tra trôi tĩnh duy trì liên tục (|gz| >= 0.05 rad/s)
+					if (Math.Abs(gz) >= 0.05 && maxGyro < 34.0)
 					{
 						if (sustainedDriftCount == 0) driftStartTs = ts;
 						sustainedDriftCount++;
-						if (sustainedDriftCount >= 100 && gyroDriftReported < 2)
+						if (sustainedDriftCount >= 80 && gyroDriftReported < 2)
 						{
 							gyroDriftReported++;
 							anomalies.Add(new RosbagAnomalyDto
@@ -217,10 +276,10 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 								Id = Guid.NewGuid().ToString("N")[..8],
 								Topic = imuTopic.TopicName,
 								AnomalyType = "GYRO_BIAS_DRIFT",
-								Severity = "HIGH",
+								Severity = Math.Abs(gz) >= 0.15 ? "CRITICAL" : "HIGH",
 								TimeRange = context.FormatRelativeRange(driftStartTs, ts),
-								IssueTitle = $"Trôi dạt góc xoay Yaw bất thường ({Math.Round(gz, 2)} rad/s)",
-								Description = $"Vận tốc góc trục Yaw duy trì độ lệch tĩnh {Math.Round(gz, 2)} rad/s liên tục mà robot không xoay thực tế, gây tích lũy sai số heading nghiêm trọng cho Odometry.",
+								IssueTitle = $"Trôi dạt góc xoay Yaw bất thường ({Math.Round(gz, 3)} rad/s)",
+								Description = $"Vận tốc góc trục Yaw duy trì độ lệch tĩnh {Math.Round(gz, 3)} rad/s (> 0.05 rad/s) liên tục mà robot không xoay thực tế, gây tích lũy sai số heading nghiêm trọng cho Odometry.",
 								SuggestedFix = "Thực hiện Zero-velocity bias calibration tĩnh trước khi cấp dữ liệu cho EKF / Nav2."
 							});
 						}
@@ -229,6 +288,9 @@ namespace Infrastructure.Services.Rosbag.Analyzers
 					{
 						sustainedDriftCount = 0;
 					}
+
+					prevImuTs = ts;
+					prevGz = gz;
 				}
 			}
 			catch

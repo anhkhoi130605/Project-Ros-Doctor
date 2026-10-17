@@ -217,7 +217,9 @@ async def respond_node(state: AgentState) -> dict[str, Any]:
     try:
         client_api_key = state.get("api_key")
         client_model = state.get("model")
-        llm = get_llm(model=client_model, api_key=client_api_key)
+        # Mở rộng giới hạn max_tokens cho các kịch bản đa lỗi (Multi-fault) tránh ngắt đoạn chuỗi JSON
+        effective_max_tokens = 4096 if is_diagnostic else None
+        llm = get_llm(model=client_model, api_key=client_api_key, max_tokens=effective_max_tokens)
         result = await llm.ainvoke(prompt)
         raw_response = result.content if isinstance(result.content, str) else str(result.content)
     except Exception as llm_err:
