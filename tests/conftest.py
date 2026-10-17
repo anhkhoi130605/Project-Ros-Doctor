@@ -68,6 +68,7 @@ def ensure_test_jwt_secret(monkeypatch):
 @pytest.fixture
 def auth_headers():
     import jwt
+
     from src.config import get_settings
     settings = get_settings()
     token = jwt.encode(
@@ -81,6 +82,7 @@ def auth_headers():
 @pytest.fixture
 def admin_auth_headers():
     import jwt
+
     from src.config import get_settings
     settings = get_settings()
     token = jwt.encode(

@@ -62,6 +62,7 @@ async def test_ai_config_invalid_url(client, admin_auth_headers):
 @pytest.mark.asyncio
 async def test_ai_config_allowed_for_admin(client, admin_auth_headers, monkeypatch):
     from unittest.mock import MagicMock
+
     import src.config
     monkeypatch.setattr(src.config, "update_env_setting", MagicMock())
     response = await client.post(

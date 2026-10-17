@@ -8,9 +8,8 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from src.api.auth import get_current_user, require_admin
-
 from src.agents.graph import agent
+from src.api.auth import get_current_user, require_admin
 from src.models.schemas import (
     BenchmarkDatasetResponse,
     BenchmarkDatasetSummary,
@@ -253,6 +252,7 @@ class UpdateAiConfigPayload(BaseModel):
 async def update_ai_config(payload: UpdateAiConfigPayload):
     """Cập nhật cấu hình mô hình AI và API key trực tiếp cho Agent chẩn đoán (Chỉ Admin)."""
     from urllib.parse import urlparse
+
     from src.config import get_settings, update_env_setting
 
     if payload.base_url and payload.base_url.strip():
