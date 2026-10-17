@@ -11,7 +11,7 @@ using Domain.Entities.NoSql;
 
 namespace Application.Features.Sessions.Queries
 {
-	public record GetSessionByIdQuery(string Id) : IRequest<SessionDetailDto?>;
+	public record GetSessionByIdQuery(string Id, string? UserId = null, bool CanViewAll = false) : IRequest<SessionDetailDto?>;
 
 	public class GetSessionByIdQueryHandler : IRequestHandler<GetSessionByIdQuery, SessionDetailDto?>
 	{
@@ -32,6 +32,10 @@ namespace Application.Features.Sessions.Queries
 			if (session == null) return null;
 
 			var bag = await _unitOfWork.Rosbags.GetByIdAsync(session.RosbagId, cancellationToken);
+			if (!request.CanViewAll && !string.IsNullOrEmpty(request.UserId) && bag != null && bag.UserId != request.UserId)
+			{
+				return null;
+			}
 			var sessionIssues = (await _unitOfWork.DiagnosticIssues.GetAllAsync(i => i.SessionId == session.Id, null, cancellationToken)).ToList();
 
 			var issueIds = sessionIssues.Select(i => i.Id).ToHashSet();

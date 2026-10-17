@@ -7,7 +7,7 @@ using Application.Interfaces.ManageTransaction;
 
 namespace Application.Features.Rosbags.Queries
 {
-	public record GetBagByIdQuery(string Id) : IRequest<BagDetailDto?>;
+	public record GetBagByIdQuery(string Id, string? UserId = null, bool CanViewAll = false) : IRequest<BagDetailDto?>;
 
 	public class GetBagByIdQueryHandler : IRequestHandler<GetBagByIdQuery, BagDetailDto?>
 	{
@@ -23,6 +23,12 @@ namespace Application.Features.Rosbags.Queries
 			var bag = await _unitOfWork.Rosbags.GetByIdAsync(request.Id, cancellationToken);
 			if (bag == null || bag.DeletedAt != null || bag.ReviewStatus != Domain.Enums.RosbagReviewStatus.Approved) return null;
 
+			// If not allowed to view all, only the owner can view detail
+			if (!request.CanViewAll && !string.IsNullOrEmpty(request.UserId) && bag.UserId != request.UserId)
+			{
+				return null;
+			}
+
 			var sessions = await _unitOfWork.AnalysisSessions.GetAllAsync(null, null, cancellationToken);
 			var session = sessions.Where(s => s.RosbagId == bag.Id).OrderByDescending(s => s.StartedAt).FirstOrDefault();
 
@@ -30,7 +36,6 @@ namespace Application.Features.Rosbags.Queries
 			{
 				Id = bag.Id,
 				Name = bag.FileName,
-				StorageUrl = bag.StorageUrl,
 				Size = bag.SizeBytes,
 				Format = bag.Format.ToString(),
 				Duration = bag.DurationSec,

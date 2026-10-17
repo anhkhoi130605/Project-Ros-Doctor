@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controller.Sessions
 {
 	[Route("api/sessions")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class SessionsController : BaseController
 	{
 		private readonly IMediator _mediator;
@@ -24,14 +25,16 @@ namespace API.Controller.Sessions
 		[HttpGet]
 		public async Task<IActionResult> GetSessions([FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken cancellationToken = default)
 		{
-			var result = await _mediator.Send(new GetAllSessionsQuery(page, pageSize), cancellationToken);
+			var canViewAll = User.IsInRole("Admin") || User.IsInRole("Engineering");
+			var result = await _mediator.Send(new GetAllSessionsQuery(CurrentUserId, canViewAll, page, pageSize), cancellationToken);
 			return Ok(result);
 		}
 
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetSessionById(string id, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new GetSessionByIdQuery(id), cancellationToken);
+			var canViewAll = User.IsInRole("Admin") || User.IsInRole("Engineering");
+			var result = await _mediator.Send(new GetSessionByIdQuery(id, CurrentUserId, canViewAll), cancellationToken);
 			if (result == null) return NotFound(new { message = $"Không tìm thấy phiên phân tích {id}" });
 			return Ok(result);
 		}

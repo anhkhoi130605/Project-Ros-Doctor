@@ -5,6 +5,7 @@ namespace Application.Features.Rosbags.DTOs
 {
 	public class InspectRosbagRequestDto
 	{
+		public string? BagId { get; set; }
 		public string? BagPath { get; set; }
 		public string? SampleName { get; set; }
 	}
