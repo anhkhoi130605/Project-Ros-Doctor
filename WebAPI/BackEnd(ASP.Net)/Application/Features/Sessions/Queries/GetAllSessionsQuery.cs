@@ -8,7 +8,7 @@ using MediatR;
 
 namespace Application.Features.Sessions.Queries
 {
-	public record GetAllSessionsQuery(int Page = 1, int PageSize = 50) : IRequest<List<SessionDetailDto>>;
+	public record GetAllSessionsQuery(string? UserId = null, bool CanViewAll = false, int Page = 1, int PageSize = 50) : IRequest<List<SessionDetailDto>>;
 
 	public class GetAllSessionsQueryHandler : IRequestHandler<GetAllSessionsQuery, List<SessionDetailDto>>
 	{
@@ -31,6 +31,12 @@ namespace Application.Features.Sessions.Queries
 			var bagIds = sessions.Select(s => s.RosbagId).Distinct().ToHashSet();
 			var bags = (await _unitOfWork.Rosbags.GetAllAsync(b => bagIds.Contains(b.Id), null, cancellationToken))
 				.ToDictionary(b => b.Id);
+
+			if (!request.CanViewAll && !string.IsNullOrEmpty(request.UserId))
+			{
+				sessions = sessions.Where(s => bags.TryGetValue(s.RosbagId, out var b) && b.UserId == request.UserId).ToList();
+				if (sessions.Count == 0) return new List<SessionDetailDto>();
+			}
 
 			var sessionIds = sessions.Select(s => s.Id).ToHashSet();
 			var issues = (await _unitOfWork.DiagnosticIssues.GetAllAsync(i => sessionIds.Contains(i.SessionId), null, cancellationToken))

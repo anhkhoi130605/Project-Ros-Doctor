@@ -29,10 +29,12 @@ namespace API.Controller.Rosbags
 			_jobQueue = jobQueue;
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpGet]
 		public async Task<IActionResult> GetBags([FromQuery] int? pageNumber, [FromQuery] int? pageSize, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new GetBagsQuery(pageNumber, pageSize), cancellationToken);
+			var canViewAll = User.IsInRole("Admin") || User.IsInRole("Engineering");
+			var result = await _mediator.Send(new GetBagsQuery(CurrentUserId, canViewAll, pageNumber, pageSize), cancellationToken);
 			if (pageNumber.HasValue && pageSize.HasValue)
 			{
 				var pNum = Math.Max(1, pageNumber.Value);
@@ -154,7 +156,7 @@ namespace API.Controller.Rosbags
 		{
 			try
 			{
-				var result = await _mediator.Send(new InspectRosbagCommand(request.BagPath, request.SampleName, CurrentUserId), cancellationToken);
+				var result = await _mediator.Send(new InspectRosbagCommand(request.BagPath, request.SampleName, CurrentUserId, request.BagId), cancellationToken);
 				return Ok(result);
 			}
 			catch (InvalidOperationException e) { return Conflict(new { message = e.Message }); }
@@ -217,12 +219,40 @@ namespace API.Controller.Rosbags
 			}
 		}
 
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetBagById(string id, CancellationToken cancellationToken)
 		{
-			var result = await _mediator.Send(new GetBagByIdQuery(id), cancellationToken);
+			var canViewAll = User.IsInRole("Admin") || User.IsInRole("Engineering");
+			var result = await _mediator.Send(new GetBagByIdQuery(id, CurrentUserId, canViewAll), cancellationToken);
 			if (result == null) return NotFound(new { message = $"Không tìm thấy rosbag {id}" });
 			return Ok(result);
+		}
+
+		/// <summary>
+		/// Tải xuống tệp tin rosbag an toàn sau khi xác thực quyền sở hữu
+		/// </summary>
+		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+		[HttpGet("{id}/download")]
+		public async Task<IActionResult> DownloadBag(string id, CancellationToken cancellationToken)
+		{
+			if (string.IsNullOrEmpty(CurrentUserId)) return Unauthorized();
+
+			var canAccessAll = User.IsInRole("Admin") || User.IsInRole("Engineering");
+			try
+			{
+				var result = await _mediator.Send(new DownloadBagQuery(id, CurrentUserId, canAccessAll), cancellationToken);
+				if (result == null) return NotFound(new { message = $"Không tìm thấy rosbag {id}" });
+				return File(result.Stream, result.ContentType, result.FileName, enableRangeProcessing: true);
+			}
+			catch (UnauthorizedAccessException)
+			{
+				return Forbid();
+			}
+			catch (FileNotFoundException ex)
+			{
+				return NotFound(new { message = ex.Message });
+			}
 		}
 
 		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]

@@ -7,7 +7,6 @@ namespace Application.Features.Rosbags.DTOs
 	{
 		public string Id { get; set; } = string.Empty;
 		public string Name { get; set; } = string.Empty;
-		public string? StorageUrl { get; set; }
 		public long Size { get; set; }
 		public string Format { get; set; } = "MCAP";
 		public int Duration { get; set; }
@@ -22,7 +21,6 @@ namespace Application.Features.Rosbags.DTOs
 	public class CreateRosbagRequestDto
 	{
 		public string Name { get; set; } = string.Empty;
-		public string? StorageUrl { get; set; }
 		public long Size { get; set; }
 		public string Format { get; set; } = "MCAP";
 		public int Duration { get; set; } = 0;
@@ -34,5 +32,12 @@ namespace Application.Features.Rosbags.DTOs
 		public string? Description { get; set; }
 		public int TotalMessages { get; set; }
 		public int HealthScore { get; set; } = 100;
+	}
+
+	public class RosbagDownloadResult
+	{
+		public System.IO.Stream Stream { get; set; } = System.IO.Stream.Null;
+		public string FileName { get; set; } = string.Empty;
+		public string ContentType { get; set; } = "application/octet-stream";
 	}
 }

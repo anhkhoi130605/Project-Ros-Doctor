@@ -13,6 +13,7 @@ using Domain.Enums;
 namespace API.Controller.Reviews
 {
 	[Route("api/reviews")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 	public class ReviewsController : BaseController
 	{
 		private readonly IMediator _mediator;
