@@ -15,5 +15,7 @@ namespace Application.Interfaces.Repositories
         Task<List<ChatMessageDocument>> GetMessagesByConversationAsync(string conversationId, int limit = 50, CancellationToken cancellationToken = default);
         Task<List<ChatMessageDocument>> GetMessagesByRoleAsync(string role, int limit = 50, CancellationToken cancellationToken = default);
         Task<ChatMessageDocument?> GetLatestMessageByRoleAsync(string role, CancellationToken cancellationToken = default);
+        Task<List<string>> GetUserChatHistoryJsonListAsync(IReadOnlyCollection<string> userKeys, CancellationToken cancellationToken = default);
+        Task SaveUserChatHistoryJsonAsync(string primaryUserId, string? userEmail, IReadOnlyCollection<string> userKeys, string conversationsJson, CancellationToken cancellationToken = default);
     }
 }

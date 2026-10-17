@@ -157,4 +157,33 @@ namespace Application.Features.Chat.Queries
             }).ToList();
         }
     }
+
+    public record GetUserChatHistoryQuery(string? CurrentUserId, string? CurrentUserEmail, string? ClientUserKey) : IRequest<string>;
+
+    public class GetUserChatHistoryQueryHandler : IRequestHandler<GetUserChatHistoryQuery, string>
+    {
+        private readonly IChatMessageRepository _chatMessageRepository;
+
+        public GetUserChatHistoryQueryHandler(IChatMessageRepository chatMessageRepository)
+        {
+            _chatMessageRepository = chatMessageRepository;
+        }
+
+        public async Task<string> Handle(GetUserChatHistoryQuery request, CancellationToken cancellationToken)
+        {
+            var keys = ChatHistoryJsonHelper.BuildUserKeys(request.CurrentUserId, request.CurrentUserEmail, request.ClientUserKey);
+            if (keys.Count == 0)
+            {
+                return "[]";
+            }
+
+            var storedJsonList = await _chatMessageRepository.GetUserChatHistoryJsonListAsync(keys, cancellationToken);
+            if (storedJsonList == null || storedJsonList.Count == 0)
+            {
+                return "[]";
+            }
+
+            return ChatHistoryJsonHelper.MergeConversationsJson(storedJsonList);
+        }
+    }
 }
