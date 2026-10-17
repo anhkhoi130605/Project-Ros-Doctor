@@ -7,16 +7,24 @@ if hasattr(sys.stdout, "reconfigure"):
 if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
+# Tự động nạp cấu hình từ file .env nếu có
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 import requests
 
 # Lấy biến môi trường và tự động loại bỏ mọi khoảng trắng / ký tự \r\n xuống dòng
 GITLAB_TOKEN = "".join((os.environ.get("GITLAB_TOKEN") or "").split())
-# Hỗ trợ cả OPENROUTER_API_KEY hoặc GEMINI_API_KEY nếu đã đặt trước đó
-API_KEY = "".join((os.environ.get("OPENROUTER_API_KEY") or os.environ.get("GEMINI_API_KEY") or "").split())
-CI_API_V4_URL = (os.environ.get("CI_API_V4_URL") or "").strip()
+# Hỗ trợ cả OPENROUTER_API_KEY, AI_REVIEW_API_KEY hoặc GEMINI_API_KEY nếu đã đặt trước đó
+API_KEY = "".join((os.environ.get("OPENROUTER_API_KEY") or os.environ.get("AI_REVIEW_API_KEY") or os.environ.get("GEMINI_API_KEY") or "").split())
+CI_API_V4_URL = (os.environ.get("CI_API_V4_URL") or "https://gitlab.com/api/v4").strip()
 PROJECT_ID = (os.environ.get("CI_PROJECT_ID") or "").strip()
 MR_IID = (os.environ.get("CI_MERGE_REQUEST_IID") or "").strip()
-OPENROUTER_MODEL = (os.environ.get("OPENROUTER_MODEL") or "google/gemini-2.5-flash").strip()
+OPENROUTER_MODEL = (os.environ.get("OPENROUTER_MODEL") or os.environ.get("AI_REVIEW_MODEL") or "google/gemini-2.5-flash").strip()
+AI_REVIEW_MAX_TOKENS = int(os.environ.get("AI_REVIEW_MAX_TOKENS") or 1500)
 
 if not MR_IID:
     print("Không phải Merge Request, bỏ qua.")
@@ -66,7 +74,7 @@ payload = {
     "messages": [
         {"role": "user", "content": prompt}
     ],
-    "max_tokens": 1500,
+    "max_tokens": AI_REVIEW_MAX_TOKENS or 5000,
 }
 
 print(f"Đang gửi yêu cầu review tới OpenRouter (model: {OPENROUTER_MODEL})...")
