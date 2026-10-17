@@ -42,10 +42,13 @@ class AgentTraceService:
                 appname=settings.app_name,
             )
             self._collection = self._client[settings.mongo_database_name]["agent_execution_traces"]
+            self._chat_collection = self._client[settings.mongo_database_name]["chat_messages"]
             logger.info("[MongoDB] AgentTraceService connected to collection 'agent_execution_traces'.")
         except Exception as e:
             logger.error(f"[MongoDB] Failed to connect to MongoDB for agent traces: {e}")
             self._collection = None
+            self._chat_collection = None
+        self._memory_chat_histories: dict[str, list[dict[str, Any]]] = {}
 
     def save_trace(
         self,
@@ -127,6 +130,159 @@ class AgentTraceService:
         except Exception as e:
             logger.error(f"[MongoDB] Error listing agent traces: {e}")
             return []
+
+    def get_user_chat_history(self, user_key: str | None, email: str | None = None) -> list[dict[str, Any]]:
+        """Retrieve and merge persisted AI chat conversations for a user across devices."""
+        import json
+
+        keys = [k.strip().lower() for k in (user_key, email) if isinstance(k, str) and k.strip()]
+        if not keys:
+            return []
+
+        sources: list[list[dict[str, Any]]] = []
+        mem = getattr(self, "_memory_chat_histories", {})
+        for key in keys:
+            if key in mem:
+                sources.append(mem[key])
+
+        chat_col = getattr(self, "_chat_collection", None)
+        if chat_col is not None:
+            try:
+                conv_ids = [f"ai_history_{k}" for k in keys]
+                docs = list(
+                    chat_col.find(
+                        {
+                            "target_role": "__AI_CHAT_HISTORY__",
+                            "$or": [
+                                {"sender_id": {"$in": keys}},
+                                {"sender_email": {"$in": keys}},
+                                {"conversation_id": {"$in": conv_ids}},
+                            ],
+                        }
+                    )
+                    .sort("created_at", DESCENDING)
+                    .limit(10)
+                )
+                for doc in docs:
+                    raw = doc.get("content")
+                    if isinstance(raw, str) and raw.strip():
+                        parsed = json.loads(raw)
+                        if isinstance(parsed, list):
+                            sources.append(parsed)
+            except Exception as e:
+                logger.error(f"[MongoDB] Error loading user chat history: {e}")
+
+        return self._merge_conversation_lists(sources)
+
+    def save_user_chat_history(
+        self,
+        user_key: str | None,
+        conversations: list[dict[str, Any]],
+        email: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Merge and persist AI chat conversations for a user across devices."""
+        import json
+
+        keys = [k.strip().lower() for k in (user_key, email) if isinstance(k, str) and k.strip()]
+        if not keys:
+            return []
+
+        existing = self.get_user_chat_history(user_key=user_key, email=email)
+        merged = self._merge_conversation_lists([existing, conversations if isinstance(conversations, list) else []])
+
+        if not hasattr(self, "_memory_chat_histories"):
+            self._memory_chat_histories = {}
+        for key in keys:
+            self._memory_chat_histories[key] = merged
+
+        chat_col = getattr(self, "_chat_collection", None)
+        if chat_col is not None:
+            try:
+                primary_key = keys[0]
+                norm_email = email.strip().lower() if isinstance(email, str) and email.strip() else ""
+                conv_id = f"ai_history_{primary_key}"
+                serialized = json.dumps(merged, ensure_ascii=False)
+                chat_col.update_one(
+                    {
+                        "target_role": "__AI_CHAT_HISTORY__",
+                        "$or": [
+                            {"sender_id": {"$in": keys}},
+                            {"sender_email": {"$in": keys}},
+                            {"conversation_id": conv_id},
+                        ],
+                    },
+                    {
+                        "$set": {
+                            "conversation_id": conv_id,
+                            "target_role": "__AI_CHAT_HISTORY__",
+                            "sender_id": primary_key,
+                            "sender_name": primary_key,
+                            "sender_email": norm_email,
+                            "sender_role": "User",
+                            "content": serialized,
+                            "status": "saved",
+                            "created_at": datetime.now(UTC),
+                        }
+                    },
+                    upsert=True,
+                )
+            except Exception as e:
+                logger.error(f"[MongoDB] Error saving user chat history: {e}")
+
+        return merged
+
+    @staticmethod
+    def _merge_conversation_lists(sources: list[list[dict[str, Any]]]) -> list[dict[str, Any]]:
+        by_id: dict[str, dict[str, Any]] = {}
+        for conv_list in sources:
+            if not isinstance(conv_list, list):
+                continue
+            for item in conv_list:
+                if not isinstance(item, dict):
+                    continue
+                cid = item.get("id")
+                updated_at = item.get("updatedAt")
+                messages = item.get("messages")
+                bag_id = item.get("bagId")
+                session_id = item.get("sessionId")
+                if (
+                    not isinstance(cid, str)
+                    or not cid.strip()
+                    or not isinstance(updated_at, str)
+                    or not isinstance(messages, list)
+                    or not isinstance(bag_id, str)
+                    or not isinstance(session_id, str)
+                ):
+                    continue
+                first_user_text = ""
+                normalized_msgs = []
+                valid = True
+                for msg in messages:
+                    if not isinstance(msg, dict) or not isinstance(msg.get("text"), str) or msg.get("sender") not in ("user", "agent"):
+                        valid = False
+                        break
+                    msg_copy = dict(msg)
+                    if msg_copy.get("isStreaming"):
+                        msg_copy["isStreaming"] = False
+                        msg_copy["interrupted"] = True
+                    if msg_copy["sender"] == "user" and not first_user_text and msg_copy["text"].strip():
+                        first_user_text = " ".join(msg_copy["text"].split())[:80]
+                    normalized_msgs.append(msg_copy)
+                if not valid or not first_user_text:
+                    continue
+                candidate = {
+                    **item,
+                    "title": first_user_text,
+                    "messages": normalized_msgs,
+                }
+                prev = by_id.get(cid)
+                if prev is None or candidate["updatedAt"] > prev["updatedAt"] or (
+                    candidate["updatedAt"] == prev["updatedAt"] and len(candidate["messages"]) >= len(prev["messages"])
+                ):
+                    by_id[cid] = candidate
+
+        sorted_items = sorted(by_id.values(), key=lambda x: x.get("updatedAt", ""), reverse=True)
+        return sorted_items[:50]
 
 
 @lru_cache

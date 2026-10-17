@@ -2,13 +2,17 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useApp } from '../../../stored/appStore';
 import { PageHeader, Card } from '../../../components/common/UIComponents';
-import { streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../service';
+import { apiClient, streamChatMessageApi, getBagsApi, logUserActivityApi } from '../../../service';
 import { useTranslation } from 'react-i18next';
 import { useChatHistory } from '../useChatHistory';
 import ChatHistorySidebar from '../components/ChatHistorySidebar';
 import ChatText from '../components/ChatText';
 import '../chat-history.css';
 import robotPearlImg from '../../../assets/robot-pearl.png';
+
+if (typeof window !== 'undefined' && apiClient?.baseUrl !== undefined) {
+  window.__ROS2_API_BASE_URL__ = apiClient.baseUrl;
+}
 
 const SEVERITY_COLORS = {
   critical: { bg: '#fee2e2', text: '#b91c1c', border: '#fca5a5' },
@@ -60,7 +64,10 @@ function storeDailyCalls(userKey, count) {
 export default function ChatPage() {
   const { state } = useApp();
   const [searchParams] = useSearchParams();
-  const owner = state.currentUserId || state.profile?.id || (state.signedIn ? state.profile?.email : '') || '';
+  const storedEmail = typeof window !== 'undefined' && localStorage.getItem('accessToken')
+    ? (localStorage.getItem('userEmail') || '')
+    : '';
+  const owner = state.currentUserId || state.profile?.id || (state.signedIn ? state.profile?.email : '') || storedEmail || '';
   return <ChatWorkspace key={`${owner}:${searchParams.get('session') || ''}:${searchParams.get('bag') || ''}`} owner={owner} />;
 }
 
@@ -321,7 +328,7 @@ function ChatWorkspace({ owner }) {
         <div className="chat-conversation-heading" translate="no">
           <div><span>{english ? 'CONVERSATION' : 'CUỘC TRÒ CHUYỆN'}</span>
             <h3>{active.title || (english ? 'New conversation' : 'Cuộc trò chuyện mới')}</h3></div>
-          <span className="chat-history-local">{english ? 'Saved on this browser' : 'Lưu trên trình duyệt này'}</span>
+          <span className="chat-history-local">{english ? 'Synced with your account' : 'Đồng bộ theo tài khoản'}</span>
         </div>
         {storageFailed && <p className="chat-history-warning" role="status" translate="no">
           {english ? 'Unable to save history on this browser. Messages may be lost when you leave.' : 'Không thể lưu lịch sử trên trình duyệt này. Tin nhắn có thể mất khi bạn rời trang.'}

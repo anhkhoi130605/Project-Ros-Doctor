@@ -104,6 +104,43 @@ namespace API.Controller.ChatController
             var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
+
+        /// <summary>
+        /// 4. Lấy lịch sử các phiên trò chuyện AI Agent của tài khoản hiện tại (đồng bộ đa thiết bị)
+        /// </summary>
+        [HttpGet("history")]
+        public async Task<IActionResult> GetUserChatHistory(
+            [FromQuery] string? userKey = null,
+            [FromQuery] string? email = null,
+            CancellationToken cancellationToken = default)
+        {
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? email;
+            var json = await _mediator.Send(
+                new GetUserChatHistoryQuery(CurrentUserId, userEmail, userKey),
+                cancellationToken);
+            using var doc = System.Text.Json.JsonDocument.Parse(string.IsNullOrWhiteSpace(json) ? "[]" : json);
+            return Ok(new { conversations = doc.RootElement.Clone() });
+        }
+
+        /// <summary>
+        /// 5. Lưu & hợp nhất lịch sử các phiên trò chuyện AI Agent của tài khoản hiện tại
+        /// </summary>
+        [HttpPut("history")]
+        [HttpPost("history")]
+        public async Task<IActionResult> SaveUserChatHistory(
+            [FromBody] SaveUserChatHistoryRequestDto? dto,
+            CancellationToken cancellationToken = default)
+        {
+            var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? dto?.Email;
+            var conversationsJson = dto != null && dto.Conversations.ValueKind == System.Text.Json.JsonValueKind.Array
+                ? dto.Conversations.GetRawText()
+                : "[]";
+            var mergedJson = await _mediator.Send(
+                new SaveUserChatHistoryCommand(CurrentUserId, userEmail, dto?.UserKey, conversationsJson),
+                cancellationToken);
+            using var doc = System.Text.Json.JsonDocument.Parse(string.IsNullOrWhiteSpace(mergedJson) ? "[]" : mergedJson);
+            return Ok(new { conversations = doc.RootElement.Clone() });
+        }
     }
 
     public class SendMessageRequestDto
@@ -114,5 +151,12 @@ namespace API.Controller.ChatController
         public string? SenderEmail { get; set; }
         public string? SenderRole { get; set; }
         public List<string>? MediaUrls { get; set; }
+    }
+
+    public class SaveUserChatHistoryRequestDto
+    {
+        public string? UserKey { get; set; }
+        public string? Email { get; set; }
+        public System.Text.Json.JsonElement Conversations { get; set; }
     }
 }
