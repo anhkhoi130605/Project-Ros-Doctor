@@ -132,4 +132,47 @@ namespace Application.Features.Chat.Commands
             return dto;
         }
     }
+
+    public record SaveUserChatHistoryCommand(
+        string? CurrentUserId,
+        string? CurrentUserEmail,
+        string? ClientUserKey,
+        string ConversationsJson
+    ) : IRequest<string>;
+
+    public class SaveUserChatHistoryCommandHandler : IRequestHandler<SaveUserChatHistoryCommand, string>
+    {
+        private readonly IChatMessageRepository _chatMessageRepository;
+
+        public SaveUserChatHistoryCommandHandler(IChatMessageRepository chatMessageRepository)
+        {
+            _chatMessageRepository = chatMessageRepository;
+        }
+
+        public async Task<string> Handle(SaveUserChatHistoryCommand request, CancellationToken cancellationToken)
+        {
+            var keys = ChatHistoryJsonHelper.BuildUserKeys(request.CurrentUserId, request.CurrentUserEmail, request.ClientUserKey);
+            if (keys.Count == 0)
+            {
+                return "[]";
+            }
+
+            var existingJsonList = await _chatMessageRepository.GetUserChatHistoryJsonListAsync(keys, cancellationToken);
+            var sources = new List<string?>(existingJsonList ?? new List<string>()) { request.ConversationsJson };
+            var mergedJson = ChatHistoryJsonHelper.MergeConversationsJson(sources);
+
+            var primaryKey = !string.IsNullOrWhiteSpace(request.CurrentUserId)
+                ? request.CurrentUserId.Trim().ToLowerInvariant()
+                : keys[0];
+
+            await _chatMessageRepository.SaveUserChatHistoryJsonAsync(
+                primaryKey,
+                request.CurrentUserEmail,
+                keys,
+                mergedJson,
+                cancellationToken);
+
+            return mergedJson;
+        }
+    }
 }

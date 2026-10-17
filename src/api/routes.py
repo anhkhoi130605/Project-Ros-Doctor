@@ -2,10 +2,11 @@ import asyncio
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
 
 from src.agents.graph import agent
@@ -277,3 +278,37 @@ async def update_ai_config(payload: UpdateAiConfigPayload):
         "has_api_key": bool(settings.openai_api_key),
         "message": "Đã đồng bộ cấu hình AI thành công vào hệ thống Agent.",
     }
+
+
+class SaveChatHistoryPayload(BaseModel):
+    model_config = {"populate_by_name": True}
+    user_key: str | None = Field(default=None, alias="userKey")
+    email: str | None = None
+    conversations: list[dict[str, Any]] = []
+
+
+@router.get("/chat/history")
+async def get_user_chat_history(
+    user_key: str | None = Query(default=None, alias="userKey"),
+    email: str | None = Query(default=None),
+):
+    """Lấy lịch sử các phiên trò chuyện AI Agent của người dùng đã đồng bộ trên máy chủ."""
+    service = get_agent_trace_service()
+    conversations = await run_in_threadpool(service.get_user_chat_history, user_key, email)
+    return {"conversations": conversations}
+
+
+@router.put("/chat/history")
+@router.post("/chat/history")
+async def save_user_chat_history(payload: SaveChatHistoryPayload):
+    """Lưu và hợp nhất lịch sử các phiên trò chuyện AI Agent của người dùng."""
+    service = get_agent_trace_service()
+    conversations = await run_in_threadpool(
+        service.save_user_chat_history,
+        payload.user_key,
+        payload.conversations,
+        payload.email,
+    )
+    return {"conversations": conversations}
+
+

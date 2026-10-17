@@ -144,7 +144,24 @@ export default function HeaderMessengerDropdown() {
             : c
         )
       );
+
+      // Bắn sự kiện ra toàn ứng dụng (cho Notification Dropdown cập nhật thông báo realtime)
+      if (!isSelf && typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('app_new_chat_message', {
+            detail: {
+              id: newMsgObj.id,
+              role: roleKey,
+              sender: newMsgObj.sender,
+              content: newMsgObj.content,
+              time: newMsgObj.time,
+              rawTime: newMsgObj.rawTime,
+            },
+          })
+        );
+      }
     });
+
 
     connection
       .start()
@@ -244,6 +261,23 @@ export default function HeaderMessengerDropdown() {
     setIsDropdownOpen(false);
     setShowNewChatMenu(false);
   };
+
+  // Lắng nghe sự kiện mở chat từ Notification Dropdown
+  useEffect(() => {
+    const handleOpenChatFromNotification = (e) => {
+      const targetRole = e.detail?.role;
+      if (!targetRole) return;
+      const existing = conversations.find((c) => c.role === targetRole);
+      if (existing) {
+        handleSelectConversation(existing);
+      } else {
+        handleStartNewChat(targetRole);
+      }
+    };
+    window.addEventListener('app_open_chat_conversation', handleOpenChatFromNotification);
+    return () => window.removeEventListener('app_open_chat_conversation', handleOpenChatFromNotification);
+  }, [conversations]);
+
 
   // Bắt đầu cuộc trò chuyện mới với một vai trò
   const handleStartNewChat = (roleKey) => {

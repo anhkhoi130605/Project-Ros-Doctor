@@ -8,7 +8,7 @@ const built = buildSync({
 });
 const loaded = { exports: {} };
 new Function('module', 'exports', built.outputFiles[0].text)(loaded, loaded.exports);
-const { createConversation, conversationTitle, readHistory, writeHistory, historyKey, historyGroup, recentConversations } = loaded.exports;
+const { createConversation, conversationTitle, readHistory, writeHistory, historyKey, historyGroup, recentConversations, mergeHistory, fetchRemoteHistory, syncRemoteHistory } = loaded.exports;
 const memoryStorage = () => {
   const items = new Map();
   return { getItem: (key) => items.get(key) ?? null, setItem: (key, value) => items.set(key, value) };
@@ -159,4 +159,41 @@ test('repeated new-chat clicks do not create saved empty conversations', () => {
   const render = historyHook();
   for (let index = 0; index < 5; index++) render().newConversation();
   assert.equal(render().conversations.length, 1);
+});
+
+test('cross-device merge keeps newer updates and combines conversations from multiple machines', async () => {
+  const machineA = { ...conversation('Phân tích lỗi /tf'), id: 'conv-shared', updatedAt: '2026-10-17T10:00:00.000Z' };
+  const machineBUpdated = {
+    ...machineA,
+    updatedAt: '2026-10-17T11:00:00.000Z',
+    messages: [...machineA.messages, { id: 3, sender: 'user', text: 'Chi tiết thêm' }],
+  };
+  const machineAOnly = { ...conversation('Kiểm tra /scan'), id: 'conv-a-only', updatedAt: '2026-10-17T09:00:00.000Z' };
+
+  const merged = mergeHistory([machineA, machineAOnly], [machineBUpdated]);
+  assert.equal(merged.length, 2);
+  assert.equal(merged[0].id, 'conv-shared');
+  assert.equal(merged[0].messages.length, 3);
+  assert.equal(merged[1].id, 'conv-a-only');
+
+  const serverStore = new Map();
+  const prevFetch = global.fetch;
+  global.fetch = async (url, options = {}) => {
+    if (options.method === 'PUT') {
+      const body = JSON.parse(options.body);
+      serverStore.set(body.userKey, body.conversations);
+      return new Response(JSON.stringify({ conversations: body.conversations }), { status: 200 });
+    }
+    const key = new URL(url, 'http://localhost').searchParams.get('userKey');
+    return new Response(JSON.stringify({ conversations: serverStore.get(key) || [] }), { status: 200 });
+  };
+  try {
+    await syncRemoteHistory('admin', merged, 'admin@ctrlshiftn.local');
+    const fetchedOnOtherDevice = await fetchRemoteHistory('admin', 'admin@ctrlshiftn.local');
+    assert.equal(fetchedOnOtherDevice.length, 2);
+    assert.equal(fetchedOnOtherDevice[0].title, 'Phân tích lỗi /tf');
+    assert.equal(fetchedOnOtherDevice[0].messages.length, 3);
+  } finally {
+    global.fetch = prevFetch;
+  }
 });

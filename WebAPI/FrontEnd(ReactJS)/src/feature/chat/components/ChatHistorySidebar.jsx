@@ -43,7 +43,7 @@ export default function ChatHistorySidebar({ conversations, activeId, disabled, 
       </nav>
       <p className="chat-history-footnote">{disabled
         ? (english ? 'Please wait for the response before switching chats.' : 'Vui lòng đợi phản hồi trước khi chuyển cuộc trò chuyện.')
-        : (english ? 'The 50 most recent chats are saved on this browser, separately for each account.' : 'Lưu 50 cuộc trò chuyện gần nhất trên trình duyệt này, riêng cho từng tài khoản.')}</p>
+        : (english ? 'The 50 most recent chats are saved and synced for your account.' : 'Lưu & đồng bộ 50 cuộc trò chuyện gần nhất riêng cho từng tài khoản.')}</p>
     </aside>
   );
 }
