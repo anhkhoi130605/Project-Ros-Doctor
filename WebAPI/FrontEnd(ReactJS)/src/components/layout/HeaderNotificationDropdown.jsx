@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../stored/appStore';
 import {
+  NotificationType,
+  AdminNotificationType,
+  EngineerNotificationType,
+  UserNotificationType,
+  NOTIFICATION_TYPE_LABELS,
+} from '../../domain/appTypes';
+import {
+  getNotificationsApi,
+  markNotificationReadApi,
+  markAllNotificationsReadApi,
   getReviewsApi,
   getBagsApi,
   getReportsApi,
@@ -67,283 +77,449 @@ export default function HeaderNotificationDropdown() {
     };
   }, [isOpen]);
 
-  // Tải dữ liệu thông báo thực tế theo vai trò
+  // Tải dữ liệu thông báo thực tế theo vai trò từ Backend API & hệ thống
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     const notifs = [];
 
     try {
-      if (isAdmin) {
-        // ==============================================================
-        // VAI TRÒ ADMIN: Xem toàn bộ request người dùng + log hệ thống
-        // ==============================================================
-        const [membersRes, userLogsRes, sysLogsRes, reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
-          fetchAdminMembersApi({ noCache: true }),
-          fetchAdminActivityLogsApi(15),
-          fetchSystemLogsApi({ pageSize: 8 }),
-          getReviewsApi(),
-          getBagsApi(),
-          getChatMessagesByRoleApi('Admin'),
-        ]);
+      // 0. Gọi API thông báo chính từ Backend (/api/notifications) theo vai trò
+      try {
+        const res = await getNotificationsApi(50);
+        const backendList = Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : Array.isArray(res?.data) ? res.data : [];
 
-        // 1. Yêu cầu đăng ký / duyệt thành viên Engineer chờ duyệt
-        if (membersRes.status === 'fulfilled' && Array.isArray(membersRes.value)) {
-          const pendingMembers = membersRes.value.filter(
-            (m) =>
-              (m.accountStatus || '').toUpperCase() === 'PENDING' ||
-              (m.status || '').toUpperCase() === 'PENDING'
-          );
-          pendingMembers.slice(0, 5).forEach((m) => {
-            notifs.push({
-              id: `notif_mbr_${m.id || m.email}`,
-              category: 'REQUESTS',
-              title: 'Yêu cầu duyệt tài khoản',
-              message: `${m.fullName || m.email} đăng ký vai trò ${m.role || 'Kỹ sư'} đang chờ phê duyệt.`,
-              time: 'Chờ duyệt',
-              icon: '👤',
-              iconBg: '#fef3c7',
-              to: '/admin/overview?tab=members',
-              unread: true,
-              rawTime: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
-            });
-          });
-        }
+        backendList.forEach((item) => {
+          const nType = item.type || 'Other';
+          let category = 'MESSAGES';
+          let icon = '🔔';
+          let iconBg = '#f1f5f9';
+          let to = null;
+          let chatRole = null;
 
-        // 2. Yêu cầu & hoạt động của người dùng (User Activity Logs)
-        if (userLogsRes.status === 'fulfilled' && Array.isArray(userLogsRes.value)) {
-          userLogsRes.value.slice(0, 8).forEach((log) => {
-            const userName = log.fullName || log.userName || 'Người dùng';
-            notifs.push({
-              id: `notif_act_${log.id || Math.random()}`,
-              category: 'REQUESTS',
-              title: `Yêu cầu: ${userName}`,
-              message: log.description || `Đã gửi thao tác ${log.action || ''}.`,
-              time: log.createdAt
-                ? new Date(log.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                : 'Gần đây',
-              icon: '📝',
-              iconBg: '#e0f2fe',
-              to: '/admin/overview?tab=activity',
-              unread: false,
-              rawTime: log.createdAt ? new Date(log.createdAt).getTime() : 0,
-            });
-          });
-        }
+          if (isAdmin) {
+            switch (nType) {
+              case AdminNotificationType.ReceivedRequest:
+              case AdminNotificationType.UserRegistered:
+                category = 'REQUESTS';
+                icon = nType === AdminNotificationType.UserRegistered ? '👤' : '📝';
+                iconBg = '#ffedd5';
+                to = '/admin/overview?tab=members';
+                break;
+              case AdminNotificationType.SystemError:
+                category = 'SYSTEM_LOGS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/admin/system-logs';
+                break;
+              case AdminNotificationType.AccountBan:
+              case AdminNotificationType.AccountUnban:
+                category = 'REQUESTS';
+                icon = nType === AdminNotificationType.AccountBan ? '🚫' : '✅';
+                iconBg = '#fee2e2';
+                to = '/admin/overview?tab=members';
+                break;
+              case AdminNotificationType.ReceivedMessage:
+              case AdminNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'Admin';
+                break;
+              case AdminNotificationType.SystemBroadcast:
+              default:
+                category = 'REQUESTS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/admin/overview';
+                break;
+            }
+          } else if (isEngineer) {
+            switch (nType) {
+              case EngineerNotificationType.ReviewRequired:
+              case EngineerNotificationType.DiagnosticAnomalyDetected:
+                category = 'TASKS';
+                icon = nType === EngineerNotificationType.ReviewRequired ? '📝' : '⚠️';
+                iconBg = '#fef3c7';
+                to = '/reviews';
+                break;
+              case EngineerNotificationType.RosbagUploaded:
+              case EngineerNotificationType.AnalysisCompleted:
+                category = 'TASKS';
+                icon = nType === EngineerNotificationType.AnalysisCompleted ? '✅' : '📁';
+                iconBg = nType === EngineerNotificationType.AnalysisCompleted ? '#d1fae5' : '#e0f2fe';
+                to = '/bags';
+                break;
+              case EngineerNotificationType.SystemError:
+                category = 'TASKS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/admin/system-logs';
+                break;
+              case EngineerNotificationType.AccountApproved:
+                category = 'TASKS';
+                icon = '🛡️';
+                iconBg = '#dcfce7';
+                to = '/profile';
+                break;
+              case EngineerNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'Engineering';
+                break;
+              case EngineerNotificationType.SystemBroadcast:
+              default:
+                category = 'TASKS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/reviews';
+                break;
+            }
+          } else {
+            // Role User
+            switch (nType) {
+              case UserNotificationType.ReportReady:
+                category = 'REPORTS';
+                icon = '📋';
+                iconBg = '#dcfce7';
+                to = '/reports';
+                break;
+              case UserNotificationType.RosbagProcessed:
+                category = 'REPORTS';
+                icon = '📁';
+                iconBg = '#e0f2fe';
+                to = '/bags';
+                break;
+              case UserNotificationType.VehicleAlert:
+                category = 'REPORTS';
+                icon = '🚨';
+                iconBg = '#fee2e2';
+                to = '/reports';
+                break;
+              case UserNotificationType.AccountApproved:
+              case UserNotificationType.AccountUnban:
+                category = 'REPORTS';
+                icon = '✅';
+                iconBg = '#dcfce7';
+                to = '/profile';
+                break;
+              case UserNotificationType.AccountBan:
+                category = 'REPORTS';
+                icon = '🚫';
+                iconBg = '#fee2e2';
+                to = '/profile';
+                break;
+              case UserNotificationType.NewChatMessage:
+                category = 'MESSAGES';
+                icon = '💬';
+                iconBg = '#dbeafe';
+                chatRole = 'User';
+                break;
+              case UserNotificationType.SystemBroadcast:
+              default:
+                category = 'REPORTS';
+                icon = '📢';
+                iconBg = '#ede9fe';
+                to = '/reports';
+                break;
+            }
+          }
 
-        // 3. Log hệ thống (System Error/Warning Logs)
-        if (sysLogsRes.status === 'fulfilled') {
-          const sysData = sysLogsRes.value;
-          const sysList = Array.isArray(sysData) ? sysData : sysData?.items || sysData?.Items || [];
-          sysList.slice(0, 6).forEach((sys) => {
-            const isError =
-              (sys.logLevel || '').toUpperCase() === 'ERROR' ||
-              (sys.logLevel || '').toUpperCase() === 'FATAL';
-            notifs.push({
-              id: `notif_sys_${sys.id || Math.random()}`,
-              category: 'SYSTEM_LOGS',
-              title: `Log hệ thống [${sys.logLevel || 'WARN'}]`,
-              message: sys.errorMessage || sys.translatedMessage || sys.exceptionType || 'Cảnh báo từ hệ thống máy chủ.',
-              time: sys.createdAt
-                ? new Date(sys.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-                : 'Hệ thống',
-              icon: isError ? '🚨' : '⚠️',
-              iconBg: isError ? '#fee2e2' : '#fef3c7',
-              to: '/admin/system-logs',
-              unread: isError,
-              rawTime: sys.createdAt ? new Date(sys.createdAt).getTime() : 0,
-            });
+          notifs.push({
+            id: item.id,
+            category,
+            title: item.title || 'Thông báo hệ thống',
+            message: item.message || '',
+            time: item.createdAt
+              ? new Date(item.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+              : 'Vừa xong',
+            icon,
+            iconBg,
+            to,
+            chatRole,
+            unread: !item.isRead,
+            rawTime: item.createdAt ? new Date(item.createdAt).getTime() : Date.now(),
+            backendId: item.id,
           });
-        }
+        });
+      } catch (e) {
+        console.warn('getNotificationsApi warning:', e);
+      }
 
-        // 4. Kết luận chẩn đoán chờ duyệt
-        if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
-          const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
-          pendingReviews.slice(0, 4).forEach((r) => {
-            notifs.push({
-              id: `notif_rev_${r.id || r.findingId}`,
-              category: 'REQUESTS',
-              title: 'Kết luận chẩn đoán chờ duyệt',
-              message: `Phát hiện ${r.ruleId || 'sự cố'} trên topic ${r.topic || '/telemetry'} cần phê duyệt.`,
-              time: 'Chờ duyệt',
-              icon: '⚠️',
-              iconBg: '#fef3c7',
-              to: `/reviews/${r.findingId || r.id}`,
-              unread: true,
-              rawTime: r.createdAt ? new Date(r.createdAt).getTime() : 0,
-            });
-          });
-        }
+      // Nếu API thông báo trả về rỗng, fallback sang tổng hợp dữ liệu thực tế trực tiếp từ hệ thống
+      if (notifs.length === 0) {
+        if (isAdmin) {
+          // ==============================================================
+          // VAI TRÒ ADMIN: Xem toàn bộ request người dùng + log hệ thống
+          // ==============================================================
+          const [membersRes, userLogsRes, sysLogsRes, reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
+            fetchAdminMembersApi({ noCache: true }),
+            fetchAdminActivityLogsApi(15),
+            fetchSystemLogsApi({ pageSize: 8 }),
+            getReviewsApi(),
+            getBagsApi(),
+            getChatMessagesByRoleApi('Admin'),
+          ]);
 
-        // 5. Bản ghi Rosbags tải lên
-        if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
-          bagsRes.value.slice(0, 3).forEach((bag) => {
-            notifs.push({
-              id: `notif_bag_${bag.id}`,
-              category: 'REQUESTS',
-              title: 'Bản ghi Rosbag mới',
-              message: `Tệp ${bag.name} (${bag.size || 'đầy đủ'}) đã tải lên thành công.`,
-              time: bag.date || 'Hôm nay',
-              icon: '📁',
-              iconBg: '#e0f2fe',
-              to: `/bags/${bag.id}`,
-              unread: false,
-              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+          // 1. Yêu cầu đăng ký / duyệt thành viên Engineer chờ duyệt
+          if (membersRes.status === 'fulfilled' && Array.isArray(membersRes.value)) {
+            const pendingMembers = membersRes.value.filter(
+              (m) =>
+                (m.accountStatus || '').toUpperCase() === 'PENDING' ||
+                (m.status || '').toUpperCase() === 'PENDING'
+            );
+            pendingMembers.slice(0, 5).forEach((m) => {
+              notifs.push({
+                id: `notif_mbr_${m.id || m.email}`,
+                category: 'REQUESTS',
+                title: 'Yêu cầu duyệt tài khoản',
+                message: `${m.fullName || m.email} đăng ký vai trò ${m.role || 'Kỹ sư'} đang chờ phê duyệt.`,
+                time: 'Chờ duyệt',
+                icon: '👤',
+                iconBg: '#fef3c7',
+                to: '/admin/overview?tab=members',
+                unread: true,
+                rawTime: m.createdAt ? new Date(m.createdAt).getTime() : Date.now(),
+              });
             });
-          });
-        }
+          }
 
-        // 6. Tin nhắn gửi tới Admin
-        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
-          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
-          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
-          msgs.slice(-4).reverse().forEach((msg) => {
-            notifs.push({
-              id: `notif_chat_${msg.id || Math.random()}`,
-              category: 'MESSAGES',
-              title: `Tin nhắn từ ${msg.sender || 'Người gửi'}`,
-              message: msg.content || 'Nội dung tin nhắn...',
-              time: msg.time || 'Tin nhắn mới',
-              icon: '💬',
-              iconBg: '#dbeafe',
-              to: null,
-              chatRole: 'Admin',
-              unread: true,
-              rawTime: msg.rawTime || 0,
+          // 2. Yêu cầu & hoạt động của người dùng (User Activity Logs)
+          if (userLogsRes.status === 'fulfilled' && Array.isArray(userLogsRes.value)) {
+            userLogsRes.value.slice(0, 8).forEach((log) => {
+              const userName = log.fullName || log.userName || 'Người dùng';
+              notifs.push({
+                id: `notif_act_${log.id || Math.random()}`,
+                category: 'REQUESTS',
+                title: `Yêu cầu: ${userName}`,
+                message: log.description || `Đã gửi thao tác ${log.action || ''}.`,
+                time: log.createdAt
+                  ? new Date(log.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                  : 'Gần đây',
+                icon: '📝',
+                iconBg: '#e0f2fe',
+                to: '/admin/overview?tab=activity',
+                unread: false,
+                rawTime: log.createdAt ? new Date(log.createdAt).getTime() : 0,
+              });
             });
-          });
-        }
-      } else if (isEngineer) {
-        // ==============================================================
-        // VAI TRÒ KỸ SƯ (ENGINEERING): Đánh giá, Rosbags & Tin nhắn
-        // ==============================================================
-        const [reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
-          getReviewsApi(),
-          getBagsApi(),
-          getChatMessagesByRoleApi('Engineering'),
-        ]);
+          }
 
-        // 1. Kết luận chẩn đoán chờ kỹ sư xác nhận
-        if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
-          const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
-          pendingReviews.slice(0, 6).forEach((item) => {
-            notifs.push({
-              id: `notif_rev_${item.id || item.findingId}`,
-              category: 'TASKS',
-              title: 'Cần kỹ sư xác nhận kết luận',
-              message: `Phát hiện ${item.ruleId || 'bất thường'} trên topic ${item.topic || '/system'} cần xác minh.`,
-              time: 'Cần xử lý',
-              icon: '⚠️',
-              iconBg: '#fef3c7',
-              to: `/reviews/${item.findingId || item.id}`,
-              unread: true,
-              rawTime: item.createdAt ? new Date(item.createdAt).getTime() : 0,
+          // 3. Log hệ thống (System Error/Warning Logs)
+          if (sysLogsRes.status === 'fulfilled') {
+            const sysData = sysLogsRes.value;
+            const sysList = Array.isArray(sysData) ? sysData : sysData?.items || sysData?.Items || [];
+            sysList.slice(0, 6).forEach((sys) => {
+              const isError =
+                (sys.logLevel || '').toUpperCase() === 'ERROR' ||
+                (sys.logLevel || '').toUpperCase() === 'FATAL';
+              notifs.push({
+                id: `notif_sys_${sys.id || Math.random()}`,
+                category: 'SYSTEM_LOGS',
+                title: `Log hệ thống [${sys.logLevel || 'WARN'}]`,
+                message: sys.errorMessage || sys.translatedMessage || sys.exceptionType || 'Cảnh báo từ hệ thống máy chủ.',
+                time: sys.createdAt
+                  ? new Date(sys.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                  : 'Hệ thống',
+                icon: isError ? '🚨' : '⚠️',
+                iconBg: isError ? '#fee2e2' : '#fef3c7',
+                to: '/admin/system-logs',
+                unread: isError,
+                rawTime: sys.createdAt ? new Date(sys.createdAt).getTime() : 0,
+              });
             });
-          });
-        }
+          }
 
-        // 2. Rosbags cần phân tích kỹ thuật
-        if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
-          bagsRes.value.slice(0, 4).forEach((bag) => {
-            notifs.push({
-              id: `notif_bag_${bag.id}`,
-              category: 'TASKS',
-              title: 'Rosbag sẵn sàng phân tích',
-              message: `Bản ghi ${bag.name} (${bag.size || 'dữ liệu đầy đủ'}) đang chờ phân tích telemetry.`,
-              time: bag.date || 'Hôm nay',
-              icon: '📁',
-              iconBg: '#e0f2fe',
-              to: `/bags/${bag.id}`,
-              unread: false,
-              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+          // 4. Kết luận chẩn đoán chờ duyệt
+          if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
+            const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
+            pendingReviews.slice(0, 4).forEach((r) => {
+              notifs.push({
+                id: `notif_rev_${r.id || r.findingId}`,
+                category: 'REQUESTS',
+                title: 'Kết luận chẩn đoán chờ duyệt',
+                message: `Phát hiện ${r.ruleId || 'sự cố'} trên topic ${r.topic || '/telemetry'} cần phê duyệt.`,
+                time: 'Chờ duyệt',
+                icon: '⚠️',
+                iconBg: '#fef3c7',
+                to: `/reviews/${r.findingId || r.id}`,
+                unread: true,
+                rawTime: r.createdAt ? new Date(r.createdAt).getTime() : 0,
+              });
             });
-          });
-        }
+          }
 
-        // 3. Tin nhắn gửi tới Kỹ sư
-        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
-          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
-          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
-          msgs.slice(-5).reverse().forEach((msg) => {
-            notifs.push({
-              id: `notif_chat_${msg.id || Math.random()}`,
-              category: 'MESSAGES',
-              title: `Tin nhắn kỹ thuật: ${msg.sender || 'Đồng nghiệp'}`,
-              message: msg.content || 'Nội dung tin nhắn...',
-              time: msg.time || 'Tin nhắn mới',
-              icon: '💬',
-              iconBg: '#dbeafe',
-              to: null,
-              chatRole: 'Engineering',
-              unread: true,
-              rawTime: msg.rawTime || 0,
+          // 5. Bản ghi Rosbags tải lên
+          if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
+            bagsRes.value.slice(0, 3).forEach((bag) => {
+              notifs.push({
+                id: `notif_bag_${bag.id}`,
+                category: 'REQUESTS',
+                title: 'Bản ghi Rosbag mới',
+                message: `Tệp ${bag.name} (${bag.size || 'đầy đủ'}) đã tải lên thành công.`,
+                time: bag.date || 'Hôm nay',
+                icon: '📁',
+                iconBg: '#e0f2fe',
+                to: `/bags/${bag.id}`,
+                unread: false,
+                rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+              });
             });
-          });
-        }
-      } else {
-        // ==============================================================
-        // VAI TRÒ VẬN HÀNH (USER): Báo cáo chẩn đoán, Xe & Tin nhắn
-        // ==============================================================
-        const [reportsRes, bagsRes, chatRes] = await Promise.allSettled([
-          getReportsApi(),
-          getBagsApi(),
-          getChatMessagesByRoleApi('User'),
-        ]);
+          }
 
-        // 1. Báo cáo chẩn đoán sự cố hoàn tất
-        if (reportsRes.status === 'fulfilled' && Array.isArray(reportsRes.value)) {
-          reportsRes.value.slice(0, 5).forEach((rpt) => {
-            notifs.push({
-              id: `notif_rpt_${rpt.id}`,
-              category: 'REPORTS',
-              title: 'Báo cáo chẩn đoán hoàn tất',
-              message: `Báo cáo #${rpt.id} về sự cố xe đã có kết luận và khuyến nghị xử lý.`,
-              time: rpt.createdAt ? new Date(rpt.createdAt).toLocaleDateString('vi-VN') : 'Mới',
-              icon: '📋',
-              iconBg: '#dcfce7',
-              to: `/reports/${rpt.id}`,
-              unread: true,
-              rawTime: rpt.createdAt ? new Date(rpt.createdAt).getTime() : 0,
+          // 6. Tin nhắn gửi tới Admin
+          if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+            const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+            const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+            msgs.slice(-4).reverse().forEach((msg) => {
+              notifs.push({
+                id: `notif_chat_${msg.id || Math.random()}`,
+                category: 'MESSAGES',
+                title: `Tin nhắn từ ${msg.sender || 'Người gửi'}`,
+                message: msg.content || 'Nội dung tin nhắn...',
+                time: msg.time || 'Tin nhắn mới',
+                icon: '💬',
+                iconBg: '#dbeafe',
+                to: null,
+                chatRole: 'Admin',
+                unread: true,
+                rawTime: msg.rawTime || 0,
+              });
             });
-          });
-        }
+          }
+        } else if (isEngineer) {
+          // ==============================================================
+          // VAI TRÒ KỸ SƯ (ENGINEERING): Đánh giá, Rosbags & Tin nhắn
+          // ==============================================================
+          const [reviewsRes, bagsRes, chatRes] = await Promise.allSettled([
+            getReviewsApi(),
+            getBagsApi(),
+            getChatMessagesByRoleApi('Engineering'),
+          ]);
 
-        // 2. Trạng thái bản ghi xe / telemetry đã sẵn sàng
-        if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
-          bagsRes.value.slice(0, 4).forEach((bag) => {
-            notifs.push({
-              id: `notif_bag_${bag.id}`,
-              category: 'REPORTS',
-              title: 'Dữ liệu xe sẵn sàng',
-              message: `Bản ghi ${bag.name} đã được đồng bộ với hệ thống chẩn đoán.`,
-              time: bag.date || 'Hôm nay',
-              icon: '📁',
-              iconBg: '#e0f2fe',
-              to: `/bags/${bag.id}`,
-              unread: false,
-              rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+          // 1. Kết luận chẩn đoán chờ kỹ sư xác nhận
+          if (reviewsRes.status === 'fulfilled' && Array.isArray(reviewsRes.value)) {
+            const pendingReviews = reviewsRes.value.filter((r) => r.status === 'pending');
+            pendingReviews.slice(0, 6).forEach((item) => {
+              notifs.push({
+                id: `notif_rev_${item.id || item.findingId}`,
+                category: 'TASKS',
+                title: 'Cần kỹ sư xác nhận kết luận',
+                message: `Phát hiện ${item.ruleId || 'bất thường'} trên topic ${item.topic || '/system'} cần xác minh.`,
+                time: 'Cần xử lý',
+                icon: '⚠️',
+                iconBg: '#fef3c7',
+                to: `/reviews/${item.findingId || item.id}`,
+                unread: true,
+                rawTime: item.createdAt ? new Date(item.createdAt).getTime() : 0,
+              });
             });
-          });
-        }
+          }
 
-        // 3. Tin nhắn phản hồi từ Admin hoặc Kỹ sư
-        if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
-          const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
-          const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
-          msgs.slice(-5).reverse().forEach((msg) => {
-            notifs.push({
-              id: `notif_chat_${msg.id || Math.random()}`,
-              category: 'MESSAGES',
-              title: `Tin nhắn từ ${msg.sender || 'Kỹ sư / Admin'}`,
-              message: msg.content || 'Nội dung tin nhắn...',
-              time: msg.time || 'Tin nhắn mới',
-              icon: '💬',
-              iconBg: '#dbeafe',
-              to: null,
-              chatRole: 'User',
-              unread: true,
-              rawTime: msg.rawTime || 0,
+          // 2. Rosbags cần phân tích kỹ thuật
+          if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
+            bagsRes.value.slice(0, 4).forEach((bag) => {
+              notifs.push({
+                id: `notif_bag_${bag.id}`,
+                category: 'TASKS',
+                title: 'Rosbag sẵn sàng phân tích',
+                message: `Bản ghi ${bag.name} (${bag.size || 'dữ liệu đầy đủ'}) đang chờ phân tích telemetry.`,
+                time: bag.date || 'Hôm nay',
+                icon: '📁',
+                iconBg: '#e0f2fe',
+                to: `/bags/${bag.id}`,
+                unread: false,
+                rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+              });
             });
-          });
+          }
+
+          // 3. Tin nhắn gửi tới Kỹ sư
+          if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+            const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+            const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+            msgs.slice(-5).reverse().forEach((msg) => {
+              notifs.push({
+                id: `notif_chat_${msg.id || Math.random()}`,
+                category: 'MESSAGES',
+                title: `Tin nhắn kỹ thuật: ${msg.sender || 'Đồng nghiệp'}`,
+                message: msg.content || 'Nội dung tin nhắn...',
+                time: msg.time || 'Tin nhắn mới',
+                icon: '💬',
+                iconBg: '#dbeafe',
+                to: null,
+                chatRole: 'Engineering',
+                unread: true,
+                rawTime: msg.rawTime || 0,
+              });
+            });
+          }
+        } else {
+          // ==============================================================
+          // VAI TRÒ VẬN HÀNH (USER): Báo cáo chẩn đoán, Xe & Tin nhắn
+          // ==============================================================
+          const [reportsRes, bagsRes, chatRes] = await Promise.allSettled([
+            getReportsApi(),
+            getBagsApi(),
+            getChatMessagesByRoleApi('User'),
+          ]);
+
+          // 1. Báo cáo chẩn đoán sự cố hoàn tất
+          if (reportsRes.status === 'fulfilled' && Array.isArray(reportsRes.value)) {
+            reportsRes.value.slice(0, 5).forEach((rpt) => {
+              notifs.push({
+                id: `notif_rpt_${rpt.id}`,
+                category: 'REPORTS',
+                title: 'Báo cáo chẩn đoán hoàn tất',
+                message: `Báo cáo #${rpt.id} về sự cố xe đã có kết luận và khuyến nghị xử lý.`,
+                time: rpt.createdAt ? new Date(rpt.createdAt).toLocaleDateString('vi-VN') : 'Mới',
+                icon: '📋',
+                iconBg: '#dcfce7',
+                to: `/reports/${rpt.id}`,
+                unread: true,
+                rawTime: rpt.createdAt ? new Date(rpt.createdAt).getTime() : 0,
+              });
+            });
+          }
+
+          // 2. Trạng thái bản ghi xe / telemetry đã sẵn sàng
+          if (bagsRes.status === 'fulfilled' && Array.isArray(bagsRes.value)) {
+            bagsRes.value.slice(0, 4).forEach((bag) => {
+              notifs.push({
+                id: `notif_bag_${bag.id}`,
+                category: 'REPORTS',
+                title: 'Dữ liệu xe sẵn sàng',
+                message: `Bản ghi ${bag.name} đã được đồng bộ với hệ thống chẩn đoán.`,
+                time: bag.date || 'Hôm nay',
+                icon: '📁',
+                iconBg: '#e0f2fe',
+                to: `/bags/${bag.id}`,
+                unread: false,
+                rawTime: bag.createdAt ? new Date(bag.createdAt).getTime() : 0,
+              });
+            });
+          }
+
+          // 3. Tin nhắn phản hồi từ Admin hoặc Kỹ sư
+          if (chatRes.status === 'fulfilled' && Array.isArray(chatRes.value)) {
+            const myEmail = (state.profile?.email || localStorage.getItem('email') || '').toLowerCase().trim();
+            const msgs = chatRes.value.filter((m) => (m.senderEmail || '').toLowerCase().trim() !== myEmail);
+            msgs.slice(-5).reverse().forEach((msg) => {
+              notifs.push({
+                id: `notif_chat_${msg.id || Math.random()}`,
+                category: 'MESSAGES',
+                title: `Tin nhắn từ ${msg.sender || 'Kỹ sư / Admin'}`,
+                message: msg.content || 'Nội dung tin nhắn...',
+                time: msg.time || 'Tin nhắn mới',
+                icon: '💬',
+                iconBg: '#dbeafe',
+                to: null,
+                chatRole: 'User',
+                unread: true,
+                rawTime: msg.rawTime || 0,
+              });
+            });
+          }
         }
       }
 
@@ -393,12 +569,21 @@ export default function HeaderNotificationDropdown() {
   }, []);
 
   // Xử lý click vào item thông báo
-  const handleItemClick = (n) => {
+  const handleItemClick = async (n) => {
     setIsOpen(false);
-    // Đánh dấu mục này là đã đọc
+    // Đánh dấu mục này là đã đọc trên giao diện
     setNotifications((prev) =>
       prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
     );
+
+    // Đồng bộ trạng thái đã đọc về Backend nếu có ID
+    if (n.backendId && !String(n.backendId).startsWith('notif_')) {
+      try {
+        await markNotificationReadApi(n.backendId);
+      } catch (err) {
+        console.warn('Lỗi cập nhật đã đọc:', err);
+      }
+    }
 
     if (n.chatRole) {
       // Mở hộp chat tương ứng với Role qua event
@@ -411,8 +596,13 @@ export default function HeaderNotificationDropdown() {
   };
 
   // Đánh dấu tất cả là đã đọc
-  const handleMarkAllRead = () => {
+  const handleMarkAllRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    try {
+      await markAllNotificationsReadApi();
+    } catch (err) {
+      console.warn('Lỗi đánh dấu tất cả đã đọc:', err);
+    }
   };
 
   // Lọc thông báo theo tab đang chọn
