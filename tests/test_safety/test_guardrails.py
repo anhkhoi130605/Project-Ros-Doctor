@@ -484,7 +484,7 @@ async def test_current_server_configuration_is_used_each_time(monkeypatch, mock_
 @pytest.mark.asyncio
 @pytest.mark.parametrize("endpoint", ["/api/v1/chat", "/api/v1/chat/stream"])
 @pytest.mark.parametrize("block_at", [None, "input", "context", "output"])
-async def test_api_contract_and_no_unsafe_stream(client, isolated_graph, mock_guardrail_model, endpoint, block_at):
+async def test_api_contract_and_no_unsafe_stream(client, auth_headers, isolated_graph, mock_guardrail_model, endpoint, block_at):
     _, analyze, respond, output, trace = isolated_graph
     verdicts = {
         None: ["SAFE", "SAFE", "SAFE"],
@@ -493,8 +493,13 @@ async def test_api_contract_and_no_unsafe_stream(client, isolated_graph, mock_gu
         "output": ["SAFE", "SAFE", "UNSAFE"],
     }
     mock_guardrail_model.side_effect = [judge_response(value) for value in verdicts[block_at]]
-    response = await client.post(endpoint, json={"message": "Phân tích /scan", "session_id": "s", "bag_id": "b"})
+    response = await client.post(
+        endpoint,
+        json={"message": "Phân tích /scan", "session_id": "s", "bag_id": "b"},
+        headers=auth_headers,
+    )
     assert response.status_code == 200
+
     if endpoint.endswith("/stream"):
         assert response.headers["content-type"].startswith("text/event-stream")
         events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")]

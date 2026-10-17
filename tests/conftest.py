@@ -53,3 +53,43 @@ def mock_llm():
     mock = AsyncMock()
     mock.ainvoke.return_value = AsyncMock(content="Mocked LLM response")
     return mock
+
+
+@pytest.fixture(autouse=True)
+def ensure_test_jwt_secret(monkeypatch):
+    import src.config
+    test_secret = "test-jwt-secret-key-with-at-least-32-bytes"
+    monkeypatch.setenv("JWT_SECRET", test_secret)
+    src.config.get_settings.cache_clear()
+    yield
+    src.config.get_settings.cache_clear()
+
+
+@pytest.fixture
+def auth_headers():
+    import jwt
+
+    from src.config import get_settings
+    settings = get_settings()
+    token = jwt.encode(
+        {"sub": "test-user-id", "email": "test@domain.com", "role": "User"},
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def admin_auth_headers():
+    import jwt
+
+    from src.config import get_settings
+    settings = get_settings()
+    token = jwt.encode(
+        {"sub": "test-admin-id", "email": "admin@domain.com", "role": "Admin"},
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
+    return {"Authorization": f"Bearer {token}"}
+
+
