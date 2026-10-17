@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     openai_base_url: str | None = None
     model_name: str = "gpt-4o-mini"
     llm_temperature: float = Field(default=0.7, ge=0.0, le=2.0)
+    llm_max_tokens: int = Field(default=4096, ge=512, le=32768)
     # Additive input/context/output checks, using server-side credentials only.
     guardrails_enabled: bool = True
     guardrails_model: str | None = None

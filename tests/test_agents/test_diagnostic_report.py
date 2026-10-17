@@ -97,3 +97,74 @@ def test_build_rag_prompt_structure():
     assert "tf_tree_inconsistency" in prompt_str
     assert "Kiểm tra lỗi TF" in prompt_str
     assert "Context from playbook" in prompt_str
+
+
+def test_parse_diagnostic_report_auto_repair_truncated_json():
+    # Mô phỏng JSON bị cắt cụt do giới hạn token ở kịch bản đa lỗi (Multi-fault)
+    truncated_llm_output = """Kết quả phân tích chẩn đoán cho phiên:
+```json
+{
+  "has_fault": true,
+  "faults": [
+    {
+      "fault_type": "frequency_drop",
+      "sub_type": "severe_drop",
+      "severity": "major",
+      "topic": "/camera/image_raw",
+      "start_sec": 10.5,
+      "end_sec": 30.0,
+      "evidence": "Tần số giảm từ 30Hz xuống 12Hz",
+      "root_cause": "EXECUTOR_STARVATION_OR_DDS_QUEUE_OVERFLOW",
+      "recommended_action": "1. Upgrade to MultiThreadedExecutor"
+    },
+    {
+      "fault_type": "timestamp_anomaly",
+      "sub_type": "clock_drift",
+      "severity": "critical",
+      "topic": "/carla/ego_vehicle/imu",
+      "start_sec": 5.0,
+      "end_sec": 45.0,
+      "evidence": "Trôi dạt đồng hồ tuyến tính 2 ms/s"
+"""
+    clean_text, report = parse_diagnostic_report(truncated_llm_output)
+
+    assert report is not None
+    assert report.has_fault is True
+    assert len(report.faults) >= 1
+    assert report.faults[0].fault_type == "frequency_drop"
+    assert report.faults[0].topic == "/camera/image_raw"
+
+
+def test_parse_diagnostic_report_auto_repair_trailing_commas_and_python_literals():
+    # JSON có dấu phẩy thừa (trailing commas), hằng số True/False/None của Python và chú thích //
+    syntax_error_json = """
+```json
+{
+  // Báo cáo chẩn đoán sự cố
+  "has_fault": True,
+  "faults": [
+    {
+      "fault_type": "sensor_anomaly",
+      "sub_type": "gyro_bias_drift",
+      "severity": "critical",
+      "topic": "/ouster/imu",
+      "start_sec": 0.0,
+      "end_sec": 40.0,
+      "evidence": "Yaw drift rate 0.08 rad/s",
+      "root_cause": "THERMAL_ZERO_RATE_BIAS_DRIFT_OR_FAULTY_BOOT_CALIBRATION",
+      "citation": None,
+    },
+  ],
+  "summary": "Phát hiện trôi yaw tích phân",
+  "analyzed_topics": ["/ouster/imu",],
+}
+```
+"""
+    clean_text, report = parse_diagnostic_report(syntax_error_json)
+
+    assert report is not None
+    assert report.has_fault is True
+    assert len(report.faults) == 1
+    assert report.faults[0].fault_type == "sensor_anomaly"
+    assert report.faults[0].sub_type == "gyro_bias_drift"
+
