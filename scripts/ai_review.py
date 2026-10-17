@@ -66,7 +66,7 @@ payload = {
     "messages": [
         {"role": "user", "content": prompt}
     ],
-    "max_tokens": 4000,
+    "max_tokens": 1500,
 }
 
 print(f"Đang gửi yêu cầu review tới OpenRouter (model: {OPENROUTER_MODEL})...")
@@ -79,11 +79,12 @@ try:
     )
 except requests.exceptions.RequestException as e:
     print(f"Lỗi kết nối tới OpenRouter: {e}")
-    exit(1)
+    exit(0)
 
 if ai_res.status_code != 200:
-    print(f"Lỗi gọi OpenRouter API ({ai_res.status_code}): {ai_res.text}")
-    exit(1)
+    print(f"[CẢNH BÁO] Lỗi gọi OpenRouter API ({ai_res.status_code}): {ai_res.text}")
+    print("Bỏ qua AI Code Review để không chặn pipeline.")
+    exit(0)
 
 review_data = ai_res.json()
 try:
