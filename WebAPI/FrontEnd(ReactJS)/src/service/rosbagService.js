@@ -30,5 +30,5 @@ export async function uploadAndInspectBagApi(file, yamlFile = null) {
   if (yamlFile) {
     formData.append('yamlFile', yamlFile);
   }
-  return apiClient.post('/api/bags/upload-and-inspect', formData);
+  return apiClient.post('/api/bags/upload-and-inspect', formData, { handleErrorLocally: true });
 }

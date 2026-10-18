@@ -120,6 +120,12 @@ namespace Domain.Entities.NoSql
 		[BsonElement("dataset_id")]
 		public string DatasetId { get; set; } = null!;
 
+		[BsonElement("model_name")]
+		public string ModelName { get; set; } = "ros2-doctor-v1.0";
+
+		[BsonElement("evaluation_name")]
+		public string EvaluationName { get; set; } = "";
+
 		[BsonElement("faithfulness_score")]
 		public double FaithfulnessScore { get; set; }
 
@@ -128,6 +134,27 @@ namespace Domain.Entities.NoSql
 
 		[BsonElement("answer_relevancy_score")]
 		public double AnswerRelevancyScore { get; set; }
+
+		[BsonElement("precision")]
+		public double Precision { get; set; }
+
+		[BsonElement("recall")]
+		public double Recall { get; set; }
+
+		[BsonElement("f1_score")]
+		public double F1Score { get; set; }
+
+		[BsonElement("cases_count")]
+		public int CasesCount { get; set; }
+
+		[BsonElement("status")]
+		public string Status { get; set; } = "Completed";
+
+		[BsonElement("notes")]
+		public string? Notes { get; set; }
+
+		[BsonElement("created_by")]
+		public string? CreatedBy { get; set; }
 
 		[BsonElement("confusion_matrix")]
 		public Dictionary<string, int> ConfusionMatrix { get; set; } = new();

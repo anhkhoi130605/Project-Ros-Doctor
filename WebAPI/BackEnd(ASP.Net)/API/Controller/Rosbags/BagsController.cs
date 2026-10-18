@@ -168,6 +168,8 @@ namespace API.Controller.Rosbags
 		[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "Admin,Engineering")]
 		[HttpPost("upload-and-inspect")]
 		[Consumes("multipart/form-data")]
+		[DisableRequestSizeLimit]
+		[RequestSizeLimit(2L * 1024 * 1024 * 1024)]
 		[RequestFormLimits(MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024)]
 		public async Task<IActionResult> UploadAndInspect(
 			[FromForm] IFormFile? file,

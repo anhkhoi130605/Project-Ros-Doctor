@@ -95,6 +95,7 @@ const ReviewDetailPage = lazy(() =>
 
 const ChatPage = lazy(() => import('../feature/chat/pages/ChatPage'));
 const BenchmarkPage = lazy(() => import('../feature/benchmark'));
+const EvaluationPage = lazy(() => import('../feature/evaluation/pages/EvaluationPage'));
 const CostPerformancePage = lazy(() => import('../feature/admin/pages/CostPerformancePage'));
 const AdminOverviewPage = lazy(() => import('../feature/admin/pages/AdminOverviewPage'));
 const SettingsPage = lazy(() => import('../feature/admin/pages/SettingsPage'));
@@ -167,6 +168,7 @@ export default function AppRouter() {
           <Route path="/reviews/detail" element={<ReviewDetailPage />} />
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/benchmark" element={<BenchmarkPage />} />
+          <Route path="/evaluations" element={<EvaluationPage />} />
           <Route path="/usage" element={<CostPerformancePage />} />
           <Route path="/admin" element={<RequireRoleRoute allowedRoles={['admin']}><Navigate to="/admin/members" replace /></RequireRoleRoute>} />
           <Route path="/admin/overview" element={<RequireRoleRoute allowedRoles={['admin']}><Navigate to="/admin/members" replace /></RequireRoleRoute>} />

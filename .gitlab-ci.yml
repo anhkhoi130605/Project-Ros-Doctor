@@ -73,6 +73,12 @@ test-python-ai:
     - pytest tests/ -v --tb=short --basetemp=.pytest_temp --junitxml=pytest-report.xml
     - echo "=== 5. Chạy CI/CD Benchmark Pipeline (Tier C Quality Gate) ==="
     - python eval/benchmark_runner.py --ci --threshold 0.80 --max-latency 3.0
+  retry:
+    max: 2
+    when:
+      - runner_system_failure
+      - api_failure
+      - stuck_or_timeout_failure
   artifacts:
     when: always
     reports:

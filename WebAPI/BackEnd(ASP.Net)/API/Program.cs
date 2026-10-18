@@ -17,14 +17,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
 	serverOptions.AddServerHeader = false;
-	serverOptions.Limits.MaxRequestBodySize = 30L * 1024 * 1024; // 30 MB
+	serverOptions.Limits.MaxRequestBodySize = 2L * 1024 * 1024 * 1024; // 2 GB (cho phép tải rosbag lớn)
 });
 
 builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
 {
 	options.ValueLengthLimit = 64 * 1024;
-	options.MultipartBodyLengthLimit = 30L * 1024 * 1024; // 30 MB
-	options.MultipartHeadersLengthLimit = 16 * 1024;
+	options.MultipartBodyLengthLimit = 2L * 1024 * 1024 * 1024; // 2 GB
+	options.MultipartHeadersLengthLimit = 64 * 1024;
+});
+
+builder.Services.Configure<IISServerOptions>(options =>
+{
+	options.MaxRequestBodySize = 2L * 1024 * 1024 * 1024; // 2 GB cho Azure App Service / IIS
 });
 
 // Clean Architecture: Application & Infrastructure layer registrations
