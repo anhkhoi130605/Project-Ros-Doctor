@@ -34,10 +34,21 @@ export default function UploadPage() {
   const handleIncomingFiles = (fileList) => {
     if (!fileList || fileList.length === 0) return;
     const filesArray = Array.from(fileList);
-    const db3 = filesArray.find((f) => f.name.endsWith('.db3') || f.name.endsWith('.mcap') || f.name.endsWith('.zip')) || filesArray[0];
+    const db3 = filesArray.find((f) => f.name.endsWith('.db3') || f.name.endsWith('.mcap') || f.name.endsWith('.zip'));
     const yaml = filesArray.find((f) => f.name.endsWith('.yaml') || f.name.endsWith('.yml'));
-    setFile(db3);
-    if (yaml) setYamlFile(yaml);
+
+    if (db3) {
+      setFile(db3);
+    }
+    if (yaml) {
+      setYamlFile(yaml);
+    }
+
+    if (!db3 && yaml) {
+      notify(`Đã nhận tệp cấu hình ${yaml.name}. Vui lòng chọn thêm tệp dữ liệu chính (.db3 hoặc .zip).`, 'info');
+    } else if (!db3 && !yaml) {
+      notify('Định dạng tệp không được hỗ trợ. Vui lòng chọn tệp .db3, .mcap, .zip hoặc .yaml.', 'warning');
+    }
   };
 
   const handleFileDrop = (e) => {
@@ -241,14 +252,40 @@ export default function UploadPage() {
             </div>
 
             {file && (
-              <Notice tone="green" icon="check" className="mb-2">
-                📁 Tệp dữ liệu máy tính: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)
-              </Notice>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <Notice tone="green" icon="check" style={{ margin: 0, flex: 1 }}>
+                  📁 Tệp dữ liệu chính: <strong>{file.name}</strong> ({Math.round(file.size / 1024)} KB)
+                </Notice>
+                <button
+                  type="button"
+                  onClick={() => setFile(null)}
+                  style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+                  title="Bỏ chọn tệp này"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
             )}
 
             {yamlFile && (
-              <Notice tone="cyan" icon="check" className="mb-4">
-                📄 Tệp cấu hình QoS: <strong>{yamlFile.name}</strong> ({Math.round(yamlFile.size / 1024)} KB)
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <Notice tone="cyan" icon="check" style={{ margin: 0, flex: 1 }}>
+                  📄 Tệp cấu hình QoS / Metadata: <strong>{yamlFile.name}</strong> ({Math.round(yamlFile.size / 1024)} KB)
+                </Notice>
+                <button
+                  type="button"
+                  onClick={() => setYamlFile(null)}
+                  style={{ marginLeft: '8px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)' }}
+                  title="Bỏ chọn tệp này"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+            )}
+
+            {!file && yamlFile && (
+              <Notice tone="amber" icon="alert" style={{ marginBottom: '16px' }}>
+                ⚠️ Bạn mới chỉ chọn tệp cấu hình metadata.yaml. Vui lòng chọn thêm tệp dữ liệu chính (<strong>.db3</strong> hoặc <strong>.zip</strong>) để bắt đầu phân tích.
               </Notice>
             )}
 
