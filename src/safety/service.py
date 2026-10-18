@@ -80,22 +80,75 @@ def create_rails(settings: Settings):
     # Set a bounded application limit; do not truncate any safety-check content.
     for prompt in policy["prompts"]:
         prompt["max_length"] = settings.guardrails_max_prompt_chars
-    parameters = {
-        "api_key": settings.openai_api_key,
-        "timeout": settings.guardrails_timeout_seconds,
-        "max_attempts": 1,
-        "response_format": copy.deepcopy(RESPONSE_FORMAT),
-    }
-    if settings.openai_base_url:
-        parameters["base_url"] = settings.openai_base_url
-    policy["models"] = [
-        {
-            "type": "main",
-            "engine": "openai",
-            "model": settings.guardrails_model or settings.model_name,
-            "parameters": parameters,
+    is_azure = bool(
+        settings.azure_openai_endpoint
+        or (settings.openai_base_url and "openai.azure.com" in settings.openai_base_url)
+    )
+
+    if is_azure:
+        raw_endpoint = (settings.azure_openai_endpoint or settings.openai_base_url or "").rstrip("/")
+        if "/openai/deployments" in raw_endpoint:
+            parts = raw_endpoint.split("/openai/deployments")
+            raw_endpoint = parts[0].rstrip("/")
+            if not settings.azure_openai_deployment_name and parts[1].strip("/"):
+                azure_deployment = parts[1].strip("/").split("/")[0]
+            else:
+                azure_deployment = (
+                    settings.azure_openai_deployment_name
+                    or settings.guardrails_model
+                    or settings.model_name
+                )
+        else:
+            azure_deployment = (
+                settings.azure_openai_deployment_name
+                or settings.guardrails_model
+                or settings.model_name
+            )
+
+        if raw_endpoint.endswith("/v1"):
+            raw_endpoint = raw_endpoint[:-3]
+        base_url = raw_endpoint if raw_endpoint.endswith("/openai") else f"{raw_endpoint}/openai"
+
+        api_key = settings.azure_openai_api_key or settings.openai_api_key
+        api_version = settings.azure_openai_api_version or "2024-06-01"
+        parameters = {
+            "base_url": base_url,
+            "api_key": api_key,
+            "timeout": settings.guardrails_timeout_seconds,
+            "max_attempts": 1,
+            "response_format": copy.deepcopy(RESPONSE_FORMAT),
+            "default_headers": {
+                "api-key": api_key,
+            },
+            "default_query": {
+                "api-version": api_version,
+            },
         }
-    ]
+        policy["models"] = [
+            {
+                "type": "main",
+                "engine": "azure",
+                "model": azure_deployment,
+                "parameters": parameters,
+            }
+        ]
+    else:
+        parameters = {
+            "api_key": settings.openai_api_key,
+            "timeout": settings.guardrails_timeout_seconds,
+            "max_attempts": 1,
+            "response_format": copy.deepcopy(RESPONSE_FORMAT),
+        }
+        if settings.openai_base_url:
+            parameters["base_url"] = settings.openai_base_url
+        policy["models"] = [
+            {
+                "type": "main",
+                "engine": "openai",
+                "model": settings.guardrails_model or settings.model_name,
+                "parameters": parameters,
+            }
+        ]
     rails = Guardrails(RailsConfig.from_content(config=policy), require_iorails=True)
     # Pinned IORails does not expose Guardrails.register_output_parser(). Register on
     # its per-instance task manager before execution; never patch global/vendor code.

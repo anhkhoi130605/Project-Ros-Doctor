@@ -2,7 +2,7 @@ from functools import lru_cache
 from typing import Literal
 
 from dotenv import load_dotenv
-from pydantic import Field, field_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Ensure .env values take precedence over system environment variables
@@ -43,6 +43,28 @@ class Settings(BaseSettings):
     guardrails_timeout_seconds: float = Field(default=30.0, ge=1.0, le=120.0)
     guardrails_max_attempts: int = Field(default=2, ge=1, le=3)
     guardrails_max_prompt_chars: int = Field(default=128000, ge=16000, le=2000000)
+
+    # Azure OpenAI Configuration
+    azure_openai_endpoint: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("azure_openai_endpoint", "azure_endpoint"),
+    )
+    azure_openai_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("azure_openai_api_key", "azure_api_key"),
+    )
+    azure_openai_api_version: str = Field(
+        default="2024-06-01",
+        validation_alias=AliasChoices("azure_openai_api_version", "azure_api_version"),
+    )
+    azure_openai_deployment_name: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "azure_openai_deployment_name",
+            "azure_openai_deployment",
+            "azure_deployment",
+        ),
+    )
     embedding_model: str = "text-embedding-3-small"
     embedding_request_timeout: float = Field(default=30.0, ge=1.0, le=300.0)
     embedding_max_retries: int = Field(default=3, ge=0, le=10)
