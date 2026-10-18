@@ -5,6 +5,7 @@ namespace Application.Features.Rosbags.DTOs
 {
 	public class InspectRosbagRequestDto
 	{
+		public string? BagId { get; set; }
 		public string? BagPath { get; set; }
 		public string? SampleName { get; set; }
 	}
@@ -13,6 +14,8 @@ namespace Application.Features.Rosbags.DTOs
 	{
 		public string Name { get; set; } = string.Empty;
 		public string Path { get; set; } = string.Empty;
+		[System.Text.Json.Serialization.JsonIgnore]
+		public string PhysicalPath { get; set; } = string.Empty;
 		public long SizeBytes { get; set; }
 		public string Format { get; set; } = "sqlite3";
 		public bool HasYaml { get; set; }

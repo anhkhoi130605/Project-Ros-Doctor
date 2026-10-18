@@ -15,7 +15,7 @@ using MediatR;
 
 namespace Application.Features.Rosbags.Commands
 {
-	public record InspectRosbagCommand(string? BagPath, string? SampleName, string? EngineerId = null) : IRequest<RosbagInspectionReportDto>;
+	public record InspectRosbagCommand(string? BagPath, string? SampleName, string? EngineerId = null, string? BagId = null) : IRequest<RosbagInspectionReportDto>;
 
 	public class InspectRosbagCommandHandler : IRequestHandler<InspectRosbagCommand, RosbagInspectionReportDto>
 	{
@@ -34,7 +34,17 @@ namespace Application.Features.Rosbags.Commands
 		{
 			RosbagInspectionReportDto report;
 			Rosbag? existingBag = null;
-			if (!string.IsNullOrWhiteSpace(request.BagPath))
+			if (!string.IsNullOrWhiteSpace(request.BagId))
+			{
+				existingBag = await _unitOfWork.Rosbags.GetByIdAsync(request.BagId, cancellationToken);
+				if (existingBag == null || existingBag.DeletedAt != null)
+					throw new InvalidOperationException("Rosbag không tồn tại hoặc đã bị xóa.");
+				existingBag.EnsureApprovedForAnalysis();
+				if (string.IsNullOrWhiteSpace(existingBag.StorageUrl) || !System.IO.File.Exists(existingBag.StorageUrl))
+					throw new InvalidOperationException("Tệp tin rosbag không tồn tại trên hệ thống lưu trữ.");
+				report = await _inspectorService.InspectBagAsync(existingBag.StorageUrl, cancellationToken);
+			}
+			else if (!string.IsNullOrWhiteSpace(request.BagPath))
 			{
 				// Use the existing RosbagId when inspecting a submitted file. Check before reading or analyzing it.
 				var fullPath = System.IO.Path.GetFullPath(request.BagPath);
@@ -189,6 +199,12 @@ namespace Application.Features.Rosbags.Commands
 			{
 				if (existingBag != null) throw;
 				Console.WriteLine($"[Warning] Failed to persist inspection to DB: {ex.Message}");
+			}
+
+			// Sanitize internal server directory path before returning to client
+			if (!string.IsNullOrEmpty(report.BagPath))
+			{
+				report.BagPath = System.IO.Path.GetFileName(report.BagPath);
 			}
 
 			return report;

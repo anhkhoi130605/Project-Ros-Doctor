@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controller.Reports
 {
 	[Route("api/reports")]
+	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 	public class ReportsController : BaseController
 	{
 		private readonly IMediator _mediator;
