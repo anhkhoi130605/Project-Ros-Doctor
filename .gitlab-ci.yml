@@ -71,10 +71,16 @@ test-python-ai:
     - python -c "import src.main; print('Python AI application loaded successfully')"
     - echo "=== 4. Chạy Unit Test với Pytest và xuất báo cáo ==="
     - pytest tests/ -v --tb=short --junitxml=pytest-report.xml
+    - echo "=== 5. Chạy CI/CD Benchmark Pipeline (Tier C Quality Gate) ==="
+    - python eval/benchmark_runner.py --ci --threshold 0.80 --max-latency 3.0
   artifacts:
     when: always
     reports:
-      junit: pytest-report.xml
+      junit:
+        - pytest-report.xml
+        - eval/results/benchmark_junit.xml
+    paths:
+      - eval/results/report.md
 
 # 1.2 Test Backend ASP.NET Core (.NET 10)
 test-backend-dotnet:
