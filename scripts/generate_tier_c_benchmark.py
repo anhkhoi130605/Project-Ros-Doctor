@@ -39,6 +39,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 OUTPUT_DIR = PROJECT_ROOT / "data" / "tier_c_benchmark"
 
 # =============================================================================
