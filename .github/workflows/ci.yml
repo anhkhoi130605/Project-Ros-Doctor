@@ -41,7 +41,7 @@ jobs:
           APP_ENV: test
           OPENAI_API_KEY: mock-test-key-ci
         run: |
-          pytest tests/ -v --tb=short
+          pytest tests/ -v --tb=short --basetemp=.pytest_temp
 
       - name: 1.4 [AI / Python] Chạy CI/CD Benchmark Pipeline (Tier C Quality Gate)
         env:

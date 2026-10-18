@@ -1,7 +1,7 @@
 # Evaluation Report — CI/CD Benchmark Pipeline
 
 > Báo cáo tự động đánh giá chất lượng AI Diagnostic Agent theo tiêu chí Tier C & Ban Tổ Chức.
-> Cập nhật lần cuối: **2026-10-18T21:06:12.501751**
+> Cập nhật lần cuối: **2026-10-18T21:28:24.574061**
 
 ---
 
@@ -43,16 +43,16 @@
 
 | Case Code | Expected Label | Agent Prediction | Latency | Result |
 |:---|:---|:---|:---:|:---:|
-| `tier_c_001_av_autoware_robotaxi_scen_00_nominal_clean` | `nominal` | `nominal` | 6.79ms | ✅ |
-| `tier_c_002_av_autoware_robotaxi_scen_01_transient_imu_dropout` | `topic_dropout` | `topic_dropout` | 5.45ms | ✅ |
-| `tier_c_003_av_autoware_robotaxi_scen_02_permanent_lidar_dropout` | `topic_dropout` | `topic_dropout` | 5.59ms | ✅ |
-| `tier_c_004_av_autoware_robotaxi_scen_03_severe_frequency_drop` | `frequency_drop` | `frequency_drop` | 5.45ms | ✅ |
-| `tier_c_005_av_autoware_robotaxi_scen_04_burst_packet_loss` | `frequency_drop` | `frequency_drop` | 5.26ms | ✅ |
-| `tier_c_006_av_autoware_robotaxi_scen_05_timestamp_inversion` | `timestamp_anomaly` | `timestamp_anomaly` | 5.11ms | ✅ |
-| `tier_c_007_av_autoware_robotaxi_scen_06_linear_clock_drift` | `timestamp_anomaly` | `timestamp_anomaly` | 5.48ms | ✅ |
-| `tier_c_008_av_autoware_robotaxi_scen_07_tf_frame_jump` | `tf_tree_inconsistency` | `tf_tree_inconsistency` | 5.4ms | ✅ |
-| `tier_c_009_av_autoware_robotaxi_scen_08_disconnected_tf_tree` | `tf_tree_inconsistency` | `tf_tree_inconsistency` | 5.25ms | ✅ |
-| `tier_c_010_av_autoware_robotaxi_scen_09_accel_shock_spike` | `sensor_anomaly` | `sensor_anomaly` | 5.52ms | ✅ |
+| `tier_c_001_av_autoware_robotaxi_scen_00_nominal_clean` | `nominal` | `nominal` | 6.23ms | ✅ |
+| `tier_c_002_av_autoware_robotaxi_scen_01_transient_imu_dropout` | `topic_dropout` | `topic_dropout` | 5.2ms | ✅ |
+| `tier_c_003_av_autoware_robotaxi_scen_02_permanent_lidar_dropout` | `topic_dropout` | `topic_dropout` | 5.18ms | ✅ |
+| `tier_c_004_av_autoware_robotaxi_scen_03_severe_frequency_drop` | `frequency_drop` | `frequency_drop` | 5.48ms | ✅ |
+| `tier_c_005_av_autoware_robotaxi_scen_04_burst_packet_loss` | `frequency_drop` | `frequency_drop` | 5.52ms | ✅ |
+| `tier_c_006_av_autoware_robotaxi_scen_05_timestamp_inversion` | `timestamp_anomaly` | `timestamp_anomaly` | 5.44ms | ✅ |
+| `tier_c_007_av_autoware_robotaxi_scen_06_linear_clock_drift` | `timestamp_anomaly` | `timestamp_anomaly` | 5.47ms | ✅ |
+| `tier_c_008_av_autoware_robotaxi_scen_07_tf_frame_jump` | `tf_tree_inconsistency` | `tf_tree_inconsistency` | 5.58ms | ✅ |
+| `tier_c_009_av_autoware_robotaxi_scen_08_disconnected_tf_tree` | `tf_tree_inconsistency` | `tf_tree_inconsistency` | 5.1ms | ✅ |
+| `tier_c_010_av_autoware_robotaxi_scen_09_accel_shock_spike` | `sensor_anomaly` | `sensor_anomaly` | 5.44ms | ✅ |
 
 ---
 

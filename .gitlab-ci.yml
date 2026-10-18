@@ -68,9 +68,9 @@ test-python-ai:
     - echo "=== 2. Kiểm tra Linting với Ruff ==="
     - ruff check src/ tests/
     - echo "=== 3. Xác minh khởi động ứng dụng Python AI ==="
-    - python -c "import src.main; print('Python AI application loaded successfully')"
+    - python -c "import src.main; from src.safety.service import create_rails; from src.config import get_settings; create_rails(get_settings()); print('Python AI application and Guardrails loaded successfully')"
     - echo "=== 4. Chạy Unit Test với Pytest và xuất báo cáo ==="
-    - pytest tests/ -v --tb=short --junitxml=pytest-report.xml
+    - pytest tests/ -v --tb=short --basetemp=.pytest_temp --junitxml=pytest-report.xml
     - echo "=== 5. Chạy CI/CD Benchmark Pipeline (Tier C Quality Gate) ==="
     - python eval/benchmark_runner.py --ci --threshold 0.80 --max-latency 3.0
   artifacts:
