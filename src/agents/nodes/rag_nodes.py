@@ -49,10 +49,19 @@ def _extract_telemetry_context(
             session_id = latest_sess.get("id")
             session_data = latest_sess
 
-    if bag_id and not bag_data:
-        bag_data = client.get_bag(bag_id)
-    if session_id and not session_data:
-        session_data = client.get_session(session_id)
+    from concurrent.futures import ThreadPoolExecutor
+
+    if bag_id and not bag_data and session_id and not session_data:
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            f_bag = pool.submit(client.get_bag, bag_id)
+            f_sess = pool.submit(client.get_session, session_id)
+            bag_data = f_bag.result()
+            session_data = f_sess.result()
+    else:
+        if bag_id and not bag_data:
+            bag_data = client.get_bag(bag_id)
+        if session_id and not session_data:
+            session_data = client.get_session(session_id)
     if bag_data and not session_data and bag_data.get("sessionId"):
         session_data = client.get_session(bag_data["sessionId"])
 
