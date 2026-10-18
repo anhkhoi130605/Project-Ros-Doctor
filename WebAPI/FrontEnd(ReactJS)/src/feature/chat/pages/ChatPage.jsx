@@ -342,7 +342,7 @@ function ChatWorkspace({ owner }) {
             </span>
             <select
               value={selectedBagId}
-              disabled={isLoading || active.messages.length > 0}
+              disabled={isLoading}
               onChange={handleBagChange}
               className="chat-context-select"
               aria-label="Chọn Rosbag làm ngữ cảnh chẩn đoán"
@@ -395,9 +395,6 @@ function ChatWorkspace({ owner }) {
             )}
           </div>
         </div>
-        {active.messages.length > 0 && <p className="chat-context-note" translate="no">
-          {english ? 'Start a new conversation to change the rosbag context.' : 'Tạo cuộc trò chuyện mới để đổi ngữ cảnh rosbag.'}
-        </p>}
 
         <div className="chat-messages-area" aria-live="polite">
           {messages.map((m) => (
