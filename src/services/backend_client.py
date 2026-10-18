@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from functools import lru_cache
 from typing import Any
 
@@ -13,18 +14,32 @@ SESSION_ID_PATTERN = re.compile(r"\b(s-[a-zA-Z0-9_-]+|sess?-[a-zA-Z0-9_-]+|sessi
 
 
 class BackendClient:
-    """Client for reusing ASP.NET Core Backend WebAPI endpoints."""
+    """Client for reusing ASP.NET Core Backend WebAPI endpoints with connection pooling and caching."""
 
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()
         self.base_url = self.settings.backend_api_url.rstrip("/")
-
-    def _client(self) -> httpx.Client:
-        return httpx.Client(
+        self._shared_client = httpx.Client(
             base_url=self.base_url,
             verify=False,  # Allow dev self-signed HTTPS certificate
             timeout=5.0,
+            limits=httpx.Limits(max_keepalive_connections=10, max_connections=20),
         )
+        self._cache: dict[str, tuple[float, Any]] = {}
+
+    def _client(self) -> httpx.Client:
+        return self._shared_client
+
+    def _get_from_cache(self, key: str, ttl: float = 30.0) -> Any | None:
+        if key in self._cache:
+            ts, val = self._cache[key]
+            if time.monotonic() - ts < ttl:
+                return val
+            del self._cache[key]
+        return None
+
+    def _set_cache(self, key: str, val: Any) -> None:
+        self._cache[key] = (time.monotonic(), val)
 
     def extract_bag_id(self, text: str) -> str | None:
         """Find a bag ID or rosbag name mentioned in user text."""
@@ -38,11 +53,16 @@ class BackendClient:
 
     def get_bag(self, bag_id: str) -> dict[str, Any] | None:
         """Fetch metadata, topic metrics, and Hz for a specific rosbag."""
+        cache_key = f"bag:{bag_id}"
+        cached = self._get_from_cache(cache_key)
+        if cached is not None:
+            return cached
         try:
-            with self._client() as client:
-                res = client.get(f"/api/bags/{bag_id}")
-                if res.status_code == 200:
-                    return res.json()
+            res = self._client().get(f"/api/bags/{bag_id}")
+            if res.status_code == 200:
+                data = res.json()
+                self._set_cache(cache_key, data)
+                return data
         except Exception:
             pass
         return None
@@ -50,22 +70,26 @@ class BackendClient:
     def list_bags(self) -> list[dict[str, Any]]:
         """List rosbags available on the backend server."""
         try:
-            with self._client() as client:
-                res = client.get("/api/bags")
-                if res.status_code == 200:
-                    data = res.json()
-                    return data if isinstance(data, list) else []
+            res = self._client().get("/api/bags")
+            if res.status_code == 200:
+                data = res.json()
+                return data if isinstance(data, list) else []
         except Exception:
             pass
         return []
 
     def get_session(self, session_id: str) -> dict[str, Any] | None:
         """Fetch diagnostic session results, health score, and detected issues."""
+        cache_key = f"sess:{session_id}"
+        cached = self._get_from_cache(cache_key)
+        if cached is not None:
+            return cached
         try:
-            with self._client() as client:
-                res = client.get(f"/api/sessions/{session_id}")
-                if res.status_code == 200:
-                    return res.json()
+            res = self._client().get(f"/api/sessions/{session_id}")
+            if res.status_code == 200:
+                data = res.json()
+                self._set_cache(cache_key, data)
+                return data
         except Exception:
             pass
         return None
