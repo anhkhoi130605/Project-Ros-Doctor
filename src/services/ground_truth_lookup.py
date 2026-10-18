@@ -36,7 +36,7 @@ def detect_lookup(query: str) -> LookupIntent | None:
     answer_key = bool(re.search(r"\b(?:ground[ _-]?truth|dap an chuan)\b", text))
     evidence = bool(re.search(r"\b(?:bang chung|evidence)\b", text))
     citation = bool(re.search(r"\b(?:trich dan|citation|reference)\b", text) and
-                    re.search(r"\b(?:loi|case_\w+|phien|rosbag|fault|session|benchmark)\b", text))
+                    re.search(r"\b(?:loi|case_\w+|tier_c_\w+|phien|rosbag|fault|session|benchmark)\b", text))
     if not (answer_key or evidence or citation):
         return None
     # A diagnostic request explicitly excluding answers must stay on the diagnostic path.
@@ -48,7 +48,7 @@ def detect_lookup(query: str) -> LookupIntent | None:
         r"bang chung la gi|what is evidence)\b", text
     ):
         return None
-    cases = list(dict.fromkeys(re.findall(r"\bcase_\d{2}_[a-z0-9]+(?:_[a-z0-9]+)*\b", text)))
+    cases = list(dict.fromkeys(re.findall(r"\b(?:case_\d{2}|tier_c_\d{3})_[a-z0-9]+(?:_[a-z0-9]+)*\b", text)))
     if answer_key and not (evidence or citation or cases) and not re.search(r"\b(?:tra cuu|hien thi|xem|lookup|look up|show|display)\b", text):
         return None
     codes = list(dict.fromkeys(re.findall(r"\bBENCHMARK-[A-Z0-9]+(?:[-_][A-Z0-9]+)*\b", query.upper())))

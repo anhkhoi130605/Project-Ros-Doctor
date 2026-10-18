@@ -41,15 +41,17 @@ def collection_for(*documents):
     return collection
 
 
-@pytest.mark.parametrize("query,language", [
-    (f"Tra cứu ground truth tiếng Việt của {CASE}", "vi"),
-    (f"Show ground truth for {CASE} in English", "en"),
-    (f"Hiển thị đáp án chuẩn {CASE}", "vi"),
-    (f"Tra cứu ground_truth {CASE} tiếng Anh", "en"),
+@pytest.mark.parametrize("query,language,expected_case", [
+    (f"Tra cứu ground truth tiếng Việt của {CASE}", "vi", CASE),
+    (f"Show ground truth for {CASE} in English", "en", CASE),
+    (f"Hiển thị đáp án chuẩn {CASE}", "vi", CASE),
+    (f"Tra cứu ground_truth {CASE} tiếng Anh", "en", CASE),
+    ("Show ground truth for tier_c_001_av_autoware_robotaxi_scen_00_nominal_clean in English", "en", "tier_c_001_av_autoware_robotaxi_scen_00_nominal_clean"),
+    ("Tra cứu ground truth của tier_c_002_av_autoware_robotaxi_scen_01_transient_imu_dropout tiếng Việt", "vi", "tier_c_002_av_autoware_robotaxi_scen_01_transient_imu_dropout"),
 ])
-def test_explicit_lookup_intent(query, language):
+def test_explicit_lookup_intent(query, language, expected_case):
     intent = detect_lookup(query)
-    assert intent.case_id == CASE
+    assert intent.case_id == expected_case
     assert intent.language == language
 
 
