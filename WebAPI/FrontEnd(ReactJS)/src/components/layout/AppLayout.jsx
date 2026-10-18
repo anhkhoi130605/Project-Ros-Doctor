@@ -153,6 +153,7 @@ export default function AppLayout() {
     ['/reviews', t('navigation:items.reviews'), 'file-text', ['Engineering'], pendingReviewsCount > 0 ? pendingReviewsCount : undefined],
     ['/reports', isUserRole ? t('navigation:items.approvedReports') : t('navigation:items.reports'), 'file-text', ['Admin', 'Engineering', 'User']],
     ['/benchmark', t('navigation:items.benchmark'), 'trending-up', ['Engineering']],
+    ['/evaluations', t('navigation:items.evaluation'), 'check', ['Engineering']],
     ['/usage', t('navigation:items.usage'), 'clock', ['Engineering']],
     ['/admin', t('navigation:items.admin'), 'shield', ['Admin']],
     ['/settings', t('navigation:items.settings'), 'settings', ['Admin']],
@@ -166,7 +167,7 @@ export default function AppLayout() {
       return false;
     })
   );
-  const rosbagChildPaths = ['/bags', '/bag-submissions', '/analysis', '/reviews', '/reports', '/benchmark'];
+  const rosbagChildPaths = ['/bags', '/bag-submissions', '/analysis', '/reviews', '/reports', '/benchmark', '/evaluations'];
   const rosbagChildren = filteredNav.filter(([to]) => rosbagChildPaths.includes(to));
 
   const getPageTitle = (pathname) => {
@@ -179,6 +180,7 @@ export default function AppLayout() {
     if (pathname.startsWith('/reviews')) return t('navigation:pageTitles.reviews');
     if (pathname.startsWith('/chat')) return t('navigation:pageTitles.chat');
     if (pathname.startsWith('/benchmark')) return t('navigation:pageTitles.benchmark');
+    if (pathname.startsWith('/evaluations')) return t('navigation:pageTitles.evaluation');
     if (pathname.startsWith('/usage')) return t('navigation:cost.sessions');
     if (pathname === '/admin/ai-config') return t('navigation:pageTitles.aiConfig');
     if (pathname === '/admin/cost' || pathname === '/settings/cost') return t('navigation:cost.model');
