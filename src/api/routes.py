@@ -235,7 +235,7 @@ async def list_carla_bags():
                 bags.append(
                     {
                         "name": item.name,
-                        "path": str(item),
+                        "path": item.name,
                         "db3_files": db3_files,
                         "has_yaml": len(yaml_files) > 0,
                     }
@@ -287,7 +287,7 @@ class SaveChatHistoryPayload(BaseModel):
     conversations: list[dict[str, Any]] = []
 
 
-@router.get("/chat/history")
+@router.get("/chat/history", dependencies=[Depends(get_current_user)])
 async def get_user_chat_history(
     user_key: str | None = Query(default=None, alias="userKey"),
     email: str | None = Query(default=None),
@@ -298,8 +298,8 @@ async def get_user_chat_history(
     return {"conversations": conversations}
 
 
-@router.put("/chat/history")
-@router.post("/chat/history")
+@router.put("/chat/history", dependencies=[Depends(get_current_user)])
+@router.post("/chat/history", dependencies=[Depends(get_current_user)])
 async def save_user_chat_history(payload: SaveChatHistoryPayload):
     """Lưu và hợp nhất lịch sử các phiên trò chuyện AI Agent của người dùng."""
     service = get_agent_trace_service()

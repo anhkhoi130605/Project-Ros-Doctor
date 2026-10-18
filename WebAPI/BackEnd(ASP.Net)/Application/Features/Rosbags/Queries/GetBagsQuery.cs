@@ -8,7 +8,7 @@ using Application.Interfaces.ManageTransaction;
 
 namespace Application.Features.Rosbags.Queries
 {
-	public record GetBagsQuery(int? PageNumber = null, int? PageSize = null) : IRequest<List<RosbagDto>>;
+	public record GetBagsQuery(string? UserId = null, bool CanViewAll = false, int? PageNumber = null, int? PageSize = null) : IRequest<List<RosbagDto>>;
 
 	public class GetBagsQueryHandler : IRequestHandler<GetBagsQuery, List<RosbagDto>>
 	{
@@ -32,13 +32,17 @@ namespace Application.Features.Rosbags.Queries
 				take = pSize;
 			}
 
-			// Projection query at SQL level with AsNoTracking
+			// Filter condition: Approved, Not deleted, and owned by UserId unless user has permission to view all
+			System.Linq.Expressions.Expression<System.Func<Domain.Entities.RosbagAnalysis.Rosbag, bool>> filter = request.CanViewAll
+				? b => b.ReviewStatus == Domain.Enums.RosbagReviewStatus.Approved && b.DeletedAt == null
+				: b => b.ReviewStatus == Domain.Enums.RosbagReviewStatus.Approved && b.DeletedAt == null && b.UserId == request.UserId;
+
+			// Projection query at SQL level with AsNoTracking (never exposes internal StorageUrl)
 			var bagsList = await _unitOfWork.Rosbags.SelectAsync(
 				b => new
 				{
 					b.Id,
 					Name = b.FileName,
-					b.StorageUrl,
 					Size = b.SizeBytes,
 					Format = b.Format.ToString(),
 					Duration = b.DurationSec,
@@ -47,7 +51,7 @@ namespace Application.Features.Rosbags.Queries
 					Date = b.CreatedAt.ToString("o"),
 					b.UserId
 				},
-				b => b.ReviewStatus == Domain.Enums.RosbagReviewStatus.Approved && b.DeletedAt == null,
+				filter,
 				q => q.OrderByDescending(b => b.CreatedAt),
 				skip,
 				take,
@@ -73,7 +77,6 @@ namespace Application.Features.Rosbags.Queries
 					{
 						Id = b.Id,
 						Name = b.Name,
-						StorageUrl = b.StorageUrl,
 						Size = b.Size,
 						Format = b.Format,
 						Duration = b.Duration,

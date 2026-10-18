@@ -29,7 +29,7 @@ namespace Application.Features.Rosbags.Commands
 				Id = "bag-" + Guid.NewGuid().ToString("N")[..8],
 				UserId = command.UserId,
 				FileName = command.Request.Name,
-				StorageUrl = command.Request.StorageUrl,
+				StorageUrl = null,
 				SizeBytes = command.Request.Size,
 				Format = format,
 				DurationSec = command.Request.Duration,
@@ -45,7 +45,6 @@ namespace Application.Features.Rosbags.Commands
 			{
 				Id = rosbag.Id,
 				Name = rosbag.FileName,
-				StorageUrl = rosbag.StorageUrl,
 				Size = rosbag.SizeBytes,
 				Format = rosbag.Format.ToString(),
 				Duration = rosbag.DurationSec,

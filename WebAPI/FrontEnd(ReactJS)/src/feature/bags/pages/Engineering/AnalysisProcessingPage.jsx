@@ -11,18 +11,13 @@ export default function AnalysisProcessingPage() {
   // Reuse the request during StrictMode effect replay and ordinary re-renders.
   const requestRef = useRef(null);
   const bagId = bag?.id;
-  const bagPath = bag?.storageUrl;
 
   useEffect(() => {
     if (!bagId || !canAnalyze) return;
     let active = true;
-    if (!bagPath) {
-      setResult({ status: 'error', message: 'Rosbag chưa có đường dẫn tệp trên máy chủ. Vui lòng kiểm tra lại bản ghi.' });
-      return;
-    }
     if (requestRef.current?.bagId !== bagId) {
       setResult({ status: 'running' });
-      const promise = apiClient.post('/api/bags/inspect', { bagPath }, {
+      const promise = apiClient.post('/api/bags/inspect', { bagId }, {
         signal: AbortSignal.timeout(120000),
         handleErrorLocally: true,
       }).then(report => {

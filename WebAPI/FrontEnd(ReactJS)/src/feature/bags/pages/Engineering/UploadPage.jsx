@@ -59,7 +59,7 @@ export default function UploadPage() {
     try {
       setLoading(true);
       notify(`Đang nạp và phân tích rosbag mẫu: ${sample.name}...`, 'info');
-      const report = await inspectBagApi({ bagPath: sample.path });
+      const report = await inspectBagApi({ sampleName: sample.name });
       const elapsedSec = Math.round((Date.now() - startTime) / 100) / 10;
       processInspectionResult(report, sample.name, sample.sizeBytes, elapsedSec);
     } catch (err) {
@@ -277,7 +277,7 @@ export default function UploadPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '14px' }}>
               {sampleBags.map((sample) => (
                 <div
-                  key={sample.path}
+                  key={sample.name}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',

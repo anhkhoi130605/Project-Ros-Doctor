@@ -76,7 +76,8 @@ namespace Infrastructure.Services.Rosbag
 					results.Add(new SampleBagInfoDto
 					{
 						Name = subDir.Name,
-						Path = subDir.FullName,
+						Path = subDir.Name,
+						PhysicalPath = subDir.FullName,
 						SizeBytes = totalSize,
 						Format = "sqlite3",
 						HasYaml = yamlFiles.Length > 0,
@@ -94,7 +95,8 @@ namespace Infrastructure.Services.Rosbag
 					results.Add(new SampleBagInfoDto
 					{
 						Name = file.Name,
-						Path = file.FullName,
+						Path = file.Name,
+						PhysicalPath = file.FullName,
 						SizeBytes = file.Length,
 						Format = "sqlite3",
 						HasYaml = File.Exists(Path.Combine(file.DirectoryName ?? "", "metadata.yaml")),
@@ -122,7 +124,8 @@ namespace Infrastructure.Services.Rosbag
 			}
 
 			target ??= samples.First();
-			return await InspectBagAsync(target.Path, cancellationToken);
+			var path = !string.IsNullOrWhiteSpace(target.PhysicalPath) ? target.PhysicalPath : target.Path;
+			return await InspectBagAsync(path, cancellationToken);
 		}
 
 		public async Task<RosbagInspectionReportDto> InspectUploadedFileAsync(

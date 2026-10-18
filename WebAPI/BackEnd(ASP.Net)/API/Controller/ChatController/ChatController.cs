@@ -8,6 +8,8 @@ using Application.Features.Chat.Commands;
 using Application.Features.Chat.DTOs;
 using Application.Features.Chat.Queries;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controller.ChatController
@@ -23,6 +25,7 @@ namespace API.Controller.ChatController
     /// Không chứa business logic hay truy cập database trực tiếp; ủy thác toàn bộ cho Use Cases qua IMediator.
     /// </summary>
     [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class ChatController : BaseController
     {
         private readonly IMediator _mediator;
@@ -54,6 +57,12 @@ namespace API.Controller.ChatController
         {
             if (string.IsNullOrWhiteSpace(role))
                 return BadRequest(new { message = ChatErrorMessages.RoleRequired });
+
+            // Ràng buộc phân quyền đọc kênh nhạy cảm
+            if (string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase) && !User.IsInRole("Admin"))
+                return Forbid();
+            if (string.Equals(role, "Engineering", StringComparison.OrdinalIgnoreCase) && !User.IsInRole("Admin") && !User.IsInRole("Engineering"))
+                return Forbid();
 
             var result = await _mediator.Send(new GetChatMessagesByRoleQuery(role, limit, before, CurrentUserId), cancellationToken);
             return Ok(result);
