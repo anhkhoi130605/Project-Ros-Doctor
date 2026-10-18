@@ -60,12 +60,22 @@ def _error_code(error: BaseException) -> str:
     return "configuration" if any(isinstance(x, (ImportError, ValueError)) for x in nodes) else "runtime_error"
 
 
+_BASE_POLICY_CACHE: dict | None = None
+
+
+def _get_base_policy() -> dict:
+    global _BASE_POLICY_CACHE
+    if _BASE_POLICY_CACHE is None:
+        _BASE_POLICY_CACHE = yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8"))
+    return copy.deepcopy(_BASE_POLICY_CACHE)
+
+
 def create_rails(settings: Settings):
     # No additional outbound usage telemetry is needed for this integration.
     os.environ.setdefault("NEMO_GUARDRAILS_NO_USAGE_STATS", "1")
     from nemoguardrails import Guardrails, RailsConfig
 
-    policy = yaml.safe_load(POLICY_PATH.read_text(encoding="utf-8"))
+    policy = _get_base_policy()
     # NeMo defaults to only 16,000 characters, including evidence AND the report.
     # Set a bounded application limit; do not truncate any safety-check content.
     for prompt in policy["prompts"]:
