@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuite name="AI_Agent_Benchmark_Tier_C" tests="110" failures="0" time="0.55">
+  <testcase classname="BenchmarkTierC" name="tier_c_001_av_autoware_robotaxi_scen_00_nominal_clean" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_002_av_autoware_robotaxi_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_003_av_autoware_robotaxi_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_004_av_autoware_robotaxi_scen_03_severe_frequency_drop" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_005_av_autoware_robotaxi_scen_04_burst_packet_loss" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_006_av_autoware_robotaxi_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_007_av_autoware_robotaxi_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_008_av_autoware_robotaxi_scen_07_tf_frame_jump" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_009_av_autoware_robotaxi_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_010_av_autoware_robotaxi_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_011_av_autoware_robotaxi_scen_10_imu_sensor_freeze" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_012_av_delivery_amr_scen_00_nominal_clean" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_013_av_delivery_amr_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_014_av_delivery_amr_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_015_av_delivery_amr_scen_03_severe_frequency_drop" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_016_av_delivery_amr_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_017_av_delivery_amr_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_018_av_delivery_amr_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_019_av_delivery_amr_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_020_av_delivery_amr_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_021_av_delivery_amr_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_022_av_delivery_amr_scen_10_imu_sensor_freeze" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_023_av_mining_truck_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_024_av_mining_truck_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_025_av_mining_truck_scen_02_permanent_lidar_dropout" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_026_av_mining_truck_scen_03_severe_frequency_drop" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_027_av_mining_truck_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_028_av_mining_truck_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_029_av_mining_truck_scen_06_linear_clock_drift" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_030_av_mining_truck_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_031_av_mining_truck_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_032_av_mining_truck_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_033_av_mining_truck_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_034_av_shuttle_bus_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_035_av_shuttle_bus_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_036_av_shuttle_bus_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_037_av_shuttle_bus_scen_03_severe_frequency_drop" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_038_av_shuttle_bus_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_039_av_shuttle_bus_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_040_av_shuttle_bus_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_041_av_shuttle_bus_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_042_av_shuttle_bus_scen_08_disconnected_tf_tree" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_043_av_shuttle_bus_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_044_av_shuttle_bus_scen_10_imu_sensor_freeze" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_045_av_carla_town03_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_046_av_carla_town03_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_047_av_carla_town03_scen_02_permanent_lidar_dropout" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_048_av_carla_town03_scen_03_severe_frequency_drop" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_049_av_carla_town03_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_050_av_carla_town03_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_051_av_carla_town03_scen_06_linear_clock_drift" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_052_av_carla_town03_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_053_av_carla_town03_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_054_av_carla_town03_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_055_av_carla_town03_scen_10_imu_sensor_freeze" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_056_uav_px4_quadcopter_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_057_uav_px4_quadcopter_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_058_uav_px4_quadcopter_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_059_uav_px4_quadcopter_scen_03_severe_frequency_drop" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_060_uav_px4_quadcopter_scen_04_burst_packet_loss" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_061_uav_px4_quadcopter_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_062_uav_px4_quadcopter_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_063_uav_px4_quadcopter_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_064_uav_px4_quadcopter_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_065_uav_px4_quadcopter_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_066_uav_px4_quadcopter_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_067_uav_cargo_hexacopter_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_068_uav_cargo_hexacopter_scen_01_transient_imu_dropout" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_069_uav_cargo_hexacopter_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_070_uav_cargo_hexacopter_scen_03_severe_frequency_drop" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_071_uav_cargo_hexacopter_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_072_uav_cargo_hexacopter_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_073_uav_cargo_hexacopter_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_074_uav_cargo_hexacopter_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_075_uav_cargo_hexacopter_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_076_uav_cargo_hexacopter_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_077_uav_cargo_hexacopter_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_078_uav_vtol_mapping_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_079_uav_vtol_mapping_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_080_uav_vtol_mapping_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_081_uav_vtol_mapping_scen_03_severe_frequency_drop" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_082_uav_vtol_mapping_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_083_uav_vtol_mapping_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_084_uav_vtol_mapping_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_085_uav_vtol_mapping_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_086_uav_vtol_mapping_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_087_uav_vtol_mapping_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_088_uav_vtol_mapping_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_089_uav_fpv_racing_scen_00_nominal_clean" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_090_uav_fpv_racing_scen_01_transient_imu_dropout" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_091_uav_fpv_racing_scen_02_permanent_lidar_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_092_uav_fpv_racing_scen_03_severe_frequency_drop" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_093_uav_fpv_racing_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_094_uav_fpv_racing_scen_05_timestamp_inversion" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_095_uav_fpv_racing_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_096_uav_fpv_racing_scen_07_tf_frame_jump" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_097_uav_fpv_racing_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_098_uav_fpv_racing_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_099_uav_fpv_racing_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_100_uav_subt_explorer_scen_00_nominal_clean" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_101_uav_subt_explorer_scen_01_transient_imu_dropout" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_102_uav_subt_explorer_scen_02_permanent_lidar_dropout" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_103_uav_subt_explorer_scen_03_severe_frequency_drop" time="0.006">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_104_uav_subt_explorer_scen_04_burst_packet_loss" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_105_uav_subt_explorer_scen_05_timestamp_inversion" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_106_uav_subt_explorer_scen_06_linear_clock_drift" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_107_uav_subt_explorer_scen_07_tf_frame_jump" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_108_uav_subt_explorer_scen_08_disconnected_tf_tree" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_109_uav_subt_explorer_scen_09_accel_shock_spike" time="0.005">
+  </testcase>
+  <testcase classname="BenchmarkTierC" name="tier_c_110_uav_subt_explorer_scen_10_imu_sensor_freeze" time="0.005">
+  </testcase>
+</testsuite>
