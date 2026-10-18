@@ -19,6 +19,7 @@ from src.models.schemas import (
     ChatRequest,
     ChatResponse,
 )
+from src.safety.fast_guard import sanitize_output_text
 from src.services.agent_trace_service import get_agent_trace_service
 from src.services.benchmark_dataset_service import get_benchmark_dataset_service
 from src.services.carla_rosbag_service import CarlaRosbagRecorder
@@ -55,6 +56,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         response_text = result.get("response", "")
         analysis_text = result.get("analysis", "")
         report_data = result.get("report")
+        response_text, _ = sanitize_output_text(response_text)
 
         # Tự động lưu vết chẩn đoán vào collection agent_execution_traces trong MongoDB
         try:
@@ -97,10 +99,12 @@ async def chat_stream(request: ChatRequest):
             full_response = result.get("response", "")
             analysis = result.get("analysis", "")
             report = result.get("report")
+            full_response, _ = sanitize_output_text(full_response)
 
-            # Stream words/tokens in small bursts (ChatGPT-style fast cadence)
+            # Stream words/tokens in low-latency optimized bursts
             tokens = re.findall(r"\S+|\n+", full_response)
-            chunk_size = 2  # 2 từ mỗi gói burst
+            is_blocked = result.get("metadata", {}).get("guardrails", {}).get("blocked", False)
+            chunk_size = 4 if not is_blocked else max(1, len(tokens) or 1)
             for i in range(0, len(tokens), chunk_size):
                 chunk = tokens[i : i + chunk_size]
                 chunk_str = ""
@@ -111,7 +115,8 @@ async def chat_stream(request: ChatRequest):
                         chunk_str += (t + " ")
                 data = json.dumps({"token": chunk_str, "done": False}, ensure_ascii=False)
                 yield f"data: {data}\n\n"
-                await asyncio.sleep(0.008)  # 8ms per burst = ~250 từ/phút cực nhanh và mượt mà
+                if not is_blocked and len(tokens) > 10:
+                    await asyncio.sleep(0.003)
 
             # Tự động lưu vết chẩn đoán vào MongoDB
             try:
